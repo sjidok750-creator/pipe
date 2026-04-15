@@ -1,158 +1,66 @@
-import { useState } from 'react'
-import type { ModuleId, ModuleInfo } from '../../types'
-
-export const MODULES: ModuleInfo[] = [
-  { id: 'simple-beam',    label: 'RC 보 단면',   labelEn: 'RC Beam Section', group: '보 (Beam)',              standard: 'KDS 14 20 20/22', icon: '▬' },
-  { id: 'deep-beam',      label: '깊은보',       labelEn: 'Deep Beam',       group: '보 (Beam)',              standard: 'KDS 14 20 24',    icon: '▰' },
-  { id: 'rc-column',      label: 'RC 기둥',      labelEn: 'RC Column',       group: '기둥·벽체 (Column)',     standard: 'KDS 14 20 20/22', icon: '▮' },
-  { id: 'rc-wall',        label: '벽체 검토',    labelEn: 'RC Wall',         group: '기둥·벽체 (Column)',     standard: 'KDS 14 20 70',    icon: '▯' },
-  { id: 'abutment',       label: '교대 검토',    labelEn: 'Abutment',        group: '교량 하부 (Substructure)', standard: 'KDS 24 14 21',    icon: '⌂' },
-  { id: 'foundation',     label: '기초 검토',    labelEn: 'Foundation',      group: '교량 하부 (Substructure)', standard: 'KDS 11 50 15',    icon: '⊓' },
-]
+import React from 'react'
+import { NavLink } from 'react-router-dom'
 
 interface SidebarProps {
-  active: ModuleId
-  onSelect: (id: ModuleId) => void
+  open: boolean
+  onClose: () => void
 }
 
-export default function Sidebar({ active, onSelect }: SidebarProps) {
-  const groups = Array.from(new Set(MODULES.map(m => m.group)))
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+const NAV_ITEMS = [
+  { to: '/',          label: '홈',       icon: '🏠' },
+  { to: '/input',     label: '입력',     icon: '📝' },
+  { to: '/result',    label: '결과',     icon: '📊' },
+  { to: '/report',    label: '보고서',   icon: '📄' },
+  { to: '/reference', label: '기준자료', icon: '📚' },
+]
 
-  const toggleGroup = (g: string) =>
-    setCollapsed(prev => ({ ...prev, [g]: !prev[g] }))
-
+export default function Sidebar({ open, onClose }: SidebarProps) {
   return (
-    <nav style={{
-      width: '15rem',
-      minWidth: '15rem',
-      background: 'var(--surface)',
-      borderRight: '1px solid var(--border-dark)',
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden',
-      userSelect: 'none',
-    }}>
+    <>
+      {/* 오버레이 */}
+      {open && (
+        <div
+          className="fixed inset-0 bg-black/40 z-40 md:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      {/* 트리 헤더 */}
-      <div style={{
-        padding: '0.45rem 0.7rem',
-        background: 'var(--surface-3)',
-        borderBottom: '1px solid var(--border-dark)',
-        fontSize: '0.7rem', fontWeight: 700,
-        color: 'var(--text-3)',
-        letterSpacing: '0.08em', textTransform: 'uppercase',
-        fontFamily: 'var(--font-mono)',
-      }}>
-        Section Type
-      </div>
-
-      {/* 트리 바디 */}
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        {groups.map(group => {
-          const isOpen = !collapsed[group]
-          const items = MODULES.filter(m => m.group === group)
-          return (
-            <div key={group}>
-              {/* 그룹 헤더 */}
-              <button
-                onClick={() => toggleGroup(group)}
-                style={{
-                  width: '100%',
-                  display: 'flex', alignItems: 'center', gap: '0.4rem',
-                  padding: '0.35rem 0.6rem',
-                  background: 'var(--surface-2)',
-                  border: 'none',
-                  borderBottom: '1px solid var(--border-light)',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <span style={{
-                  fontSize: '0.62rem', color: 'var(--text-3)',
-                  fontFamily: 'var(--font-mono)',
-                  transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                  display: 'inline-block',
-                  transition: 'transform 0.1s',
-                  flexShrink: 0,
-                }}>▶</span>
-                <span style={{
-                  fontSize: '0.75rem', fontWeight: 700,
-                  color: 'var(--text-2)',
-                  letterSpacing: '0.01em',
-                }}>{group}</span>
-              </button>
-
-              {/* 항목 목록 */}
-              {isOpen && items.map(m => {
-                const isActive = m.id === active
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => onSelect(m.id)}
-                    className={isActive ? 'tree-item tree-item-active' : 'tree-item'}
-                    style={{
-                      width: '100%',
-                      display: 'flex', alignItems: 'center',
-                      gap: '0',
-                      padding: '0',
-                      background: isActive ? 'var(--primary-bg)' : 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid var(--border-light)',
-                      borderLeft: isActive ? '3px solid var(--primary)' : '3px solid transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                    }}
-                  >
-                    {/* 들여쓰기 라인 */}
-                    <div style={{
-                      width: '1.6rem', flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      alignSelf: 'stretch',
-                      borderRight: '1px dashed var(--border-light)',
-                    }}>
-                      <div style={{
-                        width: '12px', height: '1px',
-                        background: 'var(--border-dark)',
-                      }}/>
-                    </div>
-
-                    {/* 항목 내용 */}
-                    <div style={{ flex: 1, padding: '0.38rem 0.55rem' }}>
-                      <div style={{
-                        fontSize: '0.82rem',
-                        fontWeight: isActive ? 700 : 500,
-                        color: isActive ? 'var(--primary)' : 'var(--text)',
-                      }}>{m.label}</div>
-                      <div style={{
-                        fontSize: '0.65rem',
-                        color: isActive ? 'var(--primary)' : 'var(--text-3)',
-                        fontFamily: 'var(--font-mono)',
-                        marginTop: '1px',
-                        opacity: 0.85,
-                      }}>{m.labelEn}</div>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          )
-        })}
-      </div>
-
-      {/* 하단 기준 정보 */}
-      <div style={{
-        padding: '0.5rem 0.7rem',
-        borderTop: '1px solid var(--border-dark)',
-        background: 'var(--surface-2)',
-      }}>
-        <div style={{ fontSize: '0.62rem', color: 'var(--text-disabled)', fontFamily: 'var(--font-mono)', lineHeight: 1.8 }}>
-          KDS 24 14 21 : 2021<br />
-          도로교설계기준 (한계상태설계법)<br />
-          국토교통부 고시
+      {/* 사이드바 */}
+      <aside
+        className={`
+          fixed md:hidden top-0 left-0 h-full w-64 z-50
+          transform transition-transform duration-300
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{ background: '#003366', color: 'white' }}
+      >
+        <div className="p-4 flex items-center justify-between border-b border-white/20">
+          <span className="font-bold">PipeCheck KDS</span>
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded">✕</button>
         </div>
-      </div>
-    </nav>
+        <nav className="p-4 flex flex-col gap-1">
+          {NAV_ITEMS.map(({ to, label, icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === '/'}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded text-sm font-medium transition-colors ${
+                  isActive ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'
+                }`
+              }
+            >
+              <span>{icon}</span>
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <div className="absolute bottom-4 left-4 text-xs text-white/40">
+          KDS 57 00 00 : 2022<br/>
+          KS D 3565 / KS D 4311
+        </div>
+      </aside>
+    </>
   )
 }

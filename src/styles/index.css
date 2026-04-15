@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy: #003366;
+  --color-navy-light: #e8f0fb;
+  --color-step-bg: #f0f7ff;
+  --color-input-bg: #f8faff;
+  --color-formula-bg: #fffbf0;
+  --color-calc-bg: #fafafa;
+  --color-ok-bg: #1a7a3c;
+  --color-ng-bg: #c0392b;
+  --color-ref-bg: #f0f4f0;
+  --color-warn-bg: #fff8e8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: #f4f6fa;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+/* KaTeX 렌더링 */
+.katex-display {
+  margin: 0.5rem 0;
+}
+
+/* 계산 과정 monospace */
+.calc-mono {
+  font-family: 'Noto Sans Mono', monospace;
+  font-size: 0.875rem;
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f0f0f0; }
+::-webkit-scrollbar-thumb { background: #b0c0d0; border-radius: 3px; }
+
+/* PDF 전용 스타일 */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
+
+/* 아코디언 애니메이션 */
+.accordion-content {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+/* 게이지 애니메이션 */
+.gauge-needle {
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* OK/NG 뱃지 */
+.badge-ok {
+  background: #1a7a3c;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.badge-ng {
+  background: #c0392b;
+  color: white;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
