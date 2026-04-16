@@ -26,7 +26,6 @@ const MODULE_TABS = [
     label: '내진성능 예비평가',
     labelShort: '예비평가',
     sub: 'KDS 57 17 00',
-    badge: '준비중',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <path d="M2 13 L5 8 L8 11 L11 5 L14 9 L16 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -41,7 +40,6 @@ const MODULE_TABS = [
     label: '내진성능 상세평가',
     labelShort: '상세평가',
     sub: 'KDS 57 17 00',
-    badge: '준비중',
     icon: (
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
         <rect x="2" y="10" width="3" height="6" rx="0.5" stroke="currentColor" strokeWidth="1.5"/>
