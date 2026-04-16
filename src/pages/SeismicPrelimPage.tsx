@@ -424,53 +424,44 @@ export default function SeismicPrelimPage() {
           관로 기본정보
         </div>
         <div style={sb}>
-          <div style={{ display:'flex', gap:20, flexWrap:'wrap' }}>
-            <div style={{ flex:'1 1 340px' }}>
-              <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:14 }}>
-                <F label="관종" wide>
-                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    {[['ductile','덕타일 주철관'],['steel','강관'],['concrete','콘크리트관'],['pvc','PVC관']].map(([k,lbl])=>(
-                      <Chip key={k} active={pipeKind===k} onClick={()=>setPipeKind(k)}>{lbl}</Chip>
-                    ))}
-                  </div>
-                </F>
-                <F label="공칭관경 DN (mm)">
-                  <NumInput value={DN} onChange={setDN} min={50} max={3000} step={50}/>
-                </F>
-                <F label="관두께 t (mm)">
-                  <NumInput value={thickness} onChange={setThickness} min={1} step={0.5}/>
-                  <div style={{ fontSize:10, color:C.muted, marginTop:4 }}>
-                    D/t = {(parseFloat(DN)/parseFloat(thickness)||0).toFixed(1)} → <strong>FLEX = {calcFLEX(parseFloat(DN)/parseFloat(thickness)||0).toFixed(0)}</strong>
-                  </div>
-                </F>
+          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+            <F label="관종" wide>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {[['ductile','덕타일 주철관'],['steel','강관'],['concrete','콘크리트관'],['pvc','PVC관']].map(([k,lbl])=>(
+                  <Chip key={k} active={pipeKind===k} onClick={()=>setPipeKind(k)}>{lbl}</Chip>
+                ))}
               </div>
-            </div>
-            {/* 세부지수 선택 */}
-            <div style={{ flex:'1 1 300px' }}>
-              <div style={{ display:'flex', gap:12, flexDirection:'column' }}>
-                <F label="이음부 상태 (CONNECT)">
-                  <div style={{ display:'flex', gap:6 }}>
-                    {Object.entries(CONNECT_INDEX).map(([k,v])=>(
-                      <Chip key={k} active={connectCond===k} onClick={()=>setConnectCond(k)}>{v.label} · {v.score}</Chip>
-                    ))}
-                  </div>
-                </F>
-                <F label="주요시설물 (FACIL)">
-                  <div style={{ display:'flex', gap:6 }}>
-                    {Object.entries(FACIL_INDEX).map(([k,v])=>(
-                      <Chip key={k} active={facilExists===k} onClick={()=>setFacilExists(k)}>{v.label} · {v.score}</Chip>
-                    ))}
-                  </div>
-                </F>
-                <F label="이음처리방법 (MCONE)">
-                  <div style={{ display:'flex', gap:6 }}>
-                    {Object.entries(MCONE_INDEX).map(([k,v])=>(
-                      <Chip key={k} active={mcone===k} onClick={()=>setMcone(k)}>{v.label} · {v.score}</Chip>
-                    ))}
-                  </div>
-                </F>
+            </F>
+            <F label="공칭관경 DN (mm)">
+              <NumInput value={DN} onChange={setDN} min={50} max={3000} step={50}/>
+            </F>
+            <F label="관두께 t (mm)">
+              <NumInput value={thickness} onChange={setThickness} min={1} step={0.5}/>
+              <div style={{ fontSize:10, color:C.muted, marginTop:4 }}>
+                D/t = {(parseFloat(DN)/parseFloat(thickness)||0).toFixed(1)} → <strong>FLEX = {calcFLEX(parseFloat(DN)/parseFloat(thickness)||0).toFixed(0)}</strong>
               </div>
-            </div>
+            </F>
+            <F label="이음부 상태 (CONNECT)">
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {Object.entries(CONNECT_INDEX).map(([k,v])=>(
+                  <Chip key={k} active={connectCond===k} onClick={()=>setConnectCond(k)}>{v.label} · {v.score}</Chip>
+                ))}
+              </div>
+            </F>
+            <F label="주요시설물 (FACIL)">
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {Object.entries(FACIL_INDEX).map(([k,v])=>(
+                  <Chip key={k} active={facilExists===k} onClick={()=>setFacilExists(k)}>{v.label} · {v.score}</Chip>
+                ))}
+              </div>
+            </F>
+            <F label="이음처리방법 (MCONE)">
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {Object.entries(MCONE_INDEX).map(([k,v])=>(
+                  <Chip key={k} active={mcone===k} onClick={()=>setMcone(k)}>{v.label} · {v.score}</Chip>
+                ))}
+              </div>
+            </F>
           </div>
         </div>
       </div>
