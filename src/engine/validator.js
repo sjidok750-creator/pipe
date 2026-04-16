@@ -2,7 +2,7 @@
 // 입력값 유효성 검사
 // ============================================================
 
-import { STEEL_THICKNESS, DI_THICKNESS } from './constants.js'
+import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES } from './constants.js'
 
 /**
  * 입력값 전체 유효성 검사
@@ -12,12 +12,27 @@ import { STEEL_THICKNESS, DI_THICKNESS } from './constants.js'
 export function validateInputs(inputs) {
   const errors = {}
 
-  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio } = inputs
+  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade } = inputs
 
   // 관경
   const table = pipeType === 'steel' ? STEEL_THICKNESS : DI_THICKNESS
   if (!DN || !table[DN]) {
     errors.DN = '지원하지 않는 관경입니다.'
+  }
+
+  // 두께/등급
+  if (pipeType === 'steel') {
+    if (!pnGrade || !STEEL_PN_GRADES.includes(pnGrade)) {
+      errors.pnGrade = 'PN 등급을 선택해야 합니다.'
+    } else if (DN && table[DN] && !table[DN][pnGrade]) {
+      errors.pnGrade = `DN${DN}에서 ${pnGrade} 등급이 없습니다.`
+    }
+  } else {
+    if (!diKGrade || !DI_K_GRADES.includes(diKGrade)) {
+      errors.diKGrade = 'K 등급을 선택해야 합니다.'
+    } else if (DN && table[DN] && !table[DN][diKGrade]) {
+      errors.diKGrade = `DN${DN}에서 ${diKGrade} 등급이 없습니다.`
+    }
   }
 
   // 설계 운전압력
@@ -52,9 +67,9 @@ export function validateInputs(inputs) {
 
   // E' 값
   if (!Eprime || Eprime <= 0) {
-    errors.Eprime = 'E\' 값은 0보다 커야 합니다.'
+    errors.Eprime = "E' 값은 0보다 커야 합니다."
   } else if (Eprime > 20000) {
-    errors.Eprime = 'E\' 값이 너무 큽니다 (최대 20,000 kPa).'
+    errors.Eprime = "E' 값이 너무 큽니다 (최대 20,000 kPa)."
   }
 
   return {

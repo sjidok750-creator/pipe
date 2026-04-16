@@ -12,12 +12,12 @@ import BeddingConditionSVG from '../components/diagrams/BeddingConditionSVG'
 import EValueChartSVG from '../components/diagrams/EValueChartSVG'
 
 const DIAGRAM_TABS = [
-  { key: 'cross',    label: '단면도' },
-  { key: 'deflect',  label: '처짐' },
-  { key: 'hoop',     label: '내압' },
-  { key: 'bouss',    label: 'DB-24' },
-  { key: 'bedding',  label: '침상' },
-  { key: 'eprime',   label: "E' 선도" },
+  { key: 'cross',   label: '단면도' },
+  { key: 'deflect', label: '처짐' },
+  { key: 'hoop',    label: '내압' },
+  { key: 'bouss',   label: 'DB-24' },
+  { key: 'bedding', label: '침상' },
+  { key: 'eprime',  label: "E' 선도" },
 ]
 
 export default function ResultPage() {
@@ -30,7 +30,7 @@ export default function ResultPage() {
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <div className="text-gray-400 text-lg">계산 결과가 없습니다.</div>
         <button
-          onClick={() => navigate('/input')}
+          onClick={() => navigate('/structural/input')}
           className="px-6 py-2 rounded-lg text-white font-bold"
           style={{ background: '#003366' }}
         >
@@ -42,7 +42,6 @@ export default function ResultPage() {
 
   const { verdict, steps, pipeType, Do, tAdopt } = result
 
-  // SafetyGauge 아이템 생성
   const gaugeItems = Object.entries(verdict)
     .filter(([k]) => k !== 'overallOK')
     .map(([k, v]: [string, any]) => ({
@@ -50,9 +49,10 @@ export default function ResultPage() {
       higherIsBetter: k === 'buckling',
     }))
 
-  // 처짐 정보
-  const deflStep = steps.step4 as any
-  const hoopStep = steps.step1 as any
+  // 강관: step1=내압, step4=링휨, step5=처짐, step6=좌굴
+  // 덕타일: step1=내압, step3=링휨, step4=처짐
+  const hoopStep  = steps.step1 as any
+  const deflStep  = pipeType === 'steel' ? (steps.step5 as any) : (steps.step4 as any)
 
   return (
     <div className="max-w-screen-xl mx-auto">
@@ -144,14 +144,14 @@ export default function ResultPage() {
           {/* 액션 버튼 */}
           <div className="flex gap-3">
             <button
-              onClick={() => navigate('/input')}
+              onClick={() => navigate('/structural/input')}
               className="flex-1 py-3 rounded-lg border-2 text-sm font-bold transition-colors"
               style={{ borderColor: '#003366', color: '#003366' }}
             >
               조건 재입력
             </button>
             <button
-              onClick={() => navigate('/report')}
+              onClick={() => navigate('/structural/report')}
               className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-opacity hover:opacity-90"
               style={{ background: '#003366' }}
             >

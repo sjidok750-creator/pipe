@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import {
   STEEL_DN_LIST, DI_DN_LIST, E_PRIME, BEDDING,
-  GW_LEVEL_OPTIONS
+  STEEL_BEDDING, GW_LEVEL_OPTIONS,
+  STEEL_THICKNESS, DI_THICKNESS,
+  STEEL_PN_GRADES, DI_K_GRADES,
 } from '../engine/constants.js'
 import { validateInputs } from '../engine/validator.js'
 
@@ -27,10 +29,14 @@ export default function InputPage() {
   }
 
   const dnList = inputs.pipeType === 'steel' ? STEEL_DN_LIST : DI_DN_LIST
+  const thicknessRow = inputs.pipeType === 'steel'
+    ? STEEL_THICKNESS[inputs.DN]
+    : DI_THICKNESS[inputs.DN]
 
   const goStep2 = () => {
-    const { errors: errs } = validateInputs({ ...inputs, Eprime: inputs.Eprime || 100 })
-    const step1Fields = ['DN', 'Pd', 'H', 'surgeRatio']
+    const gradeField = inputs.pipeType === 'steel' ? 'pnGrade' : 'diKGrade'
+    const { errors: errs } = validateInputs(inputs)
+    const step1Fields = ['DN', 'Pd', 'H', 'surgeRatio', gradeField]
     const step1Errors: Record<string, string> = {}
     step1Fields.forEach((f) => { if (errs[f]) step1Errors[f] = errs[f] })
     if (Object.keys(step1Errors).length > 0) { setErrors(step1Errors); return }
@@ -43,7 +49,7 @@ export default function InputPage() {
     const result = calcResult()
     if (result) {
       saveToHistory()
-      navigate('/result')
+      navigate('/structural/result')
     }
   }
 
@@ -57,25 +63,34 @@ export default function InputPage() {
               onClick={() => s < step && setStep(s)}
               className={`flex items-center gap-2 ${s < step ? 'cursor-pointer' : 'cursor-default'}`}
             >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
-                step >= s ? 'text-white' : 'text-gray-400 bg-gray-200'
-              }`} style={{ background: step >= s ? '#003366' : undefined }}>
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                  step >= s ? 'text-white' : 'text-gray-400 bg-gray-200'
+                }`}
+                style={{ background: step >= s ? '#003366' : undefined }}
+              >
                 {s}
               </div>
-              <span className={`text-sm font-medium hidden sm:block ${step >= s ? 'text-navy' : 'text-gray-400'}`}
-                    style={{ color: step >= s ? '#003366' : undefined }}>
+              <span
+                className={`text-sm font-medium hidden sm:block ${step >= s ? 'text-navy' : 'text-gray-400'}`}
+                style={{ color: step >= s ? '#003366' : undefined }}
+              >
                 {s === 1 ? '관로 기본 조건' : '지반·시공 조건'}
               </span>
             </button>
-            {s < 2 && <div className={`flex-1 h-1 mx-3 rounded ${step > s ? '' : 'bg-gray-200'}`}
-                          style={{ background: step > s ? '#003366' : undefined }}/>}
+            {s < 2 && (
+              <div
+                className={`flex-1 h-1 mx-3 rounded ${step > s ? '' : 'bg-gray-200'}`}
+                style={{ background: step > s ? '#003366' : undefined }}
+              />
+            )}
           </React.Fragment>
         ))}
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-6" style={{ border: '1.5px solid #b0c8e8' }}>
         {step === 1 ? (
-          /* ── STEP 1 ── */
+          /* ── STEP 1: 관로 기본 조건 ── */
           <div className="space-y-6">
             <h2 className="text-lg font-bold" style={{ color: '#003366' }}>
               Step 1 — 관로 기본 조건
@@ -86,14 +101,13 @@ export default function InputPage() {
               <label className="block text-sm font-semibold mb-2" style={{ color: '#003366' }}>관종</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { value: 'steel', label: '도복장강관', sub: 'KS D 3565', icon: '⚙' },
+                  { value: 'steel',   label: '도복장강관',     sub: 'KS D 3565', icon: '⚙' },
                   { value: 'ductile', label: '덕타일 주철관', sub: 'KS D 4311', icon: '🔩' },
                 ].map(({ value, label, sub, icon }) => (
                   <button
                     key={value}
                     onClick={() => {
                       handleChange('pipeType', value)
-                      // 관종 변경 시 DN 초기화
                       const list = value === 'steel' ? STEEL_DN_LIST : DI_DN_LIST
                       if (!list.includes(inputs.DN)) handleChange('DN', list[5] || list[0])
                     }}
@@ -125,7 +139,72 @@ export default function InputPage() {
               {errors.DN && <p className="text-red-500 text-xs mt-1">{errors.DN}</p>}
             </div>
 
-            {/* 설계 운전압력 */}
+            {/* 두께/등급 선택 — 핵심: 주어진 규격으로 검토 */}
+            {inputs.pipeType === 'steel' ? (
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: '#003366' }}>
+                  PN 등급 선택 — 채택 두께
+                  <span className="font-normal text-gray-400 ml-2 text-xs">(KS D 3565 표준 두께)</span>
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {STEEL_PN_GRADES.map((grade) => {
+                    const t = thicknessRow?.[grade]
+                    return (
+                      <button
+                        key={grade}
+                        onClick={() => handleChange('pnGrade', grade)}
+                        className={`p-3 rounded-lg border-2 text-center transition-all ${
+                          inputs.pnGrade === grade ? '' : 'border-gray-200 hover:border-blue-200'
+                        }`}
+                        style={inputs.pnGrade === grade ? { borderColor: '#003366', background: '#e8f0fb' } : {}}
+                      >
+                        <div className="font-bold text-sm" style={{ color: '#003366' }}>{grade}</div>
+                        <div className="text-lg font-black mt-0.5" style={{ color: inputs.pnGrade === grade ? '#003366' : '#555' }}>
+                          {t ?? '-'} <span className="text-xs font-normal">mm</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {errors.pnGrade && <p className="text-red-500 text-xs mt-1">{errors.pnGrade}</p>}
+                <p className="text-xs text-gray-400 mt-1">
+                  외경 Do = {thicknessRow?.Do ?? '-'} mm
+                </p>
+              </div>
+            ) : (
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: '#003366' }}>
+                  K 등급 선택 — 채택 두께
+                  <span className="font-normal text-gray-400 ml-2 text-xs">(KS D 4311 표준 두께 / K9 이상 일반 사용)</span>
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {DI_K_GRADES.map((grade) => {
+                    const t = thicknessRow?.[grade]
+                    return (
+                      <button
+                        key={grade}
+                        onClick={() => handleChange('diKGrade', grade)}
+                        className={`p-3 rounded-lg border-2 text-center transition-all ${
+                          inputs.diKGrade === grade ? '' : 'border-gray-200 hover:border-blue-200'
+                        }`}
+                        style={inputs.diKGrade === grade ? { borderColor: '#003366', background: '#e8f0fb' } : {}}
+                      >
+                        <div className="font-bold text-sm" style={{ color: '#003366' }}>{grade}</div>
+                        <div className="text-lg font-black mt-0.5" style={{ color: inputs.diKGrade === grade ? '#003366' : '#555' }}>
+                          {t ?? '-'} <span className="text-xs font-normal">mm</span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {errors.diKGrade && <p className="text-red-500 text-xs mt-1">{errors.diKGrade}</p>}
+                <p className="text-xs text-gray-400 mt-1">
+                  외경 Do = {thicknessRow?.Do ?? '-'} mm
+                </p>
+              </div>
+            )}
+
+            {/* 설계 운전압력 / 수격압 배율 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold mb-1" style={{ color: '#003366' }}>
@@ -206,7 +285,7 @@ export default function InputPage() {
             </button>
           </div>
         ) : (
-          /* ── STEP 2 ── */
+          /* ── STEP 2: 지반·시공 조건 ── */
           <div className="space-y-6">
             <h2 className="text-lg font-bold" style={{ color: '#003366' }}>
               Step 2 — 지반·시공 조건
@@ -271,10 +350,38 @@ export default function InputPage() {
                 onChange={(e) => inputs.eprimeManual && handleChange('Eprime', Number(e.target.value))}
               />
               <p className="text-xs text-gray-400 mt-1">
-                {inputs.eprimeManual ? '수동 입력 모드' : `AWWA M11 Table 5-3 자동계산 (${inputs.soilClass}, ${inputs.compaction}%)`}
+                {inputs.eprimeManual
+                  ? '수동 입력 모드'
+                  : `AWWA M11 Table 5-3 자동계산 (${inputs.soilClass}, ${inputs.compaction}%)`}
               </p>
               {errors.Eprime && <p className="text-red-500 text-xs mt-1">{errors.Eprime}</p>}
             </div>
+
+            {/* 기초지지각 (강관) */}
+            {inputs.pipeType === 'steel' && (
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: '#003366' }}>
+                  기초지지각 — 침상 조건
+                  <span className="font-normal text-gray-400 ml-2 text-xs">(AWWA M11 Table 5-1 / KDS 57 10 00 §3.4)</span>
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(STEEL_BEDDING as Record<string, { Kb: number; Kx: number; label: string }>).map(([type, { label, Kb, Kx }]) => (
+                    <button
+                      key={type}
+                      onClick={() => handleChange('steelBeddingType', type)}
+                      className={`p-3 rounded-lg border-2 text-left text-xs transition-all ${
+                        inputs.steelBeddingType === type ? '' : 'border-gray-200 hover:border-blue-200'
+                      }`}
+                      style={inputs.steelBeddingType === type ? { borderColor: '#003366', background: '#e8f0fb' } : {}}
+                    >
+                      <div className="font-bold mb-0.5" style={{ color: '#003366' }}>{label.split('—')[0].trim()}</div>
+                      <div className="text-gray-500 leading-tight">{label.split('—')[1]?.trim()}</div>
+                      <div className="text-gray-400 mt-1">Kb={Kb} / Kx={Kx}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 침상 조건 (덕타일만) */}
             {inputs.pipeType === 'ductile' && (
@@ -283,7 +390,7 @@ export default function InputPage() {
                   침상 조건 (DIPRA)
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(BEDDING).map(([type, { label, Kb, Kd }]) => (
+                  {Object.entries(BEDDING as Record<string, { label: string; Kb: number; Kd: number }>).map(([type, { label, Kb, Kd }]) => (
                     <button
                       key={type}
                       onClick={() => handleChange('beddingType', type)}
@@ -345,19 +452,24 @@ export default function InputPage() {
                 className="flex-1 py-3 rounded-lg text-white font-bold text-sm transition-opacity hover:opacity-90"
                 style={{ background: '#003366' }}
               >
-                계산하기 →
+                검토 실행 →
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* 입력 조건 요약 (하단) */}
+      {/* 입력 조건 요약 */}
       <div className="mt-4 p-4 rounded-lg text-sm" style={{ background: '#f8faff', border: '1px solid #dde8f5' }}>
         <div className="font-semibold mb-2" style={{ color: '#003366' }}>현재 입력 조건</div>
         <div className="flex flex-wrap gap-3 text-xs text-gray-600">
           <span>{inputs.pipeType === 'steel' ? '강관' : '주철관'}</span>
           <span>DN {inputs.DN}</span>
+          <span>
+            {inputs.pipeType === 'steel'
+              ? `${inputs.pnGrade} (t=${thicknessRow?.[inputs.pnGrade] ?? '-'}mm)`
+              : `${inputs.diKGrade} (t=${thicknessRow?.[inputs.diKGrade] ?? '-'}mm)`}
+          </span>
           <span>Pd={inputs.Pd} MPa</span>
           <span>H={inputs.H} m</span>
           <span>{inputs.soilClass}</span>

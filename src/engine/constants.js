@@ -65,6 +65,12 @@ export const STEEL_THICKNESS = {
   1500: { Do: 1524.0, PN6: 12.0, PN10: 16.0, PN16: 26.0 },
 }
 
+// KS D 3565 PN등급 목록
+export const STEEL_PN_GRADES = ['PN6', 'PN10', 'PN16']
+
+// KS D 4311 K등급 목록 (K7: 특수용도, K9 이상 일반)
+export const DI_K_GRADES = ['K7', 'K9', 'K10', 'K12']
+
 // E' 값 테이블 (kPa) — AWWA M11 Table 5-3 SI 환산
 export const E_PRIME = {
   SC1:   { 80: 1400, 85: 2700, 90: 6900 },  // 조립토 (자갈, 모래)
@@ -95,6 +101,18 @@ export const BEDDING = {
   Type2: { Kb: 0.235, Kd: 0.108, label: 'Type 2 — 모래 다짐 120°' },
   Type3: { Kb: 0.189, Kd: 0.090, label: 'Type 3 — 모래 전면 180°' },
   Type4: { Kb: 0.157, Kd: 0.083, label: 'Type 4 — 콘크리트 전면지지' },
+}
+
+// 강관 기초지지각별 Kb 계수 (AWWA M11 Table 5-1 / KDS 57 10 00)
+// 기초지지각: 관 하부 지지 범위 (°)
+// Kb: 휨응력 계수, Kx: 처짐계수
+export const STEEL_BEDDING = {
+  deg0:   { Kb: 0.294, Kx: 0.110, label: '0° — 점토기초 (기초다짐 없음)' },
+  deg30:  { Kb: 0.235, Kx: 0.108, label: '30° — 모래·쇄석 약간 다짐' },
+  deg60:  { Kb: 0.189, Kx: 0.090, label: '60° — 모래·쇄석 균일다짐' },
+  deg90:  { Kb: 0.157, Kx: 0.083, label: '90° — 모래·쇄석 1/4높이 다짐 (일반)' },
+  deg120: { Kb: 0.128, Kx: 0.069, label: '120° — 모래·쇄석 중간높이 다짐' },
+  deg180: { Kb: 0.090, Kx: 0.053, label: '180° — 콘크리트 전면지지 (최우수)' },
 }
 
 // 지하수위 옵션

@@ -13,7 +13,7 @@ export default function ReportPage() {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <div className="text-gray-400 text-lg">계산 결과가 없습니다.</div>
-        <button onClick={() => navigate('/input')}
+        <button onClick={() => navigate('/structural/input')}
                 className="px-6 py-2 rounded-lg text-white font-bold"
                 style={{ background: '#003366' }}>
           입력 화면으로
@@ -34,16 +34,11 @@ export default function ReportPage() {
     }
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
   return (
     <div>
-      {/* 액션 버튼 */}
       <div className="flex gap-3 mb-6 no-print">
         <button
-          onClick={() => navigate('/result')}
+          onClick={() => navigate('/structural/result')}
           className="px-4 py-2 rounded-lg border-2 text-sm font-bold"
           style={{ borderColor: '#003366', color: '#003366' }}
         >
@@ -58,7 +53,7 @@ export default function ReportPage() {
           {exporting ? 'PDF 생성 중...' : 'PDF 다운로드'}
         </button>
         <button
-          onClick={handlePrint}
+          onClick={() => window.print()}
           className="px-6 py-2 rounded-lg text-white font-bold text-sm"
           style={{ background: '#555' }}
         >
@@ -66,7 +61,6 @@ export default function ReportPage() {
         </button>
       </div>
 
-      {/* 보고서 미리보기 */}
       <div className="bg-white shadow-lg rounded-xl overflow-auto" style={{ border: '1px solid #dde8f5' }}>
         <ReportPreview result={result} inputs={inputs}/>
       </div>

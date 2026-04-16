@@ -165,15 +165,12 @@ export default function ReportPreview({ result, inputs }: Props) {
             {/* 주요 계산값 */}
             {key === 'step1' && pipeType === 'steel' && (
               <CalcBox lines={[
+                `채택 두께: KS D 3565 ${step.pnGrade} → t = ${step.tAdopt} mm`,
                 `허용응력 (상시): σ_a = 0.50 × 235 = ${step.sigmaA_normal?.toFixed(1)} MPa`,
                 `허용응력 (수격): σ_a = 0.75 × 235 = ${step.sigmaA_surge?.toFixed(1)} MPa`,
-                `t_p (상시) = ${step.Pd} × ${step.Do} / (2×${step.sigmaA_normal?.toFixed(1)}) = ${step.tp_normal?.toFixed(2)} mm`,
-                `t_p (수격) = ${step.Psurge?.toFixed(3)} × ${step.Do} / (2×${step.sigmaA_surge?.toFixed(1)}) = ${step.tp_surge?.toFixed(2)} mm`,
-                `t_handling = ${step.Do} / 288 = ${step.tHandling?.toFixed(2)} mm`,
-                `t_required = max(${step.tp_normal?.toFixed(2)}, ${step.tp_surge?.toFixed(2)}, ${step.tHandling?.toFixed(2)}) + 1.5 = ${step.tRequired?.toFixed(2)} mm`,
-                `채택: KS D 3565 ${step.pnGrade} → t = ${step.tAdopt} mm`,
-                `σ (상시) = ${step.sigma_normal?.toFixed(2)} MPa / 허용 ${step.sigmaA_normal?.toFixed(1)} MPa → ${step.ok_normal ? 'OK' : 'NG'}`,
-                `σ (수격) = ${step.sigma_surge?.toFixed(2)} MPa / 허용 ${step.sigmaA_surge?.toFixed(1)} MPa → ${step.ok_surge ? 'OK' : 'NG'}`,
+                `σ (상시) = ${step.Pd} × ${step.Do} / (2×${step.tAdopt}) = ${step.sigma_normal?.toFixed(2)} MPa / 허용 ${step.sigmaA_normal?.toFixed(1)} MPa → ${step.ok_normal ? 'OK' : 'NG'}`,
+                `σ (수격) = ${step.Psurge?.toFixed(3)} × ${step.Do} / (2×${step.tAdopt}) = ${step.sigma_surge?.toFixed(2)} MPa / 허용 ${step.sigmaA_surge?.toFixed(1)} MPa → ${step.ok_surge ? 'OK' : 'NG'}`,
+                `[참고] t_required (최소 소요) = ${step.tRequired?.toFixed(2)} mm`,
               ]}/>
             )}
             {key === 'step1' && pipeType === 'ductile' && (
@@ -208,14 +205,30 @@ export default function ReportPreview({ result, inputs }: Props) {
                 `허용: ${step.sigmaA_bend?.toFixed(1)} MPa → ${step.ok ? 'OK' : 'NG'}`,
               ]}/>
             )}
-            {key === 'step4' && (
+            {/* 강관 step4=링휨, step5=처짐, step6=좌굴 / 덕타일 step3=링휨, step4=처짐 */}
+            {key === 'step4' && pipeType === 'steel' && (
+              <CalcBox lines={[
+                `기초지지각: ${step.beddingLabel}`,
+                `Kb = ${step.Kb_steel}`,
+                `σ_b = Kb × W × Do / t² = ${step.Kb_steel} × ${step.Wtotal?.toFixed(3)} × ${step.Do} / ${step.tAdopt}² = ${step.sigma_b?.toFixed(3)} MPa`,
+                `허용: ${step.sigmaA_bend?.toFixed(1)} MPa → ${step.ok ? 'OK' : 'NG'}`,
+              ]}/>
+            )}
+            {key === 'step4' && pipeType === 'ductile' && (
               <CalcBox lines={[
                 `r = ${step.r?.toFixed(4)} m, EI = ${step.EI?.toFixed(2)} kN·m²/m`,
                 `분모 = EI/r³ + 0.061×E' = ${step.EI_r3?.toFixed(2)} + ${(0.061*inputs.Eprime).toFixed(2)} = ${step.denominator?.toFixed(2)} kPa`,
                 `ΔD/D = ${step.deflectionRatio?.toFixed(3)}% / 허용 ${step.maxDeflection}% → ${step.ok ? 'OK' : 'NG'}`,
               ]}/>
             )}
-            {key === 'step5' && (
+            {key === 'step5' && pipeType === 'steel' && (
+              <CalcBox lines={[
+                `r = ${step.r?.toFixed(4)} m, EI = ${step.EI?.toFixed(2)} kN·m²/m`,
+                `분모 = EI/r³ + 0.061×E' = ${step.EI_r3?.toFixed(2)} + ${(0.061*inputs.Eprime).toFixed(2)} = ${step.denominator?.toFixed(2)} kPa`,
+                `ΔD/D = ${step.deflectionRatio?.toFixed(3)}% / 허용 ${step.maxDeflection}% → ${step.ok ? 'OK' : 'NG'}`,
+              ]}/>
+            )}
+            {key === 'step6' && pipeType === 'steel' && (
               <CalcBox lines={[
                 `Rw = ${step.Rw}, B' = ${step.Bprime?.toFixed(4)}`,
                 `Pcr = ${step.Pcr?.toFixed(2)} kPa`,
@@ -291,8 +304,16 @@ export default function ReportPreview({ result, inputs }: Props) {
           <div>
             <div style={{ fontSize: 10, fontWeight: 600, color: '#003366', marginBottom: 4 }}>② 처짐 변형 개념도</div>
             <DeflectionSVG
-              deflectionRatio={(steps.step4 as any)?.deflectionRatio ?? 0}
-              maxDeflection={(steps.step4 as any)?.maxDeflection ?? 5}
+              deflectionRatio={
+                pipeType === 'steel'
+                  ? ((steps as any).step5?.deflectionRatio ?? 0)
+                  : ((steps as any).step4?.deflectionRatio ?? 0)
+              }
+              maxDeflection={
+                pipeType === 'steel'
+                  ? ((steps as any).step5?.maxDeflection ?? 5)
+                  : ((steps as any).step4?.maxDeflection ?? 3)
+              }
               Do={Do}
             />
           </div>
