@@ -18,10 +18,10 @@ import BeddingConditionSVG from '../components/diagrams/BeddingConditionSVG'
 import EValueChartSVG from '../components/diagrams/EValueChartSVG'
 
 const SOIL_CLASSES = [
-  { key: 'SC1',   label: 'SC1',   sub: '조립토 (자갈, 모래)' },
+  { key: 'SC1',   label: 'SC1',   sub: '자갈·모래' },
   { key: 'SC2',   label: 'SC2',   sub: '혼합토' },
-  { key: 'SC3',   label: 'SC3',   sub: '세립토 (점토, 실트)' },
-  { key: 'loose', label: '연약', sub: '연약지반' },
+  { key: 'SC3',   label: 'SC3',   sub: '점토·실트' },
+  { key: 'loose', label: '연약',  sub: '연약지반' },
 ]
 
 export default function InputPage() {
@@ -64,8 +64,8 @@ export default function InputPage() {
           <EngRow label="관종">
             <EngSegment
               options={[
-                { key: 'steel',   label: '도복장강관 (강관)',     sub: 'KS D 3565  /  내압·링휨·처짐·좌굴' },
-                { key: 'ductile', label: '덕타일 주철관',          sub: 'KS D 4311  /  내압·링휨·처짐' },
+                { key: 'steel',   label: '도복장강관 (강관)',  sub: 'KS D 3565 · 내압·링휨·처짐·좌굴' },
+                { key: 'ductile', label: '덕타일 주철관',       sub: 'KS D 4311 · 내압·링휨·처짐' },
               ]}
               value={inputs.pipeType}
               onChange={v => {
@@ -221,8 +221,8 @@ export default function InputPage() {
                       color: active ? T.textActive : T.textPrimary,
                       textAlign: 'left', borderRadius: 2,
                     }}>
-                    <div style={{ fontWeight: 700, fontFamily: T.fontSans }}>{label.split('—')[0].trim()}</div>
-                    <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono }}>
+                    <div style={{ fontWeight: 700, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label.split('—')[0].trim()}</div>
+                    <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {label.split('—')[1]?.trim()}  Kb={Kb} Kx={Kx}
                     </div>
                   </button>
@@ -242,8 +242,8 @@ export default function InputPage() {
                       color: active ? T.textActive : T.textPrimary,
                       textAlign: 'left', borderRadius: 2,
                     }}>
-                    <div style={{ fontWeight: 700, fontFamily: T.fontSans }}>{type}</div>
-                    <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono }}>
+                    <div style={{ fontWeight: 700, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{type}</div>
+                    <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {label.split('—')[1]?.trim()}  Kb={Kb} Kd={Kd}
                     </div>
                   </button>

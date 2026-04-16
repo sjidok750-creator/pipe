@@ -243,8 +243,8 @@ export function EngSegment({
               lineHeight: '18px',
             }}
           >
-            <div>{opt.label}</div>
-            {opt.sub && <div style={{ fontSize: '9px', opacity: 0.75 }}>{opt.sub}</div>}
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.label}</div>
+            {opt.sub && <div style={{ fontSize: '9px', opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.sub}</div>}
           </button>
         )
       })}
