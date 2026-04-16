@@ -103,7 +103,7 @@ function SingleGauge({ label, value, allow, unit, ok, higherIsBetter = false }: 
 export default function SafetyGaugeSVG({ items }: Props) {
   if (!items || items.length === 0) return null
   return (
-    <div className="flex flex-wrap gap-3 justify-center">
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
       {items.map((item) => (
         <SingleGauge key={item.label} {...item}/>
       ))}

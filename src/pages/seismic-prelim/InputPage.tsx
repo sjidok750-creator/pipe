@@ -31,7 +31,7 @@ export default function SeismicPrelimInputPage() {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측 입력 패널 ─────────────────────────────── */}
-      <div style={{ flex: '0 0 420px', minWidth: 360 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
 
         {/* 지진 조건 */}
         <EngPanel title="① 지진 조건">
@@ -167,7 +167,7 @@ export default function SeismicPrelimInputPage() {
       </div>
 
       {/* ── 우측 삽도 패널 ─────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 200 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
         <EngPanel title="지반분류 단면도  (KDS 17 10 00)">
           <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
             <SoilProfileSVG soilType={inp.soilType} pipeDepth={1.5}/>

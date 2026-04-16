@@ -46,7 +46,7 @@ export default function SeismicPrelimResultPage() {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 결과 패널 ───────────────────────────── */}
-      <div style={{ flex: '0 0 520px' }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
 
         {/* 입력 요약 */}
         <EngPanel title="입력 요약">
@@ -163,7 +163,7 @@ export default function SeismicPrelimResultPage() {
       </div>
 
       {/* ── 우측: 판정 기준 참고표 ────────────────────── */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
         <EngPanel title="판정 흐름  (평가요령 해설표 3.4.1)">
           {/* 판정 기준표 */}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, fontFamily: T.fontSans }}>

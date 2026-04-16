@@ -135,8 +135,8 @@ export default function CrossSectionSVG({
       {/* 관 내원 */}
       <circle cx={pipeCX} cy={pipeCY} r={pipeInnerR}
               fill="#a8d8ea" stroke="#003366" strokeWidth="1"/>
-      {/* 관 두께 라벨 */}
-      <text x={pipeCX + pipeR + 5} y={pipeCY + 4} fontSize="9" fill="#003366">
+      {/* 관 두께 라벨 — 우측 여백 확인 후 배치 */}
+      <text x={Math.min(pipeCX + pipeR + 5, W - 45)} y={pipeCY + 4} fontSize="9" fill="#003366">
         t={t}mm
       </text>
 

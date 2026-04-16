@@ -129,7 +129,7 @@ export function JointDisplacementSVG({
       </text>
 
       {/* Lj 라벨 */}
-      <text x="52" y="H" fontSize="8" fill="#888" fontFamily={T.fontSans}>
+      <text x="52" y={H - 4} fontSize="8" fill="#888" fontFamily={T.fontSans}>
         관 1본 = {Lj} m
       </text>
     </svg>

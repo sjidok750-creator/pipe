@@ -87,11 +87,13 @@ export function SoilProfileSVG({ soilType, pipeDepth = 1.5 }: { soilType: string
               <line key={j} x1={20 + j * 20} y1={y + 2} x2={20 + j * 20 + 12} y2={y + lh - 2}
                 stroke="#888" strokeWidth="0.6" opacity="0.5"/>
             ))}
-            {/* 지층 라벨 */}
-            <text x={W / 2} y={y + lh / 2 + 3} textAnchor="middle"
-              fontSize="8" fill="#333" fontFamily={T.fontSans}>
-              {layer.label}
-            </text>
+            {/* 지층 라벨 — 충분한 높이가 있을 때만 표시 */}
+            {lh >= 14 && (
+              <text x={W / 2} y={y + lh / 2 + 3} textAnchor="middle"
+                fontSize="8" fill="#333" fontFamily={T.fontSans}>
+                {layer.label.length > 14 ? layer.label.slice(0, 14) + '…' : layer.label}
+              </text>
+            )}
             {/* 지층 경계선 */}
             {!isLast && <line x1="20" y1={y + lh} x2={W - 10} y2={y + lh}
               stroke="#888" strokeWidth="0.8" strokeDasharray="4 2"/>}

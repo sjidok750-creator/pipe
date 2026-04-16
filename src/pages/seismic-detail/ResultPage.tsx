@@ -77,7 +77,7 @@ export default function SeismicDetailResultPage() {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 결과 ───────────────────────────────── */}
-      <div style={{ flex: '0 0 560px' }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
 
         {/* 지반 해석 결과 */}
         <EngPanel title="지반 해석 결과 — 응답스펙트럼 / 지반변위 / 파장">
@@ -138,7 +138,7 @@ export default function SeismicDetailResultPage() {
       </div>
 
       {/* ── 우측: 삽도 ───────────────────────────────── */}
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
         <EngPanel title="설계응답스펙트럼">
           <ResponseSpectrumSVG
             SDS={rs.SDS} SD1={rs.SD1}

@@ -88,7 +88,7 @@ export default function SeismicDetailInputPage() {
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 입력 ───────────────────────────────── */}
-      <div style={{ flex: '0 0 400px', minWidth: 340 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
 
         {/* 관종 및 지진조건 */}
         <EngPanel title="① 관종 및 지진조건">
@@ -224,7 +224,7 @@ export default function SeismicDetailInputPage() {
       </div>
 
       {/* ── 우측: 삽도 ───────────────────────────────── */}
-      <div style={{ flex: 1, minWidth: 220 }}>
+      <div style={{ flex: '1 1 50%', minWidth: 0 }}>
         {/* 설계응답스펙트럼 */}
         <EngPanel title="설계응답스펙트럼  (KDS 17 10 00 그림 2.1.2)">
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
