@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import {
-  SEISMIC_ZONE, SOIL_TYPE, AMP_FACTOR,
+  SEISMIC_ZONE, RISK_FACTOR, SEISMIC_GRADE, SOIL_TYPE, AMP_FACTOR,
   getSeismicityGroup,
   calcFLEX,
   KIND_INDEX, EARTH_INDEX, SIZE_INDEX, CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
@@ -255,6 +255,7 @@ function NumInput({ value, onChange, min, max, step }: { value: string; onChange
 // ──────────────────────────────────────────────────────────────
 export default function SeismicPrelimPage() {
   const [zone, setZone] = useState<'I'|'II'>('I')
+  const [seismicGrade, setSeismicGrade] = useState<'I'|'II'>('I')
   const [isUrban, setIsUrban] = useState(true)
   const [soilType, setSoilType] = useState('S2')
   const [pipeKind, setPipeKind] = useState('ductile')
@@ -284,6 +285,11 @@ export default function SeismicPrelimPage() {
   }, [zone, isUrban, soilType, pipeKind, DN, thickness, connectCond, facilExists, mcone])
 
   const Z = SEISMIC_ZONE[zone].Z
+  const gradeInfo = SEISMIC_GRADE[seismicGrade]
+  const I_collapse = gradeInfo.I_collapse   // 붕괴방지수준 위험도계수
+  const I_func = gradeInfo.I_func           // 기능수행수준 위험도계수
+  const S_collapse = +(Z * I_collapse).toFixed(3)
+  const S_func = +(Z * I_func).toFixed(3)
 
   // 섹션 카드 공통 스타일
   const section = (accent = C.teal) => ({
@@ -345,6 +351,16 @@ export default function SeismicPrelimPage() {
                     <Chip active={zone==='II'} onClick={()=>setZone('II')}>구역 Ⅱ · Z=0.07</Chip>
                   </div>
                 </F>
+                <F label="내진등급">
+                  <div style={{ display:'flex', gap:6 }}>
+                    <Chip active={seismicGrade==='I'} onClick={()=>setSeismicGrade('I')}>
+                      내진Ⅰ등급
+                    </Chip>
+                    <Chip active={seismicGrade==='II'} onClick={()=>setSeismicGrade('II')}>
+                      내진Ⅱ등급
+                    </Chip>
+                  </div>
+                </F>
                 <F label="권역">
                   <div style={{ display:'flex', gap:6 }}>
                     <Chip active={isUrban} onClick={()=>setIsUrban(true)}>도시권역</Chip>
@@ -362,15 +378,28 @@ export default function SeismicPrelimPage() {
                   {SOIL_TYPE[soilType as keyof typeof SOIL_TYPE]?.label}
                 </div>
               </F>
-              {/* 설계가속도 */}
-              <div style={{ marginTop:14, display:'flex', gap:10, alignItems:'center', background:C.tealL, borderRadius:8, padding:'10px 14px' }}>
-                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                  <path d="M4 20 L8 12 L12 16 L17 6 L22 13 L25 10" stroke={C.tealD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <div>
-                  <div style={{ fontSize:11, color:C.tealD, fontWeight:600 }}>설계지반가속도 (재현주기 500년)</div>
-                  <div style={{ fontFamily:'JetBrains Mono, monospace', fontSize:16, fontWeight:700, color:C.tealD }}>
-                    S = Z × I = {Z} × 1.00 = {Z.toFixed(2)} g
+              {/* 설계가속도 — 두 수준 모두 표시 */}
+              <div style={{ marginTop:14, background:C.tealL, borderRadius:8, padding:'10px 14px' }}>
+                <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:8 }}>
+                  <svg width="22" height="22" viewBox="0 0 28 28" fill="none">
+                    <path d="M4 20 L8 12 L12 16 L17 6 L22 13 L25 10" stroke={C.tealD} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <div style={{ fontSize:11, color:C.tealD, fontWeight:700 }}>
+                    {gradeInfo.label} — 설계지반가속도
+                  </div>
+                </div>
+                <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+                  <div>
+                    <div style={{ fontSize:10, color:C.muted }}>붕괴방지수준 (재현주기 {gradeInfo.returnPeriod_collapse}년, I={I_collapse})</div>
+                    <div style={{ fontFamily:'JetBrains Mono, monospace', fontSize:15, fontWeight:700, color:C.tealD }}>
+                      S = {Z} × {I_collapse} = {S_collapse.toFixed(3)} g
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, color:C.muted }}>기능수행수준 (재현주기 {gradeInfo.returnPeriod_func}년, I={I_func})</div>
+                    <div style={{ fontFamily:'JetBrains Mono, monospace', fontSize:15, fontWeight:700, color:C.tealD }}>
+                      S = {Z} × {I_func} = {S_func.toFixed(3)} g
+                    </div>
                   </div>
                 </div>
               </div>
