@@ -73,10 +73,10 @@ export default function SeismicDetailInputPage() {
     const { SDS, SD1 } = calcDesignSpectrum(S, Fa, Fv)
     const TG = calcTG(inp.layers)
     const Ts = calcTs(TG)
-    const { Sv, T0, TS } = calcSv(Ts, SDS, SD1)
+    const { T_A, T_B } = calcSv(S, Ts)   // 올바른 인수: (S, Ts, level)
     const { Vds } = calcVds(inp.layers, Ts)
     const { L } = calcWavelength(Ts, Vds, inp.Vbs)
-    specParams = { SDS, SD1, T0, TS, Ts }
+    specParams = { SDS, SD1, T0: T_A, TS: T_B, Ts }
   } catch {}
 
   function handleCalc() {

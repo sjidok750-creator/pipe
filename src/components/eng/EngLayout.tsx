@@ -187,10 +187,12 @@ export function EngRadio({
       {options.map(opt => {
         const active = opt.key === value
         return (
-          <label key={opt.key} style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            cursor: 'pointer', userSelect: 'none',
-          }}>
+          <label key={opt.key}
+            onClick={() => onChange(opt.key)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              cursor: 'pointer', userSelect: 'none',
+            }}>
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               width: 13, height: 13, borderRadius: '50%',
@@ -232,8 +234,10 @@ export function EngSegment({
             style={{
               flex: 1,
               padding: '3px 8px',
+              borderTop: 'none',
+              borderBottom: 'none',
+              borderLeft: 'none',
               borderRight: i < options.length - 1 ? `1px solid ${T.borderDark}` : 'none',
-              border: 'none',
               background: active ? T.bgActive : T.bgPanel,
               color: active ? T.textActive : T.textPrimary,
               fontSize: '11px',

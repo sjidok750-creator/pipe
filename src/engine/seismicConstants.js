@@ -166,22 +166,66 @@ export function calcWavelength(Ts, Vds, Vbs) {
 }
 
 // 관축위치 지반수평변위 Uh
+// 해설식(5.3.5): Uh = (2/π²) × Sv × Ts × cos(πz/(2H))
 // Sv: 속도응답스펙트럼(m/s), Ts: 표층 설계고유주기, z: 지표~관축 거리(m), H_total: 표층 두께(m)
 export function calcGroundDisp(Sv, Ts, z, H_total) {
-  const Uh = (Sv * Ts / (2 * Math.PI)) * Math.cos(Math.PI * z / (2 * H_total))
+  const Uh = (2 / Math.PI ** 2) * Sv * Ts * Math.cos(Math.PI * z / (2 * H_total))
   return Uh
 }
 
 // 지반 강성계수
+// 해설식(5.3.19): K1 = 1.5 × γ/g × Vds²  (축방향)
+// 해설식(5.3.20): K2 = 3.0 × γ/g × Vds²  (축직교방향)
 export function calcGroundStiffness(gamma_kNm3, Vds, g = 9.81) {
-  const K1 = (gamma_kNm3 * Vds ** 2) / g  // 축방향
-  const K2 = K1                             // 축직교방향 (동일 가정)
+  const K1 = 1.5 * (gamma_kNm3 * Vds ** 2) / g  // 축방향
+  const K2 = 3.0 * (gamma_kNm3 * Vds ** 2) / g  // 축직교방향
   return { K1, K2 }
 }
 
 // ── 충격계수 (이음새 신축량/변형률 계산 공통) ──────────────
+// 해설표 5.3.4
 export function getImpactFactor(h) {
   if (h < 1.5) return 0.5
   if (h <= 6.5) return 0.65 - 0.1 * h
   return 0.0
+}
+
+// ── 차량하중 Wm 산정 (분절관/연속관 공통) ───────────────────
+// 해설식(5.3.3): Wm = 2×Pm×a / ((a+2h×tanθ)×(b+2h×tanθ)) × (1+i)
+// Pm: 후륜 1륜당 하중(kN), b: 차량점유폭(m), a: 접지폭(m)
+// h: 토피(m), θ: 하중분포각(기본 35°), i: 충격계수
+export function calcWm(Pm, b_width, a_contact, h, theta_deg = 35) {
+  const theta = theta_deg * Math.PI / 180
+  const i = getImpactFactor(h)
+  const Wm = (2 * Pm * a_contact)
+    / ((a_contact + 2 * h * Math.tan(theta)) * (b_width + 2 * h * Math.tan(theta)))
+    * (1 + i)
+  return { Wm, i }
+}
+
+// ── 지반변형률 ε_G (연속관/분절관 공통) ─────────────────────
+// 해설식(5.3.46): ε_G = π × Uh / L
+export function calcGroundStrain(Uh, L) {
+  return Math.PI * Uh / L
+}
+
+// ── λ1, λ2 산정 (연속관/분절관 공통) ────────────────────────
+// 해설식(5.3.19): λ1 = √(K1 / (E×A))
+// 해설식(5.3.20) / (5.3.50): λ2 = ⁴√(K2 / (E×I))
+// K1, K2 [kN/m²], E [kN/m²], A [m²], I [m⁴]
+export function calcLambda(K1, K2, E_kN, A, I) {
+  const lambda1 = Math.sqrt(K1 / (E_kN * A))
+  const lambda2 = Math.pow(K2 / (E_kN * I), 0.25)
+  return { lambda1, lambda2 }
+}
+
+// ── 보정계수 α1, α2 (연속관/분절관 공통) ────────────────────
+// 해설식(5.3.17)/(5.3.47): α1 = 1 / (1 + (2π/(λ1×L'))²)
+// 해설식(5.3.18)/(5.3.48): α2 = 1 / (1 + (2π/(λ2×L))⁴)
+// L' = 2L  해설식(5.3.21)/(5.3.51)
+export function calcAlpha(lambda1, lambda2, L) {
+  const Lprime = 2 * L
+  const alpha1 = 1 / (1 + Math.pow(2 * Math.PI / (lambda1 * Lprime), 2))
+  const alpha2 = 1 / (1 + Math.pow(2 * Math.PI / (lambda2 * L), 4))
+  return { alpha1, alpha2, Lprime }
 }

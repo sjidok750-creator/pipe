@@ -7,6 +7,7 @@
 import {
   calcTG, calcTs, calcVds, calcWavelength,
   calcGroundDisp, calcGroundStiffness, getImpactFactor,
+  calcWm, calcGroundStrain, calcLambda, calcAlpha,
 } from './seismicConstants.js'
 
 import { calcS, interpAmpFactor, calcDesignSpectrum, calcSv } from './seismicSegmented.js'
@@ -51,26 +52,60 @@ export function calcStrainSettlement(D_settle, L_settle) {
   return D_settle / (2 * L_settle)
 }
 
-// ─── 지진에 의한 축변형률 ────────────────────────────────────
-// 응답변위법 (연속관)
-// ε_eq_L = αL = 4Uh/L  (축방향 지반변형률)
-// 굽힘에 의한 추가변형률: ε_eq_B = π²×D/(2L²)×Uh (관직경/파장)
-// 실용: ε_eq = ε_eq_L (지배)
-export function calcStrainSeismic(Uh, L, D_m) {
-  const epsilon_eq_L = 4 * Uh / L                    // 축방향
-  const epsilon_eq_B = (Math.PI ** 2 * D_m) / (2 * L ** 2) * Uh  // 굽힘 기여
-  const epsilon_eq = epsilon_eq_L + epsilon_eq_B
-  return { epsilon_eq, epsilon_eq_L, epsilon_eq_B }
+// ─── 지진에 의한 축변형률 (연속관) ──────────────────────────
+// 해설식(5.3.43): ε_L = α1 × ε_G  (L > L1)  또는  L/ξ  (L ≤ L1)
+// 해설식(5.3.44): ε_B = α2 × (2πD/L) × ε_G  (굽힘 변형률)
+// 해설식(5.3.45): ε_x = √(ε_L² + ε_B²)
+// 해설식(5.3.52~53): L과 L1(Ly)을 비교하여 ε_L 결정
+//   ξ = 2√(2Et/τ)  (지침 해설식 5.3.52)
+//   L1 = ξ × ε_y  (항복점 변형률)
+//   L > L1 → ε_L = α1 × ε_G  (일반식)
+//   L ≤ L1 → ε_L = L / ξ     (마찰 지배)
+// tau: 강관-지반 마찰력 (kN/m²), t_m: 관두께(m), E_kN: 탄성계수(kN/m²)
+// epsilon_y: 항복점 변형률 = sigma_y / E
+export function calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_y) {
+  const epsilon_G = calcGroundStrain(Uh, L)
+
+  // L1(Ly) 계산: 지침 해설식(5.3.52): ξ = 2√(2Et/τ)
+  const xi = 2 * Math.sqrt(2 * E_kN * t_m / tau)    // m
+  const L1 = xi * epsilon_y                          // m
+
+  let epsilon_L
+  if (L > L1) {
+    // 일반식: 해설식(5.3.43)
+    epsilon_L = alpha1 * epsilon_G
+  } else {
+    // 마찰 지배: 해설식(5.3.53)
+    epsilon_L = L / xi
+  }
+
+  // 굽힘 변형률: 지침 해설식(5.3.44): ε_B = α2 × (2πD/L) × ε_G
+  const epsilon_B = alpha2 * (2 * Math.PI * D_m / L) * epsilon_G
+
+  // 합성 변형률: 해설식(5.3.45)
+  const epsilon_x = Math.sqrt(epsilon_L ** 2 + epsilon_B ** 2)
+
+  return { epsilon_G, epsilon_L, epsilon_B, epsilon_x, xi, L1, usedFriction: L <= L1 }
 }
 
-// ─── 국부좌굴에 의한 허용변형률 ─────────────────────────────
-// AWWA M11 / KDS 57 17 00
-// ε_allow = 0.5 × (t/D) × (1/√(1−ν²))  ≈ 0.5 × t/D
-// 강관: ε_allow = min(0.5t/D, 0.005)
-export function calcAllowableStrain(t, D_m, nu = 0.3) {
-  const eps1 = 0.5 * (t / D_m) / Math.sqrt(1 - nu ** 2)
-  const eps2 = 0.005  // 상한값 (AWWA M11)
-  return Math.min(eps1, eps2)
+// ─── 차량하중에 의한 축변형률 (연속관) ──────────────────────
+// 해설식(5.3.37): ε_o = σ_o / E, σ_o = 0.322 × Wm / Z × (E×I / (Kv×D))^(1/4)
+// 탄성지반 위 보(Winkler beam)의 최대 휨응력 → 축변형률 변환
+// 단위: Wm [kN/m], Z [m³], E [kN/m²], I [m⁴], Kv [kN/m³], D [m]
+// ※ 분절관과 동일한 공식 형태: σ_o = 0.322*Wm*(E*I/(Kv*D))^0.25 / Z
+export function calcStrainTrafficContinuous(Wm, Z, E_kN, I, Kv, D_m) {
+  if (!Wm || Wm <= 0) return { epsilon_o: 0, sigma_o_kN: 0 }
+  const sigma_o_kN = 0.322 * Wm * Math.pow(E_kN * I / (Kv * D_m), 0.25) / Z
+  const epsilon_o = sigma_o_kN / E_kN
+  return { epsilon_o, sigma_o_kN }
+}
+
+// ─── 허용변형률 (연속강관) ───────────────────────────────────
+// KDS 57 17 00 p.108: 허용변형률 = 국부좌굴 개시변형률
+// 지침 부록C 표 C.2.3: 항복점 변형률(σ_y/E)을 국부좌굴 개시변형률로 사용
+// SS400 예제: ε_allow = 0.414% = 235/206000 MPa (확인 완료)
+export function calcAllowableStrain(sigma_y, E_MPa) {
+  return sigma_y / E_MPa  // 항복점 변형률 = 국부좌굴 개시변형률 (무차원)
 }
 
 // ─── 허용응력 (연속관, 강관) ─────────────────────────────────
@@ -96,25 +131,30 @@ export function calcVonMises(sigma_theta, sigma_x) {
 // ─── 전체 연속관 본평가 메인 함수 ───────────────────────────
 /**
  * @param {object} params
- * @param {number} params.DN          - 공칭관경 (mm)
- * @param {number} params.t           - 관두께 (mm)
- * @param {number} params.D_out       - 외경 (mm)
+ * @param {number} params.DN           - 공칭관경 (mm)
+ * @param {number} params.t            - 관두께 (mm)
+ * @param {number} params.D_out        - 외경 (mm)
  * @param {string} params.seismicGrade - 내진등급 'I' | 'II'
- * @param {string} params.zone        - 지진구역 'I' | 'II'
- * @param {number} params.Z           - 지진구역계수
- * @param {number} params.I_seismic   - 위험도계수
- * @param {number[]} params.Fa_table  - [f1,f2,f3] Fa 증폭계수
- * @param {number[]} params.Fv_table  - [f1,f2,f3] Fv 증폭계수
- * @param {object[]} params.layers    - [{H, Vs}] 표층지반 층
- * @param {number} params.Vbs         - 기반암 전단파속도 (m/s)
- * @param {number} params.P           - 설계수압 (MPa)
- * @param {number} params.deltaT      - 온도변화 (°C)
- * @param {number} params.D_settle    - 부등침하량 (m), 없으면 0
- * @param {number} params.L_settle    - 침하구간 길이 (m), 없으면 0
- * @param {number} params.h_cover     - 토피 (m)
- * @param {number} params.z_pipe      - 지표~관축 거리 (m)
- * @param {number} params.nu          - 포아송비 (강관 0.3)
- * @param {number} params.E           - 탄성계수 (MPa, 강관 206,000)
+ * @param {number} params.Z            - 지진구역계수
+ * @param {number} params.I_seismic    - 위험도계수
+ * @param {number[]} params.Fa_table   - [f1,f2,f3] Fa 증폭계수
+ * @param {number[]} params.Fv_table   - [f1,f2,f3] Fv 증폭계수
+ * @param {object[]} params.layers     - [{H, Vs}] 표층지반 층
+ * @param {number} params.Vbs          - 기반암 전단파속도 (m/s)
+ * @param {number} params.gamma        - 흙 단위체적중량 (kN/m³)
+ * @param {number} params.P            - 설계수압 (MPa)
+ * @param {number} params.deltaT       - 온도변화 (°C)
+ * @param {number} params.D_settle     - 부등침하량 (m), 없으면 0
+ * @param {number} params.L_settle     - 침하구간 길이 (m), 없으면 0
+ * @param {number} params.h_cover      - 토피 (m)
+ * @param {number} params.z_pipe       - 지표~관축 거리 (m)
+ * @param {number} params.nu           - 포아송비 (강관 0.3)
+ * @param {number} params.E            - 탄성계수 (MPa, 강관 206,000)
+ * @param {number} params.Pm           - 후륜 1륜당 차량하중 (kN), 없으면 0
+ * @param {number} params.b_width      - 차량점유폭 (m), 기본 2.75
+ * @param {number} params.a_contact    - 접지폭 (m), 기본 0.2
+ * @param {number} params.Kv           - 연직방향 지반반력계수 (kN/m³)
+ * @param {number} params.tau          - 강관-지반 마찰력 (kN/m²), 기본 10
  */
 export function evalContinuous(params) {
   const {
@@ -123,17 +163,30 @@ export function evalContinuous(params) {
     Z, I_seismic,
     Fa_table, Fv_table,
     layers, Vbs,
+    gamma = 18,          // kN/m³
     P,
     deltaT = 20,
     D_settle = 0,
     L_settle = 0,
     h_cover, z_pipe,
     nu = 0.3,
-    E = 206000,
+    E = 206000,          // MPa (강관)
+    Pm = 0,              // kN/輪 (차량 후륜 1륜 하중)
+    b_width = 2.75,      // m
+    a_contact = 0.2,     // m
+    Kv = 0,              // kN/m³ (연직방향 지반반력계수)
+    tau = 10,            // kN/m² (강관-지반 마찰력)
   } = params
 
-  const D_m = D_out / 1000  // m (외경)
-  const t_m = t / 1000      // m
+  const D_m = D_out / 1000    // m (외경)
+  const t_m = t / 1000        // m
+  const E_kN = E * 1000       // kN/m² (MPa → kN/m²)
+  const P_kN = P * 1000       // kN/m² (MPa → kN/m²)
+
+  // 단면 특성 (m 단위)
+  const A_m = Math.PI / 4 * (D_m ** 2 - (D_m - 2 * t_m) ** 2)    // m²
+  const I_m = Math.PI / 64 * (D_m ** 4 - (D_m - 2 * t_m) ** 4)   // m⁴
+  const Z_m = I_m / (D_m / 2)                                      // m³
 
   // ── Step 1: 설계지반가속도 ──
   const S = calcS(Z, I_seismic)
@@ -149,56 +202,80 @@ export function evalContinuous(params) {
   const { Vds, vsi } = calcVds(layers, Ts)
   const H_total = layers.reduce((s, l) => s + l.H, 0)
 
-  // ── Step 4: 설계스펙트럼 / 속도응답스펙트럼 ──
-  const { Sv, Sa, T0, TS: TS_sp } = calcSv(Ts, SDS, SD1)
+  // ── Step 4: 기반면 속도응답스펙트럼 (해설식 5.3.6, 암반기준+감쇠보정) ──
+  const seismicLevel = params.level ?? 'collapse'
+  const { Sv, Sa, Sas, eta, xi: xi_sv, T_A, T_B } = calcSv(S, Ts, seismicLevel)
 
   // ── Step 5: 지반수평변위 ──
   const Uh = calcGroundDisp(Sv, Ts, z_pipe, H_total)  // m
 
   // ── Step 6: 파장 ──
-  const { L, L1, L2, eps } = calcWavelength(Ts, Vds, Vbs)
+  const { L, L1: Lwave1, L2: Lwave2, eps: epsWave } = calcWavelength(Ts, Vds, Vbs)
 
-  // ── Step 7: 각 성분 변형률 ──
-  const { epsilon_i, sigma_theta } = calcStrainInternal(nu, P, D_out, t, E)
-  const epsilon_o = calcStrainTraffic()
+  // ── Step 7: 지반 강성계수 (해설식 5.3.10, 5.3.11) ──
+  const { K1, K2 } = calcGroundStiffness(gamma, Vds)   // kN/m²
+
+  // ── Step 8: λ1, λ2, α1, α2 ──
+  // 지침 해설식(5.3.51): L' = 2L (분절관과 동일)
+  const { lambda1, lambda2 } = calcLambda(K1, K2, E_kN, A_m, I_m)
+  const { alpha1, alpha2 } = calcAlpha(lambda1, lambda2, L)
+
+  // ── Step 9: 내압에 의한 축변형률 ──
+  // 해설식(5.3.36): ε_i = -ν × P(D-t) / (2tE)
+  const { epsilon_i, sigma_theta } = calcStrainInternal(nu, P_kN, D_m, t_m, E_kN)
+
+  // ── Step 10: 차량하중에 의한 축변형률 (해설식 5.3.37) ──
+  let epsilon_o = 0, sigma_o_kN = 0
+  if (Pm > 0 && Kv > 0) {
+    const { Wm } = calcWm(Pm, b_width, a_contact, h_cover)
+    ;({ epsilon_o, sigma_o_kN } = calcStrainTrafficContinuous(Wm, Z_m, E_kN, I_m, Kv, D_m))
+  }
+
+  // ── Step 11: 온도변화에 의한 축변형률 (해설식 5.3.38) ──
   const epsilon_t = calcStrainTemperature(deltaT)
+
+  // ── Step 12: 부등침하에 의한 축변형률 (해설식 5.3.39~5.3.42) ──
   const epsilon_d = calcStrainSettlement(D_settle, L_settle)
-  const { epsilon_eq, epsilon_eq_L, epsilon_eq_B } = calcStrainSeismic(Uh, L, D_m)
 
-  // 조합: 절댓값 합산 (보수적)
+  // ── Step 13: 지진에 의한 축변형률 (해설식 5.3.43~5.3.53) ──
+  const sigma_y = getSteelYieldStrength(t)
+  const epsilon_y = sigma_y / E   // 항복점 변형률 (무차원, E in MPa)
+
+  const {
+    epsilon_G, epsilon_L, epsilon_B, epsilon_x,
+    xi, L1: Ly, usedFriction,
+  } = calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_y)
+
+  // ── Step 14: 합성 변형률 합산 (절댓값 합산, 보수적) ──
   const epsilon_total = Math.abs(epsilon_i) + Math.abs(epsilon_o)
-    + Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_eq)
+    + Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_x)
 
-  // ── Step 8: 허용변형률 (국부좌굴) ──
-  const epsilon_allow = calcAllowableStrain(t_m, D_m, nu)
+  // ── Step 15: 허용변형률 — 항복점 변형률 (지침 기준: σ_y/E)
+  const epsilon_allow = calcAllowableStrain(sigma_y, E)
   const strainOK = epsilon_total <= epsilon_allow
 
-  // ── Step 9: 조합응력 (Von Mises) ──
-  const sigma_x = E * epsilon_eq   // 지진 축응력 (MPa)
-  const sigma_i_axial = -nu * sigma_theta  // 내압 포아송 축응력
-  const sigma_x_total = sigma_i_axial + E * epsilon_t + E * epsilon_d + sigma_x
-  const sigma_vm = calcVonMises(sigma_theta, sigma_x_total)
-
-  const sigma_y = getSteelYieldStrength(t)
-  const sigma_allow = getAllowableStress_Steel(sigma_y, seismicGrade)
-  const stressOK = sigma_vm <= sigma_allow
-
-  const overallOK = strainOK && stressOK
+  const overallOK = strainOK
 
   return {
     ok: overallOK,
     // 지반
     S, Fa, Fv, SDS, SD1,
-    TG, Ts, Vds, H_total,
-    Sv, Sa, T0, TS_sp,
-    Uh, L, L1, L2, eps,
+    TG, Ts, Vds, H_total, vsi,
+    Sv, Sa, Sas, eta, xi: xi_sv, T_A, T_B,
+    Uh, L, Lwave1, Lwave2, epsWave,
+    // 지반 강성 / 관 특성
+    K1, K2, lambda1, lambda2, alpha1, alpha2,
+    A_m, I_m, Z_m,
     // 변형률 성분
     epsilon_i, epsilon_o, epsilon_t, epsilon_d,
-    epsilon_eq, epsilon_eq_L, epsilon_eq_B,
+    epsilon_G, epsilon_L, epsilon_B, epsilon_x,
+    // L1(Ly) 비교
+    xi, Ly, usedFriction,
+    // 합산
     epsilon_total, epsilon_allow, strainOK,
-    // 응력
-    sigma_theta,
-    sigma_x_total, sigma_vm,
-    sigma_y, sigma_allow, stressOK,
+    // 허용
+    sigma_y, epsilon_y,
+    // 응력 참고
+    sigma_theta, sigma_o_kN,
   }
 }
