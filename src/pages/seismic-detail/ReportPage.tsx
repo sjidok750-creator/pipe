@@ -504,7 +504,7 @@ export default function SeismicDetailReportPage() {
           ③ 관축위치의 지반변위 (U_h) 산정
         </div>
         <FormulaBox>
-          U_h = (Sv × Ts / (2π)) × cos(π × z_pipe / (2 × H_total))<br/>
+          U_h = (2/π²) × Sv × Ts × cos(π × z_pipe / (2 × H_total))<br/>
           여기서, Sv = {rs.Sv?.toFixed(4)} m/s,  Ts = {rs.Ts?.toFixed(3)} s<br/>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;z_pipe = {(inp.hCover + D_m / 2).toFixed(2)} m (관축까지 거리)<br/>
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;H_total = {inp.layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m (표층지반 두께)
@@ -521,9 +521,9 @@ export default function SeismicDetailReportPage() {
           V_ds = 비선형성을 고려한 표층지반 평균전단파속도 = {rs.Vds?.toFixed(1)} m/s<br/>
           보정계수 ε = {inp.Vbs >= 300 ? '1.0' : '0.85'} (기반암 Vbs = {inp.Vbs} m/s {inp.Vbs >= 300 ? '≥' : '<'} 300 m/s)<br/>
           <br/>
-          L₁ = ε × Ts × Vds = {inp.Vbs >= 300 ? '1.0' : '0.85'} × {rs.Ts?.toFixed(3)} × {rs.Vds?.toFixed(1)} = {rs.L1?.toFixed(2)} m<br/>
-          L₂ = ε × Ts × Vbs = {inp.Vbs >= 300 ? '1.0' : '0.85'} × {rs.Ts?.toFixed(3)} × {inp.Vbs} = {rs.L2?.toFixed(2)} m<br/>
-          L = 2L₁L₂ / (L₁ + L₂) = 2 × {rs.L1?.toFixed(2)} × {rs.L2?.toFixed(2)} / ({rs.L1?.toFixed(2)} + {rs.L2?.toFixed(2)})
+          L₁ = Vds × Ts = {rs.Vds?.toFixed(1)} × {rs.Ts?.toFixed(3)} = {rs.L1?.toFixed(2)} m<br/>
+          L₂ = Vbs × Ts = {inp.Vbs} × {rs.Ts?.toFixed(3)} = {rs.L2?.toFixed(2)} m<br/>
+          L = ε × 2L₁L₂ / (L₁ + L₂) = {inp.Vbs >= 300 ? '1.0' : '0.85'} × 2 × {rs.L1?.toFixed(2)} × {rs.L2?.toFixed(2)} / ({rs.L1?.toFixed(2)} + {rs.L2?.toFixed(2)})
         </FormulaBox>
         <ResultBox ok>
           ∴ L = <strong>{rs.L?.toFixed(2)} m</strong>
@@ -537,9 +537,19 @@ export default function SeismicDetailReportPage() {
               ⑤ 지진시 축응력 (σ_x) 계산
             </div>
             <FormulaBox>
-              축방향 지반변형률: ε_L = 4 × U_h / L = 4 × {rs.Uh?.toFixed(4)} / {rs.L?.toFixed(2)}<br/>
-              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= {rs.alphaL?.toFixed(6)}<br/>
-              지진시 축응력: σ_x = E × ε_L = {(E_MPa / 1000).toFixed(0)} × 10³ × {rs.alphaL?.toFixed(6)}
+              지반 강성계수: K1 = {rs.K1?.toFixed(1)} kN/m², K2 = {rs.K2?.toFixed(1)} kN/m²<br/>
+              보정계수: α1 = {rs.alpha1?.toFixed(4)}, α2 = {rs.alpha2?.toFixed(4)}<br/>
+              <br/>
+              축방향 응력: σ_L = α1 × (π×Uh/L) × E<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;= {rs.alpha1?.toFixed(4)} × (π × {rs.Uh?.toFixed(4)} / {rs.L?.toFixed(2)}) × {(E_MPa * 1000).toFixed(0)}<br/>
+              &nbsp;&nbsp;&nbsp;&nbsp;= {rs.sigma_L?.toFixed(2)} MPa<br/>
+              굽힘 응력: σ_B = α2 × (2π²×D×Uh/L²) × E = {rs.sigma_B?.toFixed(2)} MPa<br/>
+              <br/>
+              보정계수: ξ1 = {rs.xi1?.toFixed(4)}, ξ2 = {rs.xi2?.toFixed(4)}<br/>
+              σ'_L = ξ1 × σ_L = {rs.xi1?.toFixed(4)} × {rs.sigma_L?.toFixed(2)} = {rs.sigma_L_prime?.toFixed(2)} MPa<br/>
+              σ'_B = ξ2 × σ_B = {rs.xi2?.toFixed(4)} × {rs.sigma_B?.toFixed(2)} = {rs.sigma_B_prime?.toFixed(2)} MPa<br/>
+              <br/>
+              합성: σ_x = √(σ'_L² + σ'_B²) = √({rs.sigma_L_prime?.toFixed(2)}² + {rs.sigma_B_prime?.toFixed(2)}²)
             </FormulaBox>
             <ResultBox ok>
               ∴ σ_x = <strong>{rs.sigma_x?.toFixed(2)} MPa</strong>
@@ -724,10 +734,10 @@ export default function SeismicDetailReportPage() {
               상시하중에 의한 축변형률과 지진시의 축변형률을 합산하고 이것이 허용변형률 이하인지 조사한다.
             </div>
 
-            <div style={SUB_TITLE}>허용변형률 (국부좌굴 개시변형률)</div>
+            <div style={SUB_TITLE}>허용변형률 (항복점 변형률 = 국부좌굴 개시변형률)</div>
             <FormulaBox>
-              ε_allow = 0.5 × t/D / √(1−ν²)<br/>
-              = 0.5 × {t_m.toFixed(4)} / {D_m.toFixed(3)} / √(1−{nu}²) = <strong>{rs.epsilon_allow?.toExponential(4)}</strong>
+              ε_allow = σ_y / E = {rs.sigma_y} / {E_MPa.toLocaleString()}<br/>
+              = <strong>{rs.epsilon_allow?.toExponential(4)}</strong> ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
             </FormulaBox>
 
             <table style={TABLE}>

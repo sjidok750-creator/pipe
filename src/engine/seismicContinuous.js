@@ -254,7 +254,15 @@ export function evalContinuous(params) {
   const epsilon_allow = calcAllowableStrain(sigma_y, E)
   const strainOK = epsilon_total <= epsilon_allow
 
-  const overallOK = strainOK
+  // ── Step 16: Von Mises 조합응력 검토 ──
+  // 축방향 합성응력: σ_x = ν×σ_θ + E×(ε_t + ε_d + ε_x)
+  const sigma_theta_MPa = sigma_theta / 1000  // kN/m² → MPa (sigma_theta는 kN/m² 단위)
+  const sigma_x_total = nu * sigma_theta_MPa + E * (Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_x))
+  const sigma_vm = calcVonMises(sigma_theta_MPa, sigma_x_total)
+  const sigma_allow = getAllowableStress_Steel(sigma_y, seismicGrade)
+  const stressOK = sigma_vm <= sigma_allow
+
+  const overallOK = strainOK && stressOK
 
   return {
     ok: overallOK,
@@ -263,19 +271,24 @@ export function evalContinuous(params) {
     TG, Ts, Vds, H_total, vsi,
     Sv, Sa, Sas, eta, xi: xi_sv, T_A, T_B,
     Uh, L, Lwave1, Lwave2, epsWave,
+    // alias (보고서/결과 페이지 호환)
+    L1: Lwave1, L2: Lwave2, eps: epsWave,
     // 지반 강성 / 관 특성
     K1, K2, lambda1, lambda2, alpha1, alpha2,
     A_m, I_m, Z_m,
     // 변형률 성분
     epsilon_i, epsilon_o, epsilon_t, epsilon_d,
     epsilon_G, epsilon_L, epsilon_B, epsilon_x,
+    // alias (보고서/결과 페이지 호환)
+    epsilon_eq: epsilon_x, epsilon_eq_L: epsilon_L, epsilon_eq_B: epsilon_B,
     // L1(Ly) 비교
     xi, Ly, usedFriction,
     // 합산
     epsilon_total, epsilon_allow, strainOK,
     // 허용
     sigma_y, epsilon_y,
-    // 응력 참고
-    sigma_theta, sigma_o_kN,
+    // 응력 (MPa)
+    sigma_theta: sigma_theta_MPa, sigma_o_kN,
+    sigma_x_total, sigma_vm, sigma_allow, stressOK,
   }
 }

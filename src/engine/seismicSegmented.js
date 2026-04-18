@@ -374,7 +374,15 @@ export function evalSegmented(params) {
   const e_allow = getAllowableJointDisp(DN, isSeismicJoint)
   const dispOK = e_total <= e_allow
 
-  const overallOK = stressOK && dispOK
+  // ── Step 16: 이음부 굽힘각도 (θ_J) 검토 ──
+  // 해설식(5.3.36): θ_J = (π × Uh / L) × sin(π × l / L)
+  // 허용 굽힘각도: DN < 300 → 3.5°, DN ≤ 600 → 2.5°, DN > 600 → 1.5°
+  const theta_J = (Math.PI * Uh / L) * Math.sin(Math.PI * l_joint / L)  // rad
+  const theta_allow_deg = DN < 300 ? 3.5 : DN <= 600 ? 2.5 : 1.5
+  const theta_allow = theta_allow_deg * Math.PI / 180  // rad
+  const angleOK = Math.abs(theta_J) <= theta_allow
+
+  const overallOK = stressOK && dispOK && angleOK
 
   return {
     ok: overallOK,
@@ -384,6 +392,8 @@ export function evalSegmented(params) {
     TG, Ts, Vds, H_total, vsi,
     Sv, Sa, Sas, eta, xi, T_A, T_B,
     Uh, L, Lwave1, Lwave2, epsWave,
+    // alias (보고서/결과 페이지 호환)
+    L1: Lwave1, L2: Lwave2, eps: epsWave,
     // 지반 강성 / 관 특성
     K1, K2, lambda1, lambda2, alpha1, alpha2,
     A_m, I_m, Z_m,
@@ -397,5 +407,9 @@ export function evalSegmented(params) {
     e_i, e_o, e_t, e_d,
     uJ, u0, Ua, beta1, gamma1, uJ_bar,
     e_total, e_allow, dispOK,
+    // 이음부 굽힘각도 (rad)
+    theta_J, theta_allow, angleOK,
+    // alias (보고서 호환)
+    u_J: uJ, u_allow: e_allow,
   }
 }
