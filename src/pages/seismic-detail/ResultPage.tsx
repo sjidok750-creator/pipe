@@ -7,6 +7,8 @@ import {
 import { T } from '../../components/eng/tokens'
 import { ResponseSpectrumSVG } from '../../components/eng/diagrams/ResponseSpectrumSVG'
 import { JointDisplacementSVG } from '../../components/eng/diagrams/BuriedPipeResponseSVG'
+import { SEISMIC_GRADE, AMP_FACTOR } from '../../engine/seismicConstants.js'
+import { interpAmpFactor, calcDesignSpectrum } from '../../engine/seismicSegmented.js'
 
 export default function SeismicDetailResultPage() {
   const navigate = useNavigate()
@@ -26,6 +28,23 @@ export default function SeismicDetailResultPage() {
 
   const isSegmented = inp.pipeType === 'segmented'
   const rs = r as any
+
+  // 기능수행 스펙트럼 파라미터 계산 (붕괴방지와 T_A/T_B 공유, I만 다름)
+  const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
+  const Z = rs.S / (inp.seismicGrade === 'I' ? 1.40 : 1.00)  // Z 역산
+  const S_func = Z * gradeInfo.I_func
+  let SDS_func: number | undefined
+  let SD1_func: number | undefined
+  try {
+    const ampEntry = (AMP_FACTOR as any)[inp.soilType]
+    if (ampEntry) {
+      const Fa_f = interpAmpFactor(ampEntry.Fa, S_func)
+      const Fv_f = interpAmpFactor(ampEntry.Fv, S_func)
+      const spec = calcDesignSpectrum(S_func, Fa_f, Fv_f)
+      SDS_func = spec.SDS
+      SD1_func = spec.SD1
+    }
+  } catch {}
 
   // 지반 해석 파라미터
   const groundParams = [
@@ -139,12 +158,18 @@ export default function SeismicDetailResultPage() {
 
       {/* ── 우측: 삽도 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-        <EngPanel title="설계응답스펙트럼">
+        <EngPanel title="설계응답스펙트럼 (KDS 17 10 00 그림 2.1.2)">
           <ResponseSpectrumSVG
             SDS={rs.SDS} SD1={rs.SD1}
-            T0={rs.T0} TS={rs.TS_sp} Ts={rs.Ts}
-            width={260} height={155}
+            T0={rs.T_A ?? 0.06} TS={rs.T_B ?? 0.30} Ts={rs.Ts}
+            SDS_func={SDS_func} SD1_func={SD1_func}
+            width={440} height={220}
           />
+          <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
+            SDS = Fa·S·2.5 = {rs.SDS?.toFixed(3)} g&nbsp;|&nbsp;
+            SD1 = Fv·S = {rs.SD1?.toFixed(3)} g&nbsp;|&nbsp;
+            Ts = {rs.Ts?.toFixed(3)} s
+          </div>
         </EngPanel>
 
         {isSegmented && (

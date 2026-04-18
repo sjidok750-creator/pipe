@@ -63,8 +63,9 @@ export default function SeismicDetailInputPage() {
   const S = Z * I_seismic
   const ampEntry = (AMP_FACTOR as any)[inp.soilType]
 
-  // 실시간 스펙트럼 파라미터 (삽도용)
+  // 실시간 스펙트럼 파라미터 (삽도용) — 붕괴방지
   let specParams = { SDS: 0, SD1: 0, T0: 0, TS: 0, Ts: 0 }
+  let specFunc: { SDS_func?: number; SD1_func?: number } = {}
   try {
     const Fa_t = ampEntry?.Fa ?? [1.0, 1.0, 1.0]
     const Fv_t = ampEntry?.Fv ?? [1.0, 1.0, 1.0]
@@ -73,10 +74,17 @@ export default function SeismicDetailInputPage() {
     const { SDS, SD1 } = calcDesignSpectrum(S, Fa, Fv)
     const TG = calcTG(inp.layers)
     const Ts = calcTs(TG)
-    const { T_A, T_B } = calcSv(S, Ts)   // 올바른 인수: (S, Ts, level)
+    const { T_A, T_B } = calcSv(S, Ts)
     const { Vds } = calcVds(inp.layers, Ts)
     const { L } = calcWavelength(Ts, Vds, inp.Vbs)
     specParams = { SDS, SD1, T0: T_A, TS: T_B, Ts }
+    // 기능수행 스펙트럼
+    const I_func = inp.seismicGrade === 'I' ? 0.57 : 0.40
+    const S_func = Z * I_func
+    const Fa_f = interpAmpFactor(Fa_t, S_func)
+    const Fv_f = interpAmpFactor(Fv_t, S_func)
+    const { SDS: SDS_f, SD1: SD1_f } = calcDesignSpectrum(S_func, Fa_f, Fv_f)
+    specFunc = { SDS_func: SDS_f, SD1_func: SD1_f }
   } catch {}
 
   function handleCalc() {
@@ -231,7 +239,8 @@ export default function SeismicDetailInputPage() {
             <ResponseSpectrumSVG
               SDS={specParams.SDS} SD1={specParams.SD1}
               T0={specParams.T0} TS={specParams.TS} Ts={specParams.Ts}
-              width={280} height={160}
+              SDS_func={specFunc.SDS_func} SD1_func={specFunc.SD1_func}
+              width={380} height={200}
             />
           </div>
           <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, lineHeight: 1.8, marginTop: 4 }}>
