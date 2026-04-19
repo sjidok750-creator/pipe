@@ -698,20 +698,39 @@ export default function SeismicDetailReportPage() {
             <div style={SUB_TITLE}>라. 지진시의 이음새 신축량 (|u<Sub>J</Sub>|)</div>
             <FormulaBlock>
               <FormulaRow>
-                u<Sub>J</Sub> = U<Sub>h</Sub> {G.times} sin&nbsp;
-                <Frac top={<>{G.pi} {G.times} L<Sub>j</Sub></>} bot="L" />
+                지침 해설식(5.3.28~5.3.35): |u<Sub>J</Sub>| = u<Sub>0</Sub> {G.times} ū<Sub>J</Sub>
               </FormulaRow>
               <FormulaRow>
-                여기서,&nbsp; U<Sub>h</Sub> = {rs.Uh?.toFixed(4)} m,&nbsp;
+                u<Sub>0</Sub> = {G.alpha}<Sub>1</Sub> {G.times} U<Sub>a</Sub>,&nbsp;
+                U<Sub>a</Sub> =&nbsp;
+                <Frac top="1" bot="2" />
+                &nbsp;{G.times} U<Sub>h</Sub>&nbsp;
+                (해설식 5.3.29~5.3.30)
+              </FormulaRow>
+              <FormulaRow>
+                {G.beta}<Sub>1</Sub> =&nbsp;
+                <Sqrt>
+                  <Frac top={<>K<Sub>1</Sub> {G.times} L<Sub>j</Sub></>} bot={<>E {G.times} A</>} />
+                </Sqrt>
+                &nbsp;= {rs.beta1?.toFixed(4)},&nbsp;&nbsp;
+                {G.gamma}<Sub>1</Sub> =&nbsp;
+                <Frac top={<>{G.pi} {G.times} L<Sub>j</Sub></>} bot={<>2 {G.times} L'</>} />
+                &nbsp;= {rs.gamma1?.toFixed(4)}&nbsp; (L' = 2L)
+              </FormulaRow>
+              <FormulaRow>
+                ū<Sub>J</Sub> =&nbsp;
+                <Frac top={<>sinh({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>) − sin({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>)</>} bot={<>cosh({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>) + cos({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>)</>} />
+                &nbsp;= {rs.uJ_bar?.toFixed(6)}
+              </FormulaRow>
+              <FormulaRow>
+                여기서,&nbsp; {G.alpha}<Sub>1</Sub> = {rs.alpha1?.toFixed(4)},&nbsp;
+                U<Sub>h</Sub> = {rs.Uh?.toFixed(4)} m,&nbsp;
                 L<Sub>j</Sub> = {inp.Lj} m,&nbsp; L = {rs.L?.toFixed(2)} m
-              </FormulaRow>
-              <FormulaRow>
-                {G.pi} {G.times} L<Sub>j</Sub> / L = {G.pi} {G.times} {inp.Lj} / {rs.L?.toFixed(2)} = {piLjL?.toFixed(4)} rad
               </FormulaRow>
             </FormulaBlock>
             <ResultBlock ok={rs.dispOK}>
               <FormulaRow>
-                |u<Sub>J</Sub>| = {rs.Uh?.toFixed(4)} {G.times} sin({piLjL?.toFixed(4)}) =&nbsp;
+                |u<Sub>J</Sub>| = {rs.u0?.toFixed(6)} {G.times} {rs.uJ_bar?.toFixed(6)} =&nbsp;
                 <strong>{(rs.u_J * 1000)?.toFixed(2)} mm</strong>
               </FormulaRow>
             </ResultBlock>

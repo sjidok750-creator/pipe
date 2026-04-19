@@ -18,7 +18,7 @@ export const PIPE_MATERIAL = {
   },
   ductile: {
     fu: 420,                    // MPa — GCD400급 인장강도 (KS D 4311)
-    Edi: 166000,                // MPa — 덕타일 주철관 탄성계수
+    Edi: 170000,                // MPa — 덕타일 주철관 탄성계수 (KDS 57 17 00 / 내진성능 평가요령 부록C 예제값, 구 166,000에서 수정)
     allowRatio_hoop: 1 / 3,     // 내압 허용응력 = fu/3
     allowRatio_bending: 0.50,   // 링 휨 허용응력 = 0.5*fu
     maxDeflection: 3.0,         // %

@@ -71,7 +71,7 @@ export default function SeismicDetailResultPage() {
   ] : []
 
   const segJointRows = isSegmented ? [
-    { label: '이음부 신축량 |u_J|', formula: 'Uh·sin(π·Lj/L)', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
+    { label: '이음부 신축량 |u_J|', formula: '|u₀·ūJ| (해설식 5.3.28, β₁γ₁ 기반)', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
     { label: '이음부 굽힘각 θ_J', formula: '(π·Uh/L)·sin(π·Lj/L)', value: rs.theta_J * 180 / Math.PI, unit: '°', limit: rs.theta_allow * 180 / Math.PI, ok: rs.angleOK },
   ] : []
 

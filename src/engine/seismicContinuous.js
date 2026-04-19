@@ -45,8 +45,11 @@ export function calcStrainTemperature(deltaT, alpha_T = 1.2e-5) {
 }
 
 // ─── 부등침하에 의한 축변형률 ────────────────────────────────
-// ε_d = D_settle / (2 × L_settle)
-// D_settle: 부등침하량 (m), L_settle: 침하 구간 길이 (m)
+// 지침 해설식(5.3.41): ε_d = δ / (2 × l)
+// δ: 부등침하량 (m), l: 침하 구간 길이 (m)
+// 근거: 경사 θ = δ/l, 축변형률 = sin²(θ)/2 ≈ (δ/l)²/2 (소변위 근사)가 아닌
+//       지침 예제 및 해설식은 단순히 δ/(2l) 적용 — 관의 처짐각에 의한 축방향 신장량
+//       tan(θ)/2 = (δ/l)/2 = δ/(2l) 로 직접 적용 (지침 부록C 예제값 검증 완료)
 export function calcStrainSettlement(D_settle, L_settle) {
   if (L_settle <= 0) return 0
   return D_settle / (2 * L_settle)
