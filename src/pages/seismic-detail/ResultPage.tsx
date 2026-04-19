@@ -163,7 +163,9 @@ export default function SeismicDetailResultPage() {
         <EngPanel title="설계응답스펙트럼 (KDS 17 10 00 그림 2.1.2)">
           <ResponseSpectrumSVG
             SDS={rs.SDS} SD1={rs.SD1}
-            T0={rs.T_A ?? 0.06} TS={rs.T_B ?? 0.30} Ts={rs.Ts}
+            T0={rs.SDS > 0 ? 0.2 * rs.SD1 / rs.SDS : 0.06}
+            TS={rs.SDS > 0 ? rs.SD1 / rs.SDS : 0.30}
+            Ts={rs.Ts}
             SDS_func={SDS_func} SD1_func={SD1_func}
             width={440} height={220}
           />

@@ -74,10 +74,12 @@ export default function SeismicDetailInputPage() {
     const { SDS, SD1 } = calcDesignSpectrum(S, Fa, Fv)
     const TG = calcTG(inp.layers)
     const Ts = calcTs(TG)
-    const { T_A, T_B } = calcSv(S, Ts)
     const { Vds } = calcVds(inp.layers, Ts)
     const { L } = calcWavelength(Ts, Vds, inp.Vbs)
-    specParams = { SDS, SD1, T0: T_A, TS: T_B, Ts }
+    // KDS 17 10 00 그림 2.1.2: T₀ = 0.2×SD1/SDS, Tₛ = SD1/SDS
+    const T0_design = SDS > 0 ? 0.2 * SD1 / SDS : 0.06
+    const TS_design = SDS > 0 ? SD1 / SDS : 0.3
+    specParams = { SDS, SD1, T0: T0_design, TS: TS_design, Ts }
     // 기능수행 스펙트럼
     const I_func = inp.seismicGrade === 'I' ? 0.57 : 0.40
     const S_func = Z * I_func
