@@ -124,7 +124,9 @@ export default function SeismicDetailResultPage() {
             <EngPanel title="(a) 축변형률 검토 — 국부좌굴 한계  (연속관 — 강관)">
               <EngTable rows={contStrainRows}/>
               <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-                허용변형률 = 0.5·t/D = {rs.epsilon_allow?.toExponential(3)}  (AWWA M11 국부좌굴)
+                허용변형률 = {rs.strainCriterion === 'buckling'
+                  ? `46·t/D = ${rs.epsilon_allow?.toExponential(3)}  (ASCE/KDS 해설, 국부좌굴 한계)`
+                  : `σ_y/E = ${rs.epsilon_allow?.toExponential(3)}  (지침 부록C, 항복점 변형률)`}
               </div>
             </EngPanel>
             <EngPanel title="(b) 조합응력 검토 — Von Mises  (연속관)">
@@ -213,7 +215,7 @@ export default function SeismicDetailResultPage() {
             })}
             <div style={{ height: 1, background: T.borderDark, margin: '4px 0' }}/>
             <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
-              허용값 = {rs.epsilon_allow?.toExponential(3)}  (국부좌굴 한계, AWWA M11)
+              허용값 = {rs.epsilon_allow?.toExponential(3)}  ({rs.strainCriterion === 'buckling' ? 'ASCE/KDS 해설, 46t/D' : '지침 부록C, σ_y/E'})
             </div>
           </EngPanel>
         )}

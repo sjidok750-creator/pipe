@@ -826,15 +826,32 @@ export default function SeismicDetailReportPage() {
               상시하중에 의한 축변형률과 지진시의 축변형률을 합산하고 이것이 허용변형률 이하인지 조사한다.
             </div>
 
-            <div style={SUB_TITLE}>허용변형률 (항복점 변형률 = 국부좌굴 개시변형률)</div>
+            <div style={SUB_TITLE}>
+              허용변형률 ({rs.strainCriterion === 'buckling'
+                ? '국부좌굴 한계변형률, ASCE/KDS 해설'
+                : '항복점 변형률 = 국부좌굴 개시변형률, 지침 부록C'})
+            </div>
             <FormulaBlock>
               <FormulaRow>
-                {G.epsilon}<Sub>allow</Sub> =&nbsp;
-                <Frac top={<>{G.sigma}<Sub>y</Sub></>} bot="E" />
-                &nbsp;=&nbsp;
-                <Frac top={rs.sigma_y} bot={E_MPa.toLocaleString()} />
-                &nbsp;=&nbsp;<strong>{rs.epsilon_allow?.toExponential(4)}</strong>&nbsp;
-                ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
+                {rs.strainCriterion === 'buckling' ? (
+                  <>
+                    {G.epsilon}<Sub>allow</Sub> =&nbsp;
+                    <Frac top="46t" bot="D" />
+                    &nbsp;=&nbsp;
+                    <Frac top={`46 × ${inp.thickness}`} bot={inp.D_out} />
+                    &nbsp;=&nbsp;<strong>{rs.epsilon_allow?.toExponential(4)}</strong>&nbsp;
+                    ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
+                  </>
+                ) : (
+                  <>
+                    {G.epsilon}<Sub>allow</Sub> =&nbsp;
+                    <Frac top={<>{G.sigma}<Sub>y</Sub></>} bot="E" />
+                    &nbsp;=&nbsp;
+                    <Frac top={rs.sigma_y} bot={E_MPa.toLocaleString()} />
+                    &nbsp;=&nbsp;<strong>{rs.epsilon_allow?.toExponential(4)}</strong>&nbsp;
+                    ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
+                  </>
+                )}
               </FormulaRow>
             </FormulaBlock>
 
@@ -872,7 +889,7 @@ export default function SeismicDetailReportPage() {
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{(rs.epsilon_total * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr>
-                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> (국부좌굴 개시변형률)</td>
+                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> ({rs.strainCriterion === 'buckling' ? '46t/D, ASCE/KDS' : 'σ_y/E, 부록C'})</td>
                   <td style={TDR}>{(rs.epsilon_allow * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr style={{ background: rs.strainOK ? '#f0faf4' : '#fff0f0' }}>

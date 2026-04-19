@@ -45,6 +45,7 @@ const DEFAULT_DETAIL = {
   deltaT: 20,
   D_settle: 0,
   L_settle: 0,
+  strainCriterion: 'yield',  // 'yield' (σ_y/E) | 'buckling' (46t/D)
   // 지반 층
   layers: [
     { H: 5, Vs: 150 },
@@ -89,7 +90,7 @@ function calcDetail(inp) {
   const {
     pipeType, zone, seismicGrade, soilType,
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
-    deltaT, D_settle, L_settle, layers, Vbs,
+    deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
   const I_seismic = RISK_FACTOR[seismicGrade === 'I' ? 1000 : 500]
@@ -110,7 +111,7 @@ function calcDetail(inp) {
       DN, t: thickness, D_out,
       seismicGrade, Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
-      deltaT, D_settle, L_settle,
+      deltaT, D_settle, L_settle, strainCriterion,
       h_cover: hCover, z_pipe,
     })
   }

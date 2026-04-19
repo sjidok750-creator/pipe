@@ -104,11 +104,13 @@ export function calcStrainTrafficContinuous(Wm, Z, E_kN, I, Kv, D_m) {
 }
 
 // ─── 허용변형률 (연속강관) ───────────────────────────────────
-// KDS 57 17 00 p.108: 허용변형률 = 국부좌굴 개시변형률
-// 지침 부록C 표 C.2.3: 항복점 변형률(σ_y/E)을 국부좌굴 개시변형률로 사용
-// SS400 예제: ε_allow = 0.414% = 235/206000 MPa (확인 완료)
-export function calcAllowableStrain(sigma_y, E_MPa) {
-  return sigma_y / E_MPa  // 항복점 변형률 = 국부좌굴 개시변형률 (무차원)
+// criterion = 'yield': σ_y/E — 항복점 변형률 (지침 부록C 표 C.2.3, 보수적)
+// criterion = 'buckling': 46t/D — 국부좌굴 한계 (ASCE/KDS 해설, t/D 기반)
+export function calcAllowableStrain(sigma_y, E_MPa, criterion = 'yield', t_mm, D_mm) {
+  if (criterion === 'buckling' && t_mm > 0 && D_mm > 0) {
+    return 46 * t_mm / D_mm  // ASCE Guidelines / KDS 해설: 46t/D (무차원)
+  }
+  return sigma_y / E_MPa  // 항복점 변형률 (무차원)
 }
 
 // ─── 허용응력 (연속관, 강관) ─────────────────────────────────
@@ -158,6 +160,7 @@ export function calcVonMises(sigma_theta, sigma_x) {
  * @param {number} params.a_contact    - 접지폭 (m), 기본 0.2
  * @param {number} params.Kv           - 연직방향 지반반력계수 (kN/m³)
  * @param {number} params.tau          - 강관-지반 마찰력 (kN/m²), 기본 10
+ * @param {string} params.strainCriterion - 허용변형률 기준 'yield' | 'buckling'
  */
 export function evalContinuous(params) {
   const {
@@ -179,6 +182,7 @@ export function evalContinuous(params) {
     a_contact = 0.2,     // m
     Kv = 0,              // kN/m³ (연직방향 지반반력계수)
     tau = 10,            // kN/m² (강관-지반 마찰력)
+    strainCriterion = 'yield',  // 'yield' (σ_y/E) | 'buckling' (46t/D)
   } = params
 
   const D_m = D_out / 1000    // m (외경)
@@ -219,9 +223,9 @@ export function evalContinuous(params) {
   const { K1, K2 } = calcGroundStiffness(gamma, Vds)   // kN/m²
 
   // ── Step 8: λ1, λ2, α1, α2 ──
-  // 지침 해설식(5.3.51): L' = 2L (분절관과 동일)
+  // 지침 해설식(5.3.51): L' = √2·L (연속관)
   const { lambda1, lambda2 } = calcLambda(K1, K2, E_kN, A_m, I_m)
-  const { alpha1, alpha2 } = calcAlpha(lambda1, lambda2, L)
+  const { alpha1, alpha2, Lprime } = calcAlpha(lambda1, lambda2, L, 'continuous')
 
   // ── Step 9: 내압에 의한 축변형률 ──
   // 해설식(5.3.36): ε_i = -ν × P(D-t) / (2tE)
@@ -253,8 +257,8 @@ export function evalContinuous(params) {
   const epsilon_total = Math.abs(epsilon_i) + Math.abs(epsilon_o)
     + Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_x)
 
-  // ── Step 15: 허용변형률 — 항복점 변형률 (지침 기준: σ_y/E)
-  const epsilon_allow = calcAllowableStrain(sigma_y, E)
+  // ── Step 15: 허용변형률
+  const epsilon_allow = calcAllowableStrain(sigma_y, E, strainCriterion, t, D_out)
   const strainOK = epsilon_total <= epsilon_allow
 
   // ── Step 16: Von Mises 조합응력 검토 ──
@@ -277,7 +281,7 @@ export function evalContinuous(params) {
     // alias (보고서/결과 페이지 호환)
     L1: Lwave1, L2: Lwave2, eps: epsWave,
     // 지반 강성 / 관 특성
-    K1, K2, lambda1, lambda2, alpha1, alpha2,
+    K1, K2, lambda1, lambda2, alpha1, alpha2, Lprime,
     A_m, I_m, Z_m,
     // 변형률 성분
     epsilon_i, epsilon_o, epsilon_t, epsilon_d,
@@ -287,7 +291,7 @@ export function evalContinuous(params) {
     // L1(Ly) 비교
     xi, Ly, usedFriction,
     // 합산
-    epsilon_total, epsilon_allow, strainOK,
+    epsilon_total, epsilon_allow, strainCriterion, strainOK,
     // 허용
     sigma_y, epsilon_y,
     // 응력 (MPa)

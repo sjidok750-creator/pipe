@@ -202,6 +202,30 @@ export default function SeismicDetailInputPage() {
               <EngRow label="침하구간 길이" unit="m">
                 <EngInput value={inp.L_settle} onChange={v => set({ L_settle: parseFloat(v)||0 })} min={0} step={1} width={90}/>
               </EngRow>
+              <EngDivider label="허용변형률 기준"/>
+              <EngRow label="판정 기준">
+                <EngRadio
+                  options={[
+                    { key: 'yield',    label: 'σ_y / E  (항복점 변형률)' },
+                    { key: 'buckling', label: '46·t / D  (국부좌굴 한계)' },
+                  ]}
+                  value={inp.strainCriterion ?? 'yield'}
+                  onChange={v => set({ strainCriterion: v })}
+                />
+              </EngRow>
+              <div style={{ marginLeft: 110, marginTop: 2, padding: '4px 8px', background: '#f8f9fa', border: `1px solid ${T.border}`, borderRadius: 2, fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.7 }}>
+                {(inp.strainCriterion ?? 'yield') === 'yield'
+                  ? <>
+                      <strong>σ_y/E</strong> — 지침 부록C 표 C.2.3 (항복점 변형률 = 국부좌굴 개시변형률)<br/>
+                      SS400 기준: 235/206000 = 0.114% — <em>보수적 기준</em>
+                    </>
+                  : <>
+                      <strong>46t/D</strong> — ASCE Guidelines for Seismic Design of Oil &amp; Gas Pipeline / KDS 해설<br/>
+                      t/D 비율 기반 국부좌굴 한계변형률 — σ_y/E 대비 약 3.3배 큰 값<br/>
+                      <em>실무 프로젝트에서 널리 사용</em>
+                    </>
+                }
+              </div>
             </>
           )}
         </EngPanel>

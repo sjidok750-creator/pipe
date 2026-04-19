@@ -148,9 +148,13 @@ export function calcTs(TG) {
 
 // 비선형 고려 표층지반 평균 전단파속도 Vds (m/s)
 // layers: [{H, Vs}]
+// 지침 해설표 5.3.1: 비선형 보정계수 C = 0.8 (Vs < 360 m/s), C = 1.0 (Vs ≥ 360 m/s)
 export function calcVds(layers, Ts) {
   const totalH = layers.reduce((sum, l) => sum + l.H, 0)
-  const vsi = layers.map(l => 0.5 * l.Vs)  // 비선형 보정: 0.5*Vs (간략법)
+  const vsi = layers.map(l => {
+    const C = l.Vs < 360 ? 0.8 : 1.0  // 해설표 5.3.1 비선형 보정계수
+    return C * l.Vs
+  })
   // 비선형 고려 평균 Vds = totalH / Σ(Hi/Vsi_nl)
   const Vds = totalH / layers.reduce((sum, l, i) => sum + l.H / vsi[i], 0)
   return { Vds, vsi }
@@ -219,12 +223,15 @@ export function calcLambda(K1, K2, E_kN, A, I) {
   return { lambda1, lambda2 }
 }
 
-// ── 보정계수 α1, α2 (연속관/분절관 공통) ────────────────────
+// ── 보정계수 α1, α2 ──────────────────────────────────────────
 // 해설식(5.3.17)/(5.3.47): α1 = 1 / (1 + (2π/(λ1×L'))²)
 // 해설식(5.3.18)/(5.3.48): α2 = 1 / (1 + (2π/(λ2×L))⁴)
-// L' = 2L  해설식(5.3.21)/(5.3.51)
-export function calcAlpha(lambda1, lambda2, L) {
-  const Lprime = 2 * L
+// 분절관: L' = 2L   (해설식 5.3.21)
+// 연속관: L' = √2·L (해설식 5.3.51)
+export function calcAlpha(lambda1, lambda2, L, pipeType = 'segmented') {
+  const Lprime = pipeType === 'continuous'
+    ? Math.SQRT2 * L   // 해설식 5.3.51: L' = √2·L (연속관)
+    : 2 * L             // 해설식 5.3.21: L' = 2L   (분절관)
   const alpha1 = 1 / (1 + Math.pow(2 * Math.PI / (lambda1 * Lprime), 2))
   const alpha2 = 1 / (1 + Math.pow(2 * Math.PI / (lambda2 * L), 4))
   return { alpha1, alpha2, Lprime }
