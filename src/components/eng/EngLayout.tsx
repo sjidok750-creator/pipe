@@ -1,5 +1,6 @@
 // 공학 프로그램 스타일 공통 레이아웃 컴포넌트
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { T } from './tokens'
 
 // ── 패널 (헤더 바 + 흰 본문) ────────────────────────────────
@@ -419,7 +420,7 @@ export function EngPopover({ children }: { children: React.ReactNode }) {
       >
         ⓘ
       </button>
-      {open && (
+      {open && createPortal(
         <div
           ref={panelRef}
           style={{
@@ -442,7 +443,8 @@ export function EngPopover({ children }: { children: React.ReactNode }) {
           }}
         >
           {children}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
