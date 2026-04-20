@@ -374,21 +374,37 @@ export function EngParamGrid({
 // ── 정보 팝오버 (ⓘ 버튼 클릭 → 패널) ──────────────────────
 export function EngPopover({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (
+        btnRef.current && !btnRef.current.contains(e.target as Node) &&
+        panelRef.current && !panelRef.current.contains(e.target as Node)
+      ) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const handleClick = () => {
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect()
+      const panelW = 480
+      const left = Math.min(r.left, window.innerWidth - panelW - 12)
+      setPos({ top: r.bottom + 6, left: Math.max(8, left) })
+    }
+    setOpen(v => !v)
+  }
+
   return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ display: 'inline-block' }}>
       <button
-        onClick={() => setOpen(v => !v)}
+        ref={btnRef}
+        onClick={handleClick}
         title="설명 보기"
         style={{
           width: 18, height: 18, borderRadius: '50%',
@@ -404,23 +420,27 @@ export function EngPopover({ children }: { children: React.ReactNode }) {
         ⓘ
       </button>
       {open && (
-        <div style={{
-          position: 'absolute',
-          top: 24, left: 0,
-          zIndex: 999,
-          background: 'white',
-          border: `1px solid ${T.borderDark}`,
-          borderRadius: 3,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-          padding: '14px 16px',
-          width: 480,
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          fontSize: '12px',
-          lineHeight: 1.75,
-          color: T.textPrimary,
-          fontFamily: T.fontSans,
-        }}>
+        <div
+          ref={panelRef}
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            zIndex: 9999,
+            background: 'white',
+            border: `1px solid ${T.borderDark}`,
+            borderRadius: 3,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+            padding: '14px 16px',
+            width: 480,
+            maxHeight: '70vh',
+            overflowY: 'auto',
+            fontSize: '12px',
+            lineHeight: 1.75,
+            color: T.textPrimary,
+            fontFamily: T.fontSans,
+          }}
+        >
           {children}
         </div>
       )}
