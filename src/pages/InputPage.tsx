@@ -5,7 +5,7 @@ import {
   STEEL_DN_LIST, DI_DN_LIST, E_PRIME, BEDDING,
   STEEL_BEDDING, GW_LEVEL_OPTIONS,
   STEEL_THICKNESS, DI_THICKNESS,
-  STEEL_PN_GRADES, DI_K_GRADES,
+  STEEL_PN_GRADES, DI_K_GRADES, STEEL_GRADES,
 } from '../engine/constants.js'
 import { validateInputs } from '../engine/validator.js'
 import {
@@ -91,6 +91,63 @@ export default function InputPage() {
               </div>
             </EngPopover>
           </EngRow>
+          {inputs.pipeType === 'steel' && (
+            <EngRow label="강종 (fy)">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {STEEL_GRADES.map((g: any) => {
+                  const active = inputs.steelGrade === g.key
+                  return (
+                    <button key={g.key} onClick={() => handleChange('steelGrade', g.key)}
+                      style={{
+                        padding: '2px 8px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
+                        border: `1px solid ${active ? T.bgActive : T.borderDark}`,
+                        background: active ? T.bgActive : T.bgPanel,
+                        color: active ? T.textActive : T.textPrimary,
+                        fontFamily: T.fontSans,
+                      }}>
+                      <div style={{ fontWeight: 700 }}>{g.label.split(' ')[0]}</div>
+                      <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>fy={g.key === 'MANUAL' ? '입력' : g.fy} MPa</div>
+                    </button>
+                  )
+                })}
+              </div>
+              <EngPopover>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
+                <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
+                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2 }}>
+                  <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
+                  상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
+                  fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
+                </div>
+                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2 }}>
+                  <strong>주요 강종 (KS D 3565)</strong><br/>
+                  SGP (KS D 3507): fy = 245 MPa — 일반 배관용<br/>
+                  SPS400 (KS D 3565): fy = 235 MPa — 상수도용 표준<br/>
+                  SPS490 (KS D 3565): fy = 315 MPa — 고강도 대구경용<br/>
+                  STPG38 (KS D 3562): fy = 215 MPa — 압력배관용
+                </div>
+                <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2 }}>
+                  <strong>직접입력</strong><br/>
+                  제조사 밀시트(Mill Sheet) 또는 강도시험 결과값이 있는 경우 사용.<br/>
+                  KDS에서는 공인 시험값 사용 가능.
+                </div>
+              </EngPopover>
+            </EngRow>
+          )}
+          {inputs.pipeType === 'steel' && inputs.steelGrade === 'MANUAL' && (
+            <EngRow label="fy 직접입력" unit="MPa">
+              <EngInput value={inputs.fyManual ?? 235}
+                onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
+                min={200} max={600} step={5} width={90}/>
+              <span style={{ fontSize: '10px', color: T.textMuted, marginLeft: 4 }}>200~600 MPa</span>
+            </EngRow>
+          )}
+          {inputs.pipeType === 'steel' && inputs.steelGrade && inputs.steelGrade !== 'MANUAL' && (
+            <div style={{ marginLeft: 116, fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginBottom: 4 }}>
+              {(() => { const g = (STEEL_GRADES as any[]).find((x:any) => x.key === inputs.steelGrade); return g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa (${g.note})` : '' })()}
+            </div>
+          )}
+
           <EngDivider />
           <EngRow label="">
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>

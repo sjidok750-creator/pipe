@@ -5,13 +5,15 @@
 import { create } from 'zustand'
 import { calcSteelPipe } from '../engine/steelPipe.js'
 import { calcDuctileIron } from '../engine/ductileIron.js'
-import { E_PRIME } from '../engine/constants.js'
+import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 
 const DEFAULT_INPUTS = {
   pipeType: 'steel',
   DN: 600,
   pnGrade: 'PN10',         // 강관 PN 등급 (사용자 선택)
   diKGrade: 'K9',          // 덕타일 주철관 K등급 (사용자 선택)
+  steelGrade: 'SPS400',    // 강관 강종 (fy 결정)
+  fyManual: 235,           // 직접입력 시 fy 값
   Pd: 0.60,
   surgeRatio: 1.5,
   H: 1.50,

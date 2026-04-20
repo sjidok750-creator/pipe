@@ -3,10 +3,19 @@
 // KDS 57 00 00 : 2022 / KS D 3565 / KS D 4311 / AWWA M11
 // ============================================================
 
+// 강관 강종별 항복강도 (KS D 3565 / KS D 3507 / ASTM A53)
+export const STEEL_GRADES = [
+  { key: 'SGP',   label: 'SGP (KS D 3507)',  fy: 245, fu: 400, note: '일반 배관용 강관' },
+  { key: 'STPG38', label: 'STPG38 (KS D 3562)', fy: 215, fu: 380, note: '압력배관용' },
+  { key: 'SPS400', label: 'SPS400 (KS D 3565)', fy: 235, fu: 400, note: '상수도용 강관 표준' },
+  { key: 'SPS490', label: 'SPS490 (KS D 3565)', fy: 315, fu: 490, note: '고강도 상수도용' },
+  { key: 'MANUAL', label: '직접입력', fy: 235, fu: 400, note: '강도시험 또는 제조사 데이터' },
+]
+
 // 관종별 재료 상수
 export const PIPE_MATERIAL = {
   steel: {
-    fy: 235,                    // MPa — SS400급 항복강도 (KS D 3565)
+    fy: 235,                    // MPa — 기본값 SPS400 (KS D 3565), 입력에서 변경 가능
     Es: 206000,                 // MPa — 강관 탄성계수
     allowRatio_normal: 0.50,    // 상시운전 허용응력 비율
     allowRatio_surge: 0.75,     // 수격압 허용응력 비율

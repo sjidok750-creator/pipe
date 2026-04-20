@@ -3,7 +3,7 @@
 // 근거: AWWA M11 / ASCE / KDS 57 10 00 / KS D 3565
 // ============================================================
 
-import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING } from './constants.js'
+import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
 import { calcEarthLoad } from './earthLoad.js'
 import { calcTrafficLoad } from './trafficLoad.js'
 
@@ -21,9 +21,14 @@ export function calcSteelPipe(inputs) {
     steelBeddingType = 'deg90',
     pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
+    steelGrade = 'SPS400', fyManual = 235,
   } = inputs
 
   const mat = PIPE_MATERIAL.steel
+
+  // fy: 강종 선택 또는 직접입력
+  const gradeRow = STEEL_GRADES.find(g => g.key === steelGrade)
+  const fy = steelGrade === 'MANUAL' ? fyManual : (gradeRow?.fy ?? mat.fy)
 
   let Do, tAdopt
   if (pipeDimManual) {
@@ -42,8 +47,8 @@ export function calcSteelPipe(inputs) {
   // 근거: KDS 57 10 00 §3.2 / AWWA M11 Eq.3-1 / KS D 3565
   // 채택된 두께로 실제 응력 계산 후 허용응력과 비교
   // ────────────────────────────────────────
-  const sigmaA_normal = mat.allowRatio_normal * mat.fy  // MPa: 0.50 × 235 = 117.5
-  const sigmaA_surge  = mat.allowRatio_surge  * mat.fy  // MPa: 0.75 × 235 = 176.25
+  const sigmaA_normal = mat.allowRatio_normal * fy  // MPa: 0.50 × fy
+  const sigmaA_surge  = mat.allowRatio_surge  * fy  // MPa: 0.75 × fy
   const Psurge = Pd * surgeRatio                        // MPa
 
   // Barlow 공식: σ = P × Do / (2t)
@@ -86,7 +91,7 @@ export function calcSteelPipe(inputs) {
   const Kx_steel   = beddingRow.Kx
 
   const sigma_b     = Kb_steel * Wtotal * Do / (tAdopt ** 2)  // MPa
-  const sigmaA_bend = mat.allowRatio_normal * mat.fy           // 0.5 × 235 = 117.5 MPa
+  const sigmaA_bend = mat.allowRatio_normal * fy               // 0.5 × fy MPa
   const ok_bending  = sigma_b <= sigmaA_bend
 
   // ────────────────────────────────────────
@@ -137,11 +142,13 @@ export function calcSteelPipe(inputs) {
     DN: pipeDimManual ? null : DN,
     Do, tAdopt, tRequired,
     pnGrade: pipeDimManual ? null : pnGrade,
+    steelGrade, fy,
     steps: {
       step1: {
         title: '내압 검토',
         ref: 'KDS 57 10 00 §3.2 / AWWA M11 Eq.3-1 / KS D 3565',
         Pd, Psurge, surgeRatio,
+        fy, steelGrade,
         sigmaA_normal, sigmaA_surge,
         tp_normal, tp_surge, tHandling, tCalcMin, tRequired,
         tAdopt, pnGrade,

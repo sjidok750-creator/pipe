@@ -67,18 +67,18 @@ export default function ResultPage() {
     { label: '내압 후프응력 σ',   formula: 'Pd·Di/(2t)', value: hoopStep?.sigma_hoop, unit: 'MPa', limit: hoopStep?.sigmaA_hoop, ok: hoopStep?.ok },
   ]
 
-  // 링 휨 / 처짐 검토
+  // 링 휨 / 처짐 검토 — 필드명은 각 engine 파일의 실제 반환값 기준
   const structRows = pipeType === 'steel' ? [
     ...(rs.step4 ? [
-      { label: '링 휨 응력 σ_b',  formula: 'E·Do·Δy/(2·I)', value: rs.step4?.sigma_b, unit: 'MPa', limit: rs.step4?.sigmaA_b, ok: rs.step4?.ok },
+      { label: '링 휨 응력 σ_b',  formula: 'Kb·Wtotal·Do/t²', value: rs.step4?.sigma_b, unit: 'MPa', limit: rs.step4?.sigmaA_bend, ok: rs.step4?.ok },
     ] : []),
     { label: '처짐율 Δy/Do',      formula: 'Iowa식 (수정)', value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
     ...(rs.step6 ? [
-      { label: '좌굴 안전율 FS',  formula: 'AWWA M11', value: rs.step6?.FS, unit: '',   limit: rs.step6?.FSAllow, ok: rs.step6?.ok },
+      { label: '좌굴 안전율 FS',  formula: 'AWWA M11', value: rs.step6?.bucklingFS_actual, unit: '', limit: rs.step6?.FS_allow, ok: rs.step6?.ok },
     ] : []),
   ] : [
     ...(rs.step3 ? [
-      { label: '링 휨 응력 σ_b',  formula: 'E·Do·Δy/(2I)', value: rs.step3?.sigma_b, unit: 'MPa', limit: rs.step3?.sigmaA_b, ok: rs.step3?.ok },
+      { label: '링 휨 응력 σ_b',  formula: 'Kb·Wtotal·Do/t²', value: rs.step3?.sigma_b, unit: 'MPa', limit: rs.step3?.sigmaA_bend, ok: rs.step3?.ok },
     ] : []),
     { label: '처짐율 Δy/Do',      formula: 'Iowa식 (DIPRA)', value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
   ]
@@ -107,19 +107,32 @@ export default function ResultPage() {
 
         {/* 관 기본 정보 */}
         <EngPanel title="채택 관 제원">
-          <EngParamGrid params={[
-            { label: '관종', value: pipeType === 'steel' ? '강관 (KS D 3565)' : '덕타일주철관 (KS D 4311)' },
-            ...(result.pipeDimManual
-              ? [{ label: '관 제원', value: `Do=${Do}mm  t=${tAdopt}mm  [직접입력]` }]
-              : [
-                  { label: 'DN', value: `${result.DN} mm` },
-                  { label: '외경 Do', value: `${Do} mm` },
-                  { label: '채택 두께 t', value: `${tAdopt} mm` },
-                ]
-            ),
-            { label: '설계수압 Pd', value: `${inputs.Pd} MPa` },
-            { label: '수격 배율', value: `×${inputs.surgeRatio}` },
-          ]}/>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px', fontFamily: T.fontSans }}>
+            <tbody>
+              {[
+                ['관종', pipeType === 'steel' ? '강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'],
+                ...(result.pipeDimManual
+                  ? [['외경 Do / 두께 t', `${Do} mm  /  ${tAdopt} mm  [직접입력]`]]
+                  : [
+                      ['공칭관경 DN', `${result.DN} mm`],
+                      ['외경 Do', `${Do} mm`],
+                      ['채택 두께 t', `${tAdopt} mm  (${pipeType === 'steel' ? result.pnGrade : result.selectedGrade})`],
+                    ]
+                ),
+                ...(pipeType === 'steel' && result.fy
+                  ? [['강종 / 항복강도 fy', `${result.steelGrade}  /  fy = ${result.fy} MPa`]]
+                  : []
+                ),
+                ['설계수압 Pd', `${inputs.Pd} MPa`],
+                ['수격압 Pd\'', `${inputs.Pd} × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa`],
+              ].map(([k, v], i) => (
+                <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>
+                  <td style={{ padding: '4px 8px', width: 130, fontWeight: 700, color: T.textLabel, borderBottom: `1px solid ${T.borderLight}` }}>{k}</td>
+                  <td style={{ padding: '4px 8px', fontFamily: T.fontMono, fontSize: '11px', color: T.textNumber, borderBottom: `1px solid ${T.borderLight}` }}>{v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </EngPanel>
 
         {/* 지반 해석 파라미터 */}

@@ -46,7 +46,8 @@ export default function ReportPage() {
     )
   }
 
-  const { verdict, steps, pipeType, Do, tAdopt, tRequired } = result
+  const { verdict, steps, pipeType, Do, tAdopt, tRequired, fy: resultFy, steelGrade: resultSteelGrade } = result
+  const fy = resultFy ?? 235
   const rs = steps as any
   const today = new Date().toLocaleDateString('ko-KR')
   const F = T.fontSans
@@ -101,7 +102,8 @@ export default function ReportPage() {
             ['검토방법', pipeType === 'steel'
               ? '허용응력법(내압) / 수정Iowa식(처짐) / DIPRA링휨 / AWWA M11 외압좌굴'
               : '허용응력법(내압) / DIPRA링휨 / 수정Iowa식(처짐)'],
-            ['관종', pipeType === 'steel' ? '도복장강관 (KS D 3565)  fy = 235 MPa' : '덕타일 주철관 (KS D 4311)  fu = 420 MPa'],
+            ['관종', pipeType === 'steel' ? `도복장강관 (KS D 3565)  fy = ${fy} MPa` : '덕타일 주철관 (KS D 4311)  fu = 420 MPa'],
+            ...(pipeType === 'steel' && resultSteelGrade ? [['강종', `${resultSteelGrade}  /  fy = ${fy} MPa`] as [string,string]] : []),
             ...(result.pipeDimManual
               ? [['관 제원', `Do = ${Do} mm,  t = ${tAdopt} mm  [직접입력]`]]
               : [['공칭관경 / 외경', `DN ${result.DN}  /  Do = ${Do} mm`],
@@ -206,11 +208,11 @@ export default function ReportPage() {
               </FormulaRow>
               <FormulaRow>
                 {G.sigma}<Sub>h</Sub> = <Frac top={<>P<Sub>d</Sub> × D<Sub>o</Sub></>} bot="2t"/> (상시)&nbsp;,&nbsp;
-                {G.sigma}<Sub>a,n</Sub> = 0.50 × f<Sub>y</Sub> = 0.50 × 235 = 117.5 MPa
+                {G.sigma}<Sub>a,n</Sub> = 0.50 × f<Sub>y</Sub> = 0.50 × {fy} = {(0.50*fy).toFixed(2)} MPa
               </FormulaRow>
               <FormulaRow>
                 {G.sigma}<Sub>h,surge</Sub> = <Frac top={<>P<Sub>d</Sub>' × D<Sub>o</Sub></>} bot="2t"/> (수격)&nbsp;,&nbsp;
-                {G.sigma}<Sub>a,s</Sub> = 0.75 × f<Sub>y</Sub> = 0.75 × 235 = 176.25 MPa
+                {G.sigma}<Sub>a,s</Sub> = 0.75 × f<Sub>y</Sub> = 0.75 × {fy} = {(0.75*fy).toFixed(2)} MPa
               </FormulaRow>
             </>
           ) : (
@@ -240,7 +242,7 @@ export default function ReportPage() {
               <CalcRow label="상시 후프응력 σh"
                 expr={`Pd × Do / (2t) = ${inputs.Pd} × ${Do} / (2 × ${tAdopt})`}
                 result={s1?.sigma_normal ?? 0} unit="MPa"/>
-              <CalcRow label="허용응력 σa,n" expr="0.50 × 235" result={s1?.sigmaA_normal ?? 117.5} unit="MPa"/>
+              <CalcRow label="허용응력 σa,n" expr={`0.50 × ${fy}`} result={s1?.sigmaA_normal ?? (0.50*fy)} unit="MPa"/>
               <CalcRow label="판정" expr={`${(s1?.sigma_normal??0).toFixed(3)} ≤ ${(s1?.sigmaA_normal??117.5).toFixed(3)}`} result={s1?.ok_normal ? 'O.K.' : 'N.G.'} unit=""/>
               <HR/>
               <CalcRow label="수격 후프응력 σh,surge"
@@ -271,7 +273,7 @@ export default function ReportPage() {
             &nbsp;&nbsp;(단위: kN/m × mm / mm² = MPa)
           </FormulaRow>
           <FormulaRow>
-            {G.sigma}<Sub>a,b</Sub> = {pipeType === 'steel' ? '0.50 × fy = 0.50 × 235 = 117.5 MPa' : '0.50 × fu = 0.50 × 420 = 210 MPa'}
+            {G.sigma}<Sub>a,b</Sub> = {pipeType === 'steel' ? `0.50 × fy = 0.50 × ${fy} = ${(0.50*fy).toFixed(2)} MPa` : '0.50 × fu = 0.50 × 420 = 210 MPa'}
           </FormulaRow>
         </FormulaBlock>
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
@@ -283,7 +285,7 @@ export default function ReportPage() {
           <CalcRow label="링 휨응력 σb"
             expr={`Kb × Wtotal × Do / t² = ${(s4?.Kb_steel ?? s4?.Kb ?? 0).toFixed(3)} × ${(s4?.Wtotal??0).toFixed(3)} × ${Do} / ${tAdopt}²`}
             result={s4?.sigma_b ?? 0} unit="MPa"/>
-          <CalcRow label="허용응력 σa,b" expr={pipeType === 'steel' ? "0.50 × 235" : "0.50 × 420"} result={s4?.sigmaA_bend ?? 0} unit="MPa"/>
+          <CalcRow label="허용응력 σa,b" expr={pipeType === 'steel' ? `0.50 × ${fy}` : "0.50 × 420"} result={s4?.sigmaA_bend ?? 0} unit="MPa"/>
           <CalcRow label="판정" expr={`${(s4?.sigma_b??0).toFixed(3)} ≤ ${(s4?.sigmaA_bend??0).toFixed(3)}`} result={s4?.ok ? 'O.K.' : 'N.G.'} unit=""/>
         </div>
 
