@@ -20,7 +20,7 @@ export default function ReportPage() {
     )
   }
 
-  const { verdict, steps, pipeType, Do, tAdopt } = result
+  const { verdict, steps, pipeType, Do, tAdopt, tRequired } = result
   const rs = steps as any
   const today = new Date().toLocaleDateString('ko-KR')
 
@@ -252,8 +252,64 @@ export default function ReportPage() {
           </tbody>
         </table>
 
-        {/* ── 5. 검토 의견 ── */}
-        <div style={rh}>5. 검토 의견</div>
+        {/* ── 5. 최소관두께 검토 (참고) ── */}
+        <div style={rh}>5. 최소관두께 검토 (참고)</div>
+        <table style={{ ...TABLE, fontSize: 11 }}>
+          <thead>
+            <tr style={{ background: T.bgSection }}>
+              <th style={TH}>항목</th>
+              <th style={{ ...TH, textAlign: 'right' }}>산정값 (mm)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pipeType === 'steel' ? (<>
+              <tr style={{ background: T.bgRowAlt }}>
+                <td style={TD}>내압 최소두께 (상시)  [Pd·Do/(2·σA)]</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono }}>{hoopStep?.tp_normal?.toFixed(2)}</td>
+              </tr>
+              <tr style={{ background: T.bgRow }}>
+                <td style={TD}>내압 최소두께 (수격)  [Psurge·Do/(2·σA,surge)]</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono }}>{hoopStep?.tp_surge?.toFixed(2)}</td>
+              </tr>
+              <tr style={{ background: T.bgRowAlt }}>
+                <td style={TD}>취급 최소두께  [Do/288]</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono }}>{hoopStep?.tHandling?.toFixed(2)}</td>
+              </tr>
+              <tr style={{ background: T.bgRow }}>
+                <td style={{ ...TD, fontWeight: 700 }}>소요 최소두께 (부식여유 1.5mm 포함)</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{tRequired?.toFixed(2)}</td>
+              </tr>
+            </>) : (<>
+              <tr style={{ background: T.bgRowAlt }}>
+                <td style={TD}>내압 최소두께 tp_hoop  [Pd·Do/(2·(σA+Pd))]</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono }}>{hoopStep?.tp_hoop?.toFixed(2)}</td>
+              </tr>
+              <tr style={{ background: T.bgRow }}>
+                <td style={TD}>외압(링휨) 최소두께 tp_bend  [√(Kb·W·Do/σA_bend)]</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono }}>{hoopStep?.tp_bend?.toFixed(2)}</td>
+              </tr>
+              <tr style={{ background: T.bgRowAlt }}>
+                <td style={{ ...TD, fontWeight: 700 }}>소요 최소두께 (취급두께·부식여유 미적용)</td>
+                <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{tRequired?.toFixed(2)}</td>
+              </tr>
+            </>)}
+            <tr style={{ background: '#f0f4f8', borderTop: '2px solid #bbb' }}>
+              <td style={{ ...TD, fontWeight: 700 }}>채택 두께 t</td>
+              <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700,
+                color: (tAdopt >= (tRequired ?? 0)) ? '#1a6b3a' : '#c0392b' }}>
+                {tAdopt} {(tAdopt >= (tRequired ?? 0)) ? '≥' : '<'} {tRequired?.toFixed(2)}  →  {(tAdopt >= (tRequired ?? 0)) ? 'O.K.' : 'N.G.'}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: F, lineHeight: 1.7, marginBottom: 8 }}>
+          {pipeType === 'steel'
+            ? '※ 강관 최소두께: 내압(Barlow), 취급(Do/288) 중 최댓값 + 부식여유 1.5mm. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+            : '※ 주철관 최소두께: KS D 4311 Di기반 Barlow 역산(내압) 및 링휨 역산(외압) 중 최댓값. KS D 4311에 취급최소두께·부식여유 별도 규정 없으므로 미적용.'}
+        </div>
+
+        {/* ── 6. 검토 의견 ── */}
+        <div style={rh}>6. 검토 의견</div>
         <div style={{ fontSize: 11, lineHeight: 2, fontFamily: F, padding: '6px 0' }}>
           {verdict.overallOK
             ? `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 모든 검토항목에서 허용기준을 만족한다. ${result.pipeDimManual ? `D\u2080=${Do}mm, t=${tAdopt}mm [직접입력]` : `DN ${result.DN} (D\u2080=${Do}mm, t=${tAdopt}mm)`} ${pipeType === 'steel' ? '강관' : '덕타일 주철관'}은 설계 하중 조건에 대하여 구조적으로 안전한 것으로 판단한다.`

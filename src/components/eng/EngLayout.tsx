@@ -1,5 +1,5 @@
 // 공학 프로그램 스타일 공통 레이아웃 컴포넌트
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { T } from './tokens'
 
 // ── 패널 (헤더 바 + 흰 본문) ────────────────────────────────
@@ -367,6 +367,63 @@ export function EngParamGrid({
           </span>
         </div>
       ))}
+    </div>
+  )
+}
+
+// ── 정보 팝오버 (ⓘ 버튼 클릭 → 패널) ──────────────────────
+export function EngPopover({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} style={{ position: 'relative', display: 'inline-block' }}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="설명 보기"
+        style={{
+          width: 18, height: 18, borderRadius: '50%',
+          border: `1px solid ${T.bgActive}`,
+          background: open ? T.bgActive : T.bgPanel,
+          color: open ? 'white' : T.bgActive,
+          fontSize: '11px', fontWeight: 700, lineHeight: '16px',
+          cursor: 'pointer', padding: 0,
+          fontFamily: T.fontSans,
+          flexShrink: 0,
+        }}
+      >
+        ⓘ
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: 24, left: 0,
+          zIndex: 999,
+          background: 'white',
+          border: `1px solid ${T.borderDark}`,
+          borderRadius: 3,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+          padding: '14px 16px',
+          width: 480,
+          maxHeight: '80vh',
+          overflowY: 'auto',
+          fontSize: '12px',
+          lineHeight: 1.75,
+          color: T.textPrimary,
+          fontFamily: T.fontSans,
+        }}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }

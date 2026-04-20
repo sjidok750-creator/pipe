@@ -39,7 +39,7 @@ export default function ResultPage() {
     )
   }
 
-  const { verdict, steps, pipeType, Do, tAdopt } = result
+  const { verdict, steps, pipeType, Do, tAdopt, tRequired } = result
   const rs = steps as any
   const hoopStep = rs.step1
   const deflStep = pipeType === 'steel' ? rs.step5 : rs.step4
@@ -81,6 +81,20 @@ export default function ResultPage() {
       { label: '링 휨 응력 σ_b',  formula: 'E·Do·Δy/(2I)', value: rs.step3?.sigma_b, unit: 'MPa', limit: rs.step3?.sigmaA_b, ok: rs.step3?.ok },
     ] : []),
     { label: '처짐율 Δy/Do',      formula: 'Iowa식 (DIPRA)', value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
+  ]
+
+  // 최소관두께 검토 행 구성
+  const minThkRows = pipeType === 'steel' ? [
+    { label: '내압 최소두께 (상시)', formula: 'Pd·Do/(2·σA_normal)', value: hoopStep?.tp_normal, unit: 'mm' },
+    { label: '내압 최소두께 (수격)', formula: 'Psurge·Do/(2·σA_surge)', value: hoopStep?.tp_surge, unit: 'mm' },
+    { label: '취급 최소두께', formula: 'Do/288', value: hoopStep?.tHandling, unit: 'mm' },
+    { label: '소요 최소두께 (합계)', formula: 'max(위) + 1.5mm 부식여유', value: tRequired, unit: 'mm' },
+    { label: '채택 두께 t', formula: '—', value: tAdopt, unit: 'mm', ok: tAdopt >= tRequired },
+  ] : [
+    { label: '내압 최소두께 tp_hoop', formula: 'Pd·Do/(2·(σA+Pd))', value: hoopStep?.tp_hoop, unit: 'mm' },
+    { label: '외압(링휨) 최소두께 tp_bend', formula: '√(Kb·W·Do/σA_bend)', value: hoopStep?.tp_bend, unit: 'mm' },
+    { label: '소요 최소두께', formula: 'max(tp_hoop, tp_bend)', value: tRequired, unit: 'mm' },
+    { label: '채택 두께 t', formula: '—', value: tAdopt, unit: 'mm', ok: tAdopt >= tRequired },
   ]
 
   const gaugeItems = verdictItems.map(([k, v]) => ({ ...v, higherIsBetter: k === 'buckling' }))
@@ -125,6 +139,16 @@ export default function ResultPage() {
         {/* 링 휨 · 처짐 · 좌굴 */}
         <EngPanel title="(b) 링 휨 · 처짐 · 좌굴 검토">
           <EngTable rows={structRows}/>
+        </EngPanel>
+
+        {/* 최소관두께 */}
+        <EngPanel title="(c) 최소관두께 검토 (참고)">
+          <EngTable rows={minThkRows}/>
+          <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 6, lineHeight: 1.7, padding: '4px 6px', background: T.bgSection, borderRadius: 2 }}>
+            {pipeType === 'steel'
+              ? '강관: AWWA M11 취급최소두께(Do/288) + 부식여유 1.5mm 포함. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+              : '주철관: KS D 4311 기준 Di기반 Barlow 역산(내압) 및 링휨 역산(외압). KS D 4311에 취급최소두께·부식여유 별도 규정 없으므로 해당 항목 미적용.'}
+          </div>
         </EngPanel>
 
         {/* 최종 판정 */}

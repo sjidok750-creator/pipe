@@ -10,7 +10,7 @@ import {
 import { validateInputs } from '../engine/validator.js'
 import {
   EngPanel, EngSection, EngRow, EngInput,
-  EngRadio, EngSegment, EngDivider, EngValue,
+  EngRadio, EngSegment, EngDivider, EngValue, EngPopover,
 } from '../components/eng/EngLayout'
 import { T } from '../components/eng/tokens'
 import CrossSectionSVG from '../components/diagrams/CrossSectionSVG'
@@ -153,6 +153,41 @@ export default function InputPage() {
           <EngRow label="설계 운전압력 Pd" unit="MPa">
             <EngInput value={inputs.Pd} onChange={v => handleChange('Pd', parseFloat(v) || 0)} min={0} max={3} step={0.05} width={90}/>
             {errors.Pd && <span style={{ fontSize: '10px', color: T.textNG }}>{errors.Pd}</span>}
+            <EngPopover>
+              <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.border}`, paddingBottom: 6 }}>
+                설계수압 입력 방식 — 현행 KDS 2022 기준
+              </div>
+              <p style={{ marginTop: 0 }}>
+                이 앱은 <strong>설계 운전압력 Pd</strong>와 <strong>수격압 배율</strong> 두 값만으로 내압을 설계합니다.
+                수격 포함 최대압력은 <strong>Pd' = Pd × 배율</strong>로 산정됩니다.
+              </p>
+              <div style={{ background: '#f0f4f8', borderLeft: `3px solid ${T.bgActive}`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
+                <strong>KDS 57 10 00 : 2022 (현행 기준)</strong><br/>
+                § 3.2 상시 하중: σ = Pd·D/(2t) ≤ 0.50 fy (강관) / fu/3 (주철관)<br/>
+                § 3.2 수격 포함: σ = (Pd × 배율)·D/(2t) ≤ 0.75 fy (강관)<br/>
+                배율 1.5는 일반적인 수격압 수준 (±50%)에 해당하며, 수격 해석이 없을 때의 보수적 기본값입니다.
+              </div>
+              <div style={{ background: '#fff8f0', borderLeft: `3px solid #e8a020`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
+                <strong>구 기준 (상수도 시설기준 2004) 방식과의 차이</strong><br/>
+                구 기준에서는 <strong>정수압(Ps), 동수압(Pd), 수격압(Ps + Pd)을 각각 별도 하중으로 입력</strong>하고, 이를 조합한 복합 검토식을 적용했습니다:<br/>
+                <span style={{ fontFamily: 'monospace', fontSize: '11px', display: 'block', marginTop: 4 }}>
+                  2.5·σ_ts + 2.0·σ_td + 1.4·σ_b &lt; 420 MPa
+                </span>
+                이 방식은 응력 종류별 안전계수를 달리 적용하는 구조로, 현행 KDS의 허용응력법과 개념적으로 다릅니다.
+              </div>
+              <div style={{ background: '#f4fff4', borderLeft: `3px solid #4caf50`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
+                <strong>이 앱이 KDS 2022 방식을 채택한 이유</strong><br/>
+                현행 발주 기준인 KDS 57 10 00 : 2022가 Pd/수격 분리 입력 + 허용응력 비교 방식을 채택하고 있으며,
+                AWWA M11 (강관), DIPRA Method (주철관) 등 국제 표준과도 동일한 체계입니다.
+                결과 보고서에도 KDS 2022 기준 적용을 명시합니다.
+              </div>
+              <div style={{ color: T.textMuted, fontSize: '11px' }}>
+                <strong>판단 기준:</strong><br/>
+                · 수격 해석 결과가 있는 경우 → 해석값으로 Pd' 역산 후 배율 입력<br/>
+                · 수격 해석 없는 경우 → 배율 1.5 (KDS 기본), 보수적으로 2.0까지 적용 가능<br/>
+                · 정수두만 작용하는 계통 → 배율 1.0 (수격 없음)
+              </div>
+            </EngPopover>
           </EngRow>
           <EngRow label="수격압 배율">
             <EngInput value={inputs.surgeRatio} onChange={v => handleChange('surgeRatio', parseFloat(v) || 1)} min={1} max={3} step={0.1} width={90}/>

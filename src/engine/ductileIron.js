@@ -49,6 +49,11 @@ export function calcDuctileIron(inputs) {
   const Di = Do - 2 * tAdopt  // mm 내경
   const sigma_hoop = (Pd * Di) / (2 * tAdopt)  // MPa (내경 기준 Barlow)
 
+  // 최소관두께 역산 (참고용) — KS D 4311 / DIPRA
+  // 내압 최소두께: Di기반 Barlow 역산 → t = Pd×Do / (2×(σA+Pd))
+  // 외압(링휨) 최소두께: σ_b = Kb×W×Do/t² → t = √(Kb×W×Do/σA_bend) [토압 전 계산 불가, step2 이후 재산정]
+  const tp_hoop = (Pd * Do) / (2 * (sigmaA_hoop + Pd))  // mm (내압 기준)
+
   const ok_hoop = sigma_hoop <= sigmaA_hoop
 
   // ────────────────────────────────────────
@@ -58,6 +63,12 @@ export function calcDuctileIron(inputs) {
   const { PL, WL, IF, PLraw } = calcTrafficLoad({ H, Do, hasTraffic })
   const Wtotal = We + WL
   const Ptotal = Wtotal / (Do / 1000)  // kPa
+
+  // ────────────────────────────────────────
+  // 링휨 최소두께 역산 (토압 산정 후 계산 가능)
+  // tp_bend: σ_b = Kb×Wtotal×Do/t² ≤ σA_bend → t = √(Kb×Wtotal×Do/σA_bend)
+  const tp_bend = Math.sqrt(Kb * Wtotal * Do / sigmaA_bend)  // mm (외압 기준)
+  const tRequired = Math.max(tp_hoop, tp_bend)               // mm (최소 소요 두께, 참고용)
 
   // ────────────────────────────────────────
   // STEP 3: 링 휨응력 검토 (DIPRA §2.3)
@@ -91,7 +102,7 @@ export function calcDuctileIron(inputs) {
     pipeType: 'ductile',
     pipeDimManual,
     DN: pipeDimManual ? null : DN,
-    Do, Di, tAdopt,
+    Do, Di, tAdopt, tRequired,
     selectedGrade: pipeDimManual ? null : diKGrade,
     steps: {
       step1: {
@@ -99,6 +110,7 @@ export function calcDuctileIron(inputs) {
         ref: 'KS D 4311 / DIPRA §2.1',
         Pd, Do, Di, tAdopt, selectedGrade: diKGrade,
         sigma_hoop, sigmaA_hoop,
+        tp_hoop, tp_bend, tRequired,
         ok: ok_hoop,
         formula: '\\sigma_{hoop} = \\frac{P_d \\times D_i}{2t} \\leq \\frac{f_u}{3}',
       },
