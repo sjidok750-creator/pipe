@@ -385,29 +385,39 @@ export default function InputPage() {
               <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>수동입력</span>
             </label>
             <EngPopover>
-              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>탄성지반반력 E' — AWWA M11 / KDS 57 10 00 §3.5</div>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>탄성지반반력 E' — KDS 57 10 00 §3.5 / AWWA M11</div>
               <p style={{ marginTop: 0 }}>E'(Modulus of Soil Reaction)는 관 주변 지반의 탄성 저항 특성을 나타내는 설계 정수입니다. 처짐·좌굴 계산에서 지반 지지력을 표현합니다.</p>
               <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2 }}>
                 <strong>수정 Iowa 처짐 공식에서의 역할</strong><br/>
                 Δy/D = (DL·K·Ptotal) / (EI/r³ + 0.061·E')<br/>
                 E'가 클수록 처짐 감소. 지반 지지력 과대평가 시 처짐 과소 계산 위험.
               </div>
+              <div style={{ background: '#f4fff4', borderLeft: '3px solid #4caf50', padding: '8px 10px', marginBottom: 8, borderRadius: 2 }}>
+                <strong>KDS 57 10 00 : 2022 (국내 현행 기준)</strong><br/>
+                KDS는 E' 값을 <strong>"지반조사 결과를 바탕으로 설계자가 결정"</strong>하도록 위임합니다.<br/>
+                기준에서는 사용 가능한 범위(300~14,000 kPa)만 제시하며, 구체적 값 결정은 설계자 판단입니다.<br/>
+                AWWA M11 테이블을 참고 자료로 인용하지만 강제하지 않습니다.<br/>
+                <span style={{ color: '#2a7a3a' }}>→ 지반조사 보고서가 있다면 수동입력이 KDS 취지에 더 부합합니다.</span>
+              </div>
               <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2 }}>
-                <strong>자동계산 (AWWA M11 Table 5-2)</strong><br/>
-                토질 등급·다짐도 조합으로 자동 결정. 일반 설계에서 권장.<br/>
-                SC1/90% = 14,000 kPa / SC1/85% = 6,900 kPa / SC1/80% = 2,700 kPa<br/>
-                SC3/85% = 1,400 kPa / 연약 = 300 kPa
+                <strong>AWWA M11 참고값 (토질 등급 × 다짐도 → E' 확정)</strong><br/>
+                AWWA M11은 토질 등급·다짐도 조합으로 E' 값을 테이블에서 결정합니다.<br/>
+                지반조사 결과가 없을 때 사용하는 실무적 기본값입니다.<br/>
+                SC1/90% = 14,000 kPa &nbsp;|&nbsp; SC1/85% = 6,900 kPa &nbsp;|&nbsp; SC1/80% = 2,700 kPa<br/>
+                SC2/85% = 2,000 kPa &nbsp;|&nbsp; SC3/85% = 700 kPa &nbsp;|&nbsp; 연약 = 300 kPa
               </div>
               <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2 }}>
-                <strong>수동 입력 적용 시</strong><br/>
-                지반조사 결과나 시험 다짐값이 있는 경우 직접 입력.<br/>
-                보수적 설계: 자동계산값의 50~70% 적용 가능.<br/>
-                최소값 300 kPa(연약지반), 최대값 20,000 kPa.
+                <strong>입력 방법 선택 기준</strong><br/>
+                · <strong>자동 (AWWA M11 테이블)</strong>: 지반조사 미실시 또는 예비 검토 단계<br/>
+                · <strong>수동 입력 권장</strong>: 지반조사 결과(탄성계수, 변형계수) 보유 시 → KDS 취지에 부합<br/>
+                · 보수적 설계: AWWA 자동값의 50~70% 적용 가능 (불확실성 반영)
               </div>
             </EngPopover>
           </EngRow>
           <div style={{ marginLeft: 116, fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginBottom: 4 }}>
-            {inputs.eprimeManual ? '수동 입력 모드' : `AWWA M11 자동계산 (${inputs.soilClass}, ${inputs.compaction}%)`}
+            {inputs.eprimeManual
+              ? '수동 입력 모드 — KDS 57 10 00: 지반조사 결과 기반 입력 권장'
+              : `AWWA M11 Table 참고값 자동적용 (${inputs.soilClass}, ${inputs.compaction}%) — 지반조사 결과 있으면 수동입력 권장`}
           </div>
 
           <EngDivider label={inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)'} />
