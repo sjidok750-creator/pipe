@@ -5,7 +5,7 @@ import { T } from '../eng/tokens'
 const MODULE_TABS = [
   {
     id: 'structural',
-    path: '/structural/input',
+    path: '/structural/overview',
     matchBase: '/structural',
     label: '관로 구조안전성 검토',
     labelShort: '구조안전성',
@@ -13,7 +13,7 @@ const MODULE_TABS = [
   },
   {
     id: 'seismic-prelim',
-    path: '/seismic-prelim/input',
+    path: '/seismic-prelim/overview',
     matchBase: '/seismic-prelim',
     label: '내진성능 예비평가',
     labelShort: '예비평가',
@@ -21,7 +21,7 @@ const MODULE_TABS = [
   },
   {
     id: 'seismic-detail',
-    path: '/seismic-detail/input',
+    path: '/seismic-detail/overview',
     matchBase: '/seismic-detail',
     label: '내진성능 상세평가',
     labelShort: '상세평가',
@@ -31,20 +31,23 @@ const MODULE_TABS = [
 
 const SUBNAV_MAP: Record<string, { to: string; label: string }[]> = {
   'structural': [
+    { to: '/structural/overview',  label: '검토개요' },
     { to: '/structural/input',     label: '입력' },
     { to: '/structural/result',    label: '결과' },
     { to: '/structural/report',    label: '보고서' },
     { to: '/structural/reference', label: '기준자료' },
   ],
   'seismic-prelim': [
-    { to: '/seismic-prelim/input',  label: '입력' },
-    { to: '/seismic-prelim/result', label: '결과' },
-    { to: '/seismic-prelim/report', label: '보고서' },
+    { to: '/seismic-prelim/overview', label: '검토개요' },
+    { to: '/seismic-prelim/input',    label: '입력' },
+    { to: '/seismic-prelim/result',   label: '결과' },
+    { to: '/seismic-prelim/report',   label: '보고서' },
   ],
   'seismic-detail': [
-    { to: '/seismic-detail/input',  label: '입력' },
-    { to: '/seismic-detail/result', label: '결과' },
-    { to: '/seismic-detail/report', label: '보고서' },
+    { to: '/seismic-detail/overview', label: '검토개요' },
+    { to: '/seismic-detail/input',    label: '입력' },
+    { to: '/seismic-detail/result',   label: '결과' },
+    { to: '/seismic-detail/report',   label: '보고서' },
   ],
 }
 
