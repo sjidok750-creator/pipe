@@ -19,18 +19,23 @@ export function calcSteelPipe(inputs) {
     gammaSoil, Eprime,
     hasTraffic, hasLining, gwLevel,
     steelBeddingType = 'deg90',
-    pnGrade = 'PN10',            // 사용자가 선택한 PN 등급
+    pnGrade = 'PN10',
+    pipeDimManual = false, DoManual, tManual,
   } = inputs
 
   const mat = PIPE_MATERIAL.steel
-  const row = STEEL_THICKNESS[DN]
-  if (!row) throw new Error(`강관 DN${DN}은 지원하지 않습니다.`)
 
-  const Do = row.Do  // mm
-
-  // 채택 두께: 사용자가 선택한 PN 등급의 표준 두께
-  const tAdopt = row[pnGrade]
-  if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
+  let Do, tAdopt
+  if (pipeDimManual) {
+    Do = DoManual
+    tAdopt = tManual
+  } else {
+    const row = STEEL_THICKNESS[DN]
+    if (!row) throw new Error(`강관 DN${DN}은 지원하지 않습니다.`)
+    Do = row.Do
+    tAdopt = row[pnGrade]
+    if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
+  }
 
   // ────────────────────────────────────────
   // STEP 1: 내압 검토 (Barlow 공식)
@@ -128,7 +133,10 @@ export function calcSteelPipe(inputs) {
 
   return {
     pipeType: 'steel',
-    DN, Do, tAdopt, tRequired, pnGrade,
+    pipeDimManual,
+    DN: pipeDimManual ? null : DN,
+    Do, tAdopt, tRequired,
+    pnGrade: pipeDimManual ? null : pnGrade,
     steps: {
       step1: {
         title: '내압 검토',

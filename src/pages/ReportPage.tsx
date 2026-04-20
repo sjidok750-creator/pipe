@@ -77,9 +77,10 @@ export default function ReportPage() {
               ['적용기준', 'KDS 57 10 00 : 2022 상수도 시설 설계기준 / KS D 3565 / KS D 4311'],
               ['검토방법', '허용응력법 (내압) / 수정Iowa식 (처짐·링휨) / AWWA M11 (외압좌굴)'],
               ['관종',    pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'],
-              ['공칭관경', `DN ${result.DN} mm`],
-              ['외경 D\u2080', `${Do} mm`],
-              ['채택 두께 t', `${tAdopt} mm`],
+              ...(result.pipeDimManual
+                ? [['관 제원', `Do=${Do}mm  t=${tAdopt}mm  [직접입력]`]]
+                : [['공칭관경', `DN ${result.DN} mm`], ['외경 D\u2080', `${Do} mm`], ['채택 두께 t', `${tAdopt} mm`]]
+              ),
             ] as [string, string][]).map(([k, v], i) => (
               <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>
                 <td style={{ ...TD, width: 180, fontWeight: 700 }}>{k}</td>
@@ -255,7 +256,7 @@ export default function ReportPage() {
         <div style={rh}>5. 검토 의견</div>
         <div style={{ fontSize: 11, lineHeight: 2, fontFamily: F, padding: '6px 0' }}>
           {verdict.overallOK
-            ? `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 모든 검토항목에서 허용기준을 만족한다. DN ${result.DN} (D\u2080=${Do}mm, t=${tAdopt}mm) ${pipeType === 'steel' ? '강관' : '덕타일 주철관'}은 설계 하중 조건에 대하여 구조적으로 안전한 것으로 판단한다.`
+            ? `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 모든 검토항목에서 허용기준을 만족한다. ${result.pipeDimManual ? `D\u2080=${Do}mm, t=${tAdopt}mm [직접입력]` : `DN ${result.DN} (D\u2080=${Do}mm, t=${tAdopt}mm)`} ${pipeType === 'steel' ? '강관' : '덕타일 주철관'}은 설계 하중 조건에 대하여 구조적으로 안전한 것으로 판단한다.`
             : `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 일부 검토항목에서 허용기준을 초과한다. 관경·관두께·침상조건 등을 재검토하거나 보강 방안을 강구하여야 한다.`}
         </div>
 

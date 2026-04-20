@@ -18,18 +18,23 @@ export function calcDuctileIron(inputs) {
     DN, Pd, H,
     gammaSoil, Eprime,
     hasTraffic, beddingType,
-    diKGrade = 'K9',  // 사용자가 선택한 K등급
+    diKGrade = 'K9',
+    pipeDimManual = false, DoManual, tManual,
   } = inputs
 
   const mat = PIPE_MATERIAL.ductile
-  const row = DI_THICKNESS[DN]
-  if (!row) throw new Error(`덕타일 주철관 DN${DN}은 지원하지 않습니다.`)
 
-  const Do = row.Do  // mm
-
-  // 채택 두께: 사용자가 선택한 K등급의 표준 두께
-  const tAdopt = row[diKGrade]
-  if (!tAdopt) throw new Error(`DN${DN}에서 ${diKGrade} 등급을 찾을 수 없습니다.`)
+  let Do, tAdopt
+  if (pipeDimManual) {
+    Do = DoManual
+    tAdopt = tManual
+  } else {
+    const row = DI_THICKNESS[DN]
+    if (!row) throw new Error(`덕타일 주철관 DN${DN}은 지원하지 않습니다.`)
+    Do = row.Do
+    tAdopt = row[diKGrade]
+    if (!tAdopt) throw new Error(`DN${DN}에서 ${diKGrade} 등급을 찾을 수 없습니다.`)
+  }
 
   const { Kb, Kd } = BEDDING[beddingType] || BEDDING['Type2']
 
@@ -84,7 +89,10 @@ export function calcDuctileIron(inputs) {
 
   return {
     pipeType: 'ductile',
-    DN, Do, Di, tAdopt, selectedGrade: diKGrade,
+    pipeDimManual,
+    DN: pipeDimManual ? null : DN,
+    Do, Di, tAdopt,
+    selectedGrade: pipeDimManual ? null : diKGrade,
     steps: {
       step1: {
         title: '내압 검토',

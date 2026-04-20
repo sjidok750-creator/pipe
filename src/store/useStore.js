@@ -25,6 +25,9 @@ const DEFAULT_INPUTS = {
   gwLevel: 'below',
   gammaSoil: 18.0,
   eprimeManual: false,
+  pipeDimManual: false,
+  DoManual: 610,
+  tManual: 8,
 }
 
 function getAutoEprime(soilClass, compaction) {
@@ -81,6 +84,12 @@ export const useStore = create((set, get) => ({
           ? state.inputs.Eprime
           : getAutoEprime(state.inputs.soilClass, state.inputs.compaction),
       },
+    }))
+  },
+
+  setPipeDimManual: (manual) => {
+    set((state) => ({
+      inputs: { ...state.inputs, pipeDimManual: manual },
     }))
   },
 

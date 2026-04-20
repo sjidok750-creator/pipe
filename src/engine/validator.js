@@ -12,26 +12,35 @@ import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES } from './c
 export function validateInputs(inputs) {
   const errors = {}
 
-  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade } = inputs
+  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade, pipeDimManual, DoManual, tManual } = inputs
 
-  // 관경
-  const table = pipeType === 'steel' ? STEEL_THICKNESS : DI_THICKNESS
-  if (!DN || !table[DN]) {
-    errors.DN = '지원하지 않는 관경입니다.'
-  }
-
-  // 두께/등급
-  if (pipeType === 'steel') {
-    if (!pnGrade || !STEEL_PN_GRADES.includes(pnGrade)) {
-      errors.pnGrade = 'PN 등급을 선택해야 합니다.'
-    } else if (DN && table[DN] && !table[DN][pnGrade]) {
-      errors.pnGrade = `DN${DN}에서 ${pnGrade} 등급이 없습니다.`
+  if (pipeDimManual) {
+    if (!DoManual || DoManual < 50 || DoManual > 4000) {
+      errors.DoManual = '외경은 50~4000mm 범위여야 합니다.'
+    }
+    if (!tManual || tManual < 1 || tManual > 100) {
+      errors.tManual = '두께는 1~100mm 범위여야 합니다.'
     }
   } else {
-    if (!diKGrade || !DI_K_GRADES.includes(diKGrade)) {
-      errors.diKGrade = 'K 등급을 선택해야 합니다.'
-    } else if (DN && table[DN] && !table[DN][diKGrade]) {
-      errors.diKGrade = `DN${DN}에서 ${diKGrade} 등급이 없습니다.`
+    // 관경
+    const table = pipeType === 'steel' ? STEEL_THICKNESS : DI_THICKNESS
+    if (!DN || !table[DN]) {
+      errors.DN = '지원하지 않는 관경입니다.'
+    }
+
+    // 두께/등급
+    if (pipeType === 'steel') {
+      if (!pnGrade || !STEEL_PN_GRADES.includes(pnGrade)) {
+        errors.pnGrade = 'PN 등급을 선택해야 합니다.'
+      } else if (DN && table[DN] && !table[DN][pnGrade]) {
+        errors.pnGrade = `DN${DN}에서 ${pnGrade} 등급이 없습니다.`
+      }
+    } else {
+      if (!diKGrade || !DI_K_GRADES.includes(diKGrade)) {
+        errors.diKGrade = 'K 등급을 선택해야 합니다.'
+      } else if (DN && table[DN] && !table[DN][diKGrade]) {
+        errors.diKGrade = `DN${DN}에서 ${diKGrade} 등급이 없습니다.`
+      }
     }
   }
 

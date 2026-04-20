@@ -26,7 +26,7 @@ const SOIL_CLASSES = [
 
 export default function InputPage() {
   const navigate = useNavigate()
-  const { inputs, setInputs, setEprimeManual, calcResult, saveToHistory } = useStore()
+  const { inputs, setInputs, setEprimeManual, setPipeDimManual, calcResult, saveToHistory } = useStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [diagTab, setDiagTab] = useState<'section' | 'bedding' | 'eprime'>('section')
 
@@ -39,6 +39,9 @@ export default function InputPage() {
   const thicknessRow = inputs.pipeType === 'steel'
     ? STEEL_THICKNESS[inputs.DN]
     : DI_THICKNESS[inputs.DN]
+
+  const effectiveDo = inputs.pipeDimManual ? inputs.DoManual : (thicknessRow?.Do ?? 610)
+  const effectiveT  = inputs.pipeDimManual ? inputs.tManual  : (thicknessRow?.[inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade] ?? 8)
 
   const handleCalc = () => {
     const { valid, errors: errs } = validateInputs(inputs)
@@ -76,48 +79,75 @@ export default function InputPage() {
             />
           </EngRow>
           <EngDivider />
-          <EngRow label="공칭관경 DN" unit="mm">
-            <select
-              value={inputs.DN}
-              onChange={e => handleChange('DN', Number(e.target.value))}
-              style={{
-                height: T.inputH, border: `1px solid ${T.borderDark}`, borderRadius: 0,
-                fontSize: T.fontSzInput, fontFamily: T.fontMono, padding: '0 4px',
-                background: T.bgInput, color: T.textPrimary, width: 100,
-              }}
-            >
-              {dnList.map(dn => <option key={dn} value={dn}>DN {dn}</option>)}
-            </select>
-            <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
-              Do = {thicknessRow?.Do ?? '-'} mm
-            </span>
+          <EngRow label="">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={!!inputs.pipeDimManual}
+                onChange={e => setPipeDimManual(e.target.checked)}
+                style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
+              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
+                관경·두께 직접 입력
+              </span>
+              <span style={{ fontSize: '10px', color: T.textMuted }}>(비규격 또는 실측치)</span>
+            </label>
           </EngRow>
 
-          {/* PN/K 등급 */}
-          <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'}>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {grades.map(g => {
-                const t = thicknessRow?.[g]
-                const active = (inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade) === g
-                return (
-                  <button key={g} onClick={() => handleChange(inputs.pipeType === 'steel' ? 'pnGrade' : 'diKGrade', g)}
-                    style={{
-                      padding: '2px 10px', fontSize: '11px', cursor: 'pointer',
-                      border: `1px solid ${active ? T.bgActive : T.borderDark}`,
-                      background: active ? T.bgActive : T.bgPanel,
-                      color: active ? T.textActive : T.textPrimary,
-                      fontFamily: T.fontSans, borderRadius: 2,
-                    }}>
-                    <div style={{ fontWeight: 700 }}>{g}</div>
-                    <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>{t ?? '-'} mm</div>
-                  </button>
-                )
-              })}
-            </div>
-            {(errors.pnGrade || errors.diKGrade) && (
-              <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
-            )}
-          </EngRow>
+          {inputs.pipeDimManual ? (
+            <>
+              <EngRow label="외경 Do" unit="mm">
+                <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
+                {errors.DoManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.DoManual}</span>}
+              </EngRow>
+              <EngRow label="두께 t" unit="mm">
+                <EngInput value={inputs.tManual ?? 8} onChange={v => handleChange('tManual', parseFloat(v) || 0)} min={1} max={100} step={0.5} width={100}/>
+                {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
+              </EngRow>
+            </>
+          ) : (
+            <>
+              <EngRow label="공칭관경 DN" unit="mm">
+                <select
+                  value={inputs.DN}
+                  onChange={e => handleChange('DN', Number(e.target.value))}
+                  style={{
+                    height: T.inputH, border: `1px solid ${T.borderDark}`, borderRadius: 0,
+                    fontSize: T.fontSzInput, fontFamily: T.fontMono, padding: '0 4px',
+                    background: T.bgInput, color: T.textPrimary, width: 100,
+                  }}
+                >
+                  {dnList.map(dn => <option key={dn} value={dn}>DN {dn}</option>)}
+                </select>
+                <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
+                  Do = {thicknessRow?.Do ?? '-'} mm
+                </span>
+              </EngRow>
+
+              {/* PN/K 등급 */}
+              <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'}>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {grades.map(g => {
+                    const t = thicknessRow?.[g]
+                    const active = (inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade) === g
+                    return (
+                      <button key={g} onClick={() => handleChange(inputs.pipeType === 'steel' ? 'pnGrade' : 'diKGrade', g)}
+                        style={{
+                          padding: '2px 10px', fontSize: '11px', cursor: 'pointer',
+                          border: `1px solid ${active ? T.bgActive : T.borderDark}`,
+                          background: active ? T.bgActive : T.bgPanel,
+                          color: active ? T.textActive : T.textPrimary,
+                          fontFamily: T.fontSans, borderRadius: 2,
+                        }}>
+                        <div style={{ fontWeight: 700 }}>{g}</div>
+                        <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>{t ?? '-'} mm</div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {(errors.pnGrade || errors.diKGrade) && (
+                  <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
+                )}
+              </EngRow>
+            </>
+          )}
 
           <EngDivider label="설계 하중 조건" />
           <EngRow label="설계 운전압력 Pd" unit="MPa">
@@ -283,9 +313,10 @@ export default function InputPage() {
 
         {/* 입력 요약 */}
         <div style={{ marginTop: 6, padding: '6px 10px', background: T.bgSection, fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, borderRadius: 2 }}>
-          {inputs.pipeType === 'steel' ? '강관' : '주철관'}  DN{inputs.DN}
-          {'  '}{inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade}
-          {'  '} t={thicknessRow?.[gradeField] ?? '-'}mm
+          {inputs.pipeType === 'steel' ? '강관' : '주철관'}
+          {'  '}{inputs.pipeDimManual
+            ? `Do=${effectiveDo}mm  t=${effectiveT}mm  [직접입력]`
+            : `DN${inputs.DN}  ${inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade}  t=${effectiveT}mm`}
           {'  '} Pd={inputs.Pd}MPa  H={inputs.H}m
           {'  '} E'={inputs.Eprime}kPa
           {inputs.hasTraffic ? '  DB-24' : ''}
@@ -317,9 +348,9 @@ export default function InputPage() {
         <div style={{ border: `1px solid ${T.border}`, borderRadius: '0 0 2px 2px', background: 'white', padding: '8px' }}>
           {diagTab === 'section' && (
             <CrossSectionSVG
-              Do={thicknessRow?.Do ?? 610}
+              Do={effectiveDo}
               H={inputs.H}
-              t={thicknessRow?.[gradeField] ?? 8}
+              t={effectiveT}
               hasTraffic={inputs.hasTraffic}
               gwLevel={inputs.gwLevel}
             />

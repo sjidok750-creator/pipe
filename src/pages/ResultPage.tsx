@@ -95,9 +95,14 @@ export default function ResultPage() {
         <EngPanel title="채택 관 제원">
           <EngParamGrid params={[
             { label: '관종', value: pipeType === 'steel' ? '강관 (KS D 3565)' : '덕타일주철관 (KS D 4311)' },
-            { label: 'DN', value: `${result.DN} mm` },
-            { label: '외경 Do', value: `${Do} mm` },
-            { label: '채택 두께 t', value: `${tAdopt} mm` },
+            ...(result.pipeDimManual
+              ? [{ label: '관 제원', value: `Do=${Do}mm  t=${tAdopt}mm  [직접입력]` }]
+              : [
+                  { label: 'DN', value: `${result.DN} mm` },
+                  { label: '외경 Do', value: `${Do} mm` },
+                  { label: '채택 두께 t', value: `${tAdopt} mm` },
+                ]
+            ),
             { label: '설계수압 Pd', value: `${inputs.Pd} MPa` },
             { label: '수격 배율', value: `×${inputs.surgeRatio}` },
           ]}/>
