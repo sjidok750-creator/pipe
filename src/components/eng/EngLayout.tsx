@@ -76,12 +76,13 @@ export function EngDivider({ label }: { label?: string }) {
 
 // ── 2컬럼 그리드 행 (라벨 + 컨트롤) ────────────────────────
 export function EngRow({
-  label, children, labelWidth = 110, unit,
+  label, children, labelWidth = 110, unit, popover,
 }: {
   label: string
   children: React.ReactNode
   labelWidth?: number
   unit?: string
+  popover?: React.ReactNode
 }) {
   return (
     <div style={{
@@ -106,6 +107,7 @@ export function EngRow({
         {unit && (
           <span style={{ fontSize: '11px', color: T.textMuted, whiteSpace: 'nowrap', marginLeft: 2 }}>{unit}</span>
         )}
+        {popover}
       </div>
     </div>
   )
@@ -373,7 +375,7 @@ export function EngParamGrid({
 }
 
 // ── 정보 팝오버 (ⓘ 버튼 클릭 → 패널) ──────────────────────
-export function EngPopover({ children }: { children: React.ReactNode }) {
+export function EngPopover({ title, children }: { title?: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -442,6 +444,11 @@ export function EngPopover({ children }: { children: React.ReactNode }) {
             fontFamily: T.fontSans,
           }}
         >
+          {title && (
+            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>
+              {title}
+            </div>
+          )}
           {children}
         </div>,
         document.body
