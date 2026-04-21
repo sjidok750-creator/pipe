@@ -751,10 +751,63 @@ export default function SeismicDetailInputPage() {
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
             <BuriedPipeResponseSVG width={300} height={160}/>
           </div>
-          <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.7, marginTop: 4 }}>
-            지반변위(실선) → 관로 변형(점선) → 이음부/관체 응력 산정<br/>
-            축방향 변형률: ε_L = 4U_h / L<br/>
-            굽힘 변형률: ε_B = π²·D / (2L²) · U_h
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 6 }}>
+            <div style={{ flex: 1, fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, lineHeight: 1.8 }}>
+              ε_L = 4·Uh / L &nbsp;&nbsp;|&nbsp;&nbsp; ε_B = π²·D·Uh / (2L²)
+            </div>
+            <EngPopover>
+              <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 10, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>
+                응답변위법 개념도 읽는 법
+              </div>
+
+              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>🌊 지진이 오면 어떤 일이 생기나?</strong><br/>
+                지진파(S파)가 땅 속을 파도처럼 전파되면, 매설 관로도 지반과 함께
+                <b> 사인파(물결) 형태</b>로 강제로 휘어집니다.<br/>
+                위 그림은 그 변형을 위에서 내려다본 평면도입니다.
+              </div>
+
+              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>📏 L — 지진파장 (Seismic Wavelength)</strong><br/>
+                지진파 한 주기의 길이 (마루→마루 거리).<br/>
+                L이 클수록 관로 변형이 완만하여 안전합니다.
+                <br/><span style={{ color: '#888' }}>계산: L = Vds × Tg &nbsp;(설계지반속도 × 지반고유주기)</span>
+              </div>
+
+              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>↕ Uh — 최대 지반 횡변위 (Peak Ground Displacement)</strong><br/>
+                지진 시 지반이 가장 많이 움직이는 거리 (기준선에서 마루까지).<br/>
+                규모가 큰 지진일수록, 연약한 지반일수록 Uh가 커져 위험합니다.
+                <br/><span style={{ color: '#888' }}>계산: Uh = (2/π²) × Sv × Tg</span>
+              </div>
+
+              <div style={{ background: '#eef4ff', borderLeft: '3px solid #1a3a5c', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>🔴 ε_L max — 축변형률 최대 발생점 (빨간 점)</strong><br/>
+                관로가 기준선을 <b>통과하는 영교점</b>에서 기울기가 가장 급합니다.<br/>
+                이 구간에서 관체가 축방향으로 가장 많이 늘어나거나 줄어듭니다.<br/>
+                <span style={{ fontFamily: T.fontMono, background: '#e8edf6', padding: '1px 5px', borderRadius: 2 }}>ε_L = 4·Uh / L</span>
+              </div>
+
+              <div style={{ background: '#eef4ff', borderLeft: '3px solid #1a3a5c', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>🔵 ε_B max — 굽힘변형률 최대 발생점 (파란 원)</strong><br/>
+                관로가 <b>마루 또는 골(최대 변위점)</b>에서 곡률이 가장 큽니다.<br/>
+                이 구간에서 관 단면 외측이 굽힘에 의해 인장·압축됩니다.<br/>
+                <span style={{ fontFamily: T.fontMono, background: '#e8edf6', padding: '1px 5px', borderRadius: 2 }}>ε_B = π²·D·Uh / (2L²)</span>
+              </div>
+
+              <div style={{ background: '#f5f0ff', borderLeft: '3px solid #6040c0', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>🟦🟧 색상 — 압축 / 인장 구간</strong><br/>
+                파란 구간: <b>압축</b> — 관로가 짧아지는 방향으로 응력 발생<br/>
+                주황 구간: <b>인장</b> — 관로가 늘어나는 방향으로 응력 발생
+              </div>
+
+              <div style={{ background: '#fff8e1', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+                <strong>✅ 최종 판정 방법</strong><br/>
+                ε_total = ε_L + ε_B + ε_내압 + ε_온도 + ε_침하<br/>
+                → ε_total ≤ ε_allow 이면 O.K. (허용변형률 이내)<br/>
+                <span style={{ color: '#888', fontSize: 10 }}>허용변형률: 연성관 기능수행 1%, 붕괴방지 3% (KDS 57 17 00 §C.4)</span>
+              </div>
+            </EngPopover>
           </div>
         </EngPanel>
       </div>

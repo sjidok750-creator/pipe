@@ -70,8 +70,12 @@ export function ResponseSpectrumSVG({
   const ySvC = ty(SvPeak)
   const ySvF = SvPeak_f != null ? ty(SvPeak_f) : null
 
-  // TS 위치에서 Sv 곡선 위의 레이블 X 위치
-  const xLabel = tx(TS) + 6
+  // 피크 레이블 X: 플래토 좌측 30% 지점 (범례·TS선과 겹침 방지)
+  // 레이블 폭 ~90px을 고려하여 우상단 범례(gw-114)와도 겹치지 않도록
+  const xLabelStart = tx(TS) + 8
+  const xLabelMid   = tx(TS + (TL - TS) * 0.28)
+  // 레이블이 우상단 범례 영역(px+gw-114)을 침범할 경우 중앙으로 후퇴
+  const xLabel = (xLabelStart + 95 > px + gw - 114) ? xLabelMid : xLabelStart
 
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: 'block' }}>
@@ -147,11 +151,11 @@ export function ResponseSpectrumSVG({
         </text>
       )}
 
-      {/* ── 범례 ── */}
+      {/* ── 범례 (우상단) ── */}
       {ptsF && (
-        <g transform={`translate(${px + 4},${py + 4})`}>
-          <rect x={0} y={0} width={106} height={32} rx={2}
-            fill="white" stroke="#ddd" strokeWidth="0.8" opacity="0.92" />
+        <g transform={`translate(${px + gw - 114},${py + 4})`}>
+          <rect x={0} y={0} width={114} height={32} rx={2}
+            fill="white" stroke="#ddd" strokeWidth="0.8" opacity="0.95" />
           <line x1="4" y1="10" x2="20" y2="10" stroke={T.bgActive} strokeWidth="2" />
           <text x="24" y="13" fontSize="7.5" fill="#333" fontFamily={T.fontSans}>붕괴방지수준</text>
           <line x1="4" y1="24" x2="20" y2="24" stroke="#2e7d32" strokeWidth="1.5" strokeDasharray="5 3" />
