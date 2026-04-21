@@ -148,6 +148,42 @@ export default function InputPage() {
             </div>
           )}
 
+          {inputs.pipeType === 'ductile' && (
+            <EngRow label="재료 강도">
+              <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textNumber }}>
+                fu = 420 MPa &nbsp;<span style={{ color: T.textMuted, fontSize: 10 }}>(KS D 4311 §4 — 규격 고정값, fy 선택 불필요)</span>
+              </span>
+              <EngPopover>
+                <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>
+                  덕타일 주철관 — 항복강도 fy 선택이 없는 이유
+                </div>
+                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
+                  <strong>KS D 4311 : 2021 §4 기계적 성질</strong><br/>
+                  "구상흑연주철관의 최소 인장강도(fu)는 420 N/mm² 이상, 최소 항복강도는 300 N/mm² 이상으로 한다."<br/>
+                  → KS 규격이 강도값을 단일 고정값으로 지정하므로 강종별 선택이 불필요하다.
+                </div>
+                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
+                  <strong>KDS 57 10 00 : 2022 §3.2 주철관 허용응력</strong><br/>
+                  "덕타일 주철관의 허용인장응력은 인장강도(fu)에 안전계수를 적용하여 산정한다:<br/>
+                  상시 σ_a = fu / 3 = 140 MPa,&nbsp; 링휨 σ_a = 0.5 × fu = 210 MPa"<br/>
+                  → 강관과 달리 <em>항복강도가 아닌 인장강도(fu) 기반</em> 안전계수법을 적용한다.
+                </div>
+                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
+                  <strong>DIPRA Design Manual §3 (Pressure Design)</strong><br/>
+                  "Allowable working pressure: P_a = 2t·S_a / D,&nbsp; where S_a = f_t / 3.0"<br/>
+                  (f_t = tensile strength = 420 MPa)<br/>
+                  → DIPRA(미국 덕타일주철관연구협회)도 fu 기반 안전계수 체계를 채택. fy는 설계 허용응력 산정에 사용되지 않는다.
+                </div>
+                <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
+                  <strong>강관과의 허용응력 체계 비교</strong><br/>
+                  강관 (KDS §3.2): σ_a = 0.50 × fy → <em>항복</em> 기준 (연성파괴 방지)<br/>
+                  주철관 (KDS §3.2): σ_a = fu / 3 → <em>인장강도</em> 기준 (취성파괴 안전계수)<br/>
+                  주철 계열은 fy/fu 비가 상대적으로 작고 연성이 제한되므로, 취성파괴에 대한 보수적 여유를 확보하기 위해 fu 기반 설계가 더 적합하다.
+                </div>
+              </EngPopover>
+            </EngRow>
+          )}
+
           <EngDivider />
           <EngRow label="">
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>

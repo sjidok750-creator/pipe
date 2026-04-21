@@ -2,19 +2,22 @@ import React from 'react'
 import { T } from '../eng/tokens'
 import type { FlowSpec, NodeSpec, EdgeSpec } from './FlowChartTypes'
 
-// ── 화살표 마커 3종 ─────────────────────────────────────────
+// ── 화살표 마커 + 필터 ──────────────────────────────────────
 function Markers() {
   return (
     <defs>
-      <marker id="fc-ar"   markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-        <polygon points="0,0 9,3.5 0,7" fill="#777"/>
+      <marker id="fc-ar"   markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+        <polygon points="0,0.5 7.5,3 0,5.5" fill="#6a7a8a"/>
       </marker>
-      <marker id="fc-arOK" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-        <polygon points="0,0 9,3.5 0,7" fill={T.textOK}/>
+      <marker id="fc-arOK" markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+        <polygon points="0,0.5 7.5,3 0,5.5" fill={T.textOK}/>
       </marker>
-      <marker id="fc-arNG" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
-        <polygon points="0,0 9,3.5 0,7" fill={T.textNG}/>
+      <marker id="fc-arNG" markerWidth="8" markerHeight="6" refX="7.5" refY="3" orient="auto">
+        <polygon points="0,0.5 7.5,3 0,5.5" fill={T.textNG}/>
       </marker>
+      <filter id="fc-shadow" x="-10%" y="-10%" width="120%" height="140%">
+        <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="rgba(0,30,60,0.10)"/>
+      </filter>
     </defs>
   )
 }
@@ -32,7 +35,9 @@ function getPt(node: NodeSpec, side: string): [number, number] {
   }
 }
 
-// ── SVG 경로 문자열 생성 ────────────────────────────────────
+// ── SVG 경로 문자열 생성 (모서리 라운딩 처리) ───────────────
+const CR = 7 // corner radius
+
 function buildPath(
   [ax, ay]: [number, number],
   [bx, by]: [number, number],
@@ -40,18 +45,57 @@ function buildPath(
   viaY?: number,
 ): string {
   if (viaX !== undefined && viaY === undefined) {
-    // horizontal → vertical → horizontal
-    return `M ${ax} ${ay} L ${viaX} ${ay} L ${viaX} ${by} L ${bx} ${by}`
+    // H → V → H routing
+    const sAV = viaX >= ax ? 1 : -1
+    const sVY = by >= ay ? 1 : -1
+    const sVB = bx >= viaX ? 1 : -1
+    const r1 = Math.min(CR, Math.abs(viaX - ax) / 2, Math.abs(by - ay) / 2)
+    const r2 = Math.min(CR, Math.abs(bx - viaX) / 2, Math.abs(by - ay) / 2)
+    if (r1 < 1 || r2 < 1) return `M ${ax} ${ay} L ${viaX} ${ay} L ${viaX} ${by} L ${bx} ${by}`
+    return (
+      `M ${ax} ${ay}` +
+      ` L ${viaX - sAV * r1} ${ay}` +
+      ` Q ${viaX} ${ay} ${viaX} ${ay + sVY * r1}` +
+      ` L ${viaX} ${by - sVY * r2}` +
+      ` Q ${viaX} ${by} ${viaX + sVB * r2} ${by}` +
+      ` L ${bx} ${by}`
+    )
   }
   if (viaY !== undefined && viaX === undefined) {
-    // vertical → horizontal → vertical
-    return `M ${ax} ${ay} L ${ax} ${viaY} L ${bx} ${viaY} L ${bx} ${by}`
+    // V → H → V routing
+    const sAV = viaY >= ay ? 1 : -1
+    const sVX = bx >= ax ? 1 : -1
+    const sVB = by >= viaY ? 1 : -1
+    const r1 = Math.min(CR, Math.abs(viaY - ay) / 2, Math.abs(bx - ax) / 2)
+    const r2 = Math.min(CR, Math.abs(bx - ax) / 2, Math.abs(by - viaY) / 2)
+    if (r1 < 1 || r2 < 1) return `M ${ax} ${ay} L ${ax} ${viaY} L ${bx} ${viaY} L ${bx} ${by}`
+    return (
+      `M ${ax} ${ay}` +
+      ` L ${ax} ${viaY - sAV * r1}` +
+      ` Q ${ax} ${viaY} ${ax + sVX * r1} ${viaY}` +
+      ` L ${bx - sVX * r2} ${viaY}` +
+      ` Q ${bx} ${viaY} ${bx} ${viaY + sVB * r2}` +
+      ` L ${bx} ${by}`
+    )
   }
-  if (Math.abs(ax - bx) < 3) {
+  if (Math.abs(ax - bx) < 2) {
     return `M ${ax} ${ay} L ${bx} ${by}`
   }
+  // L-shape via midY with rounded corners
   const midY = (ay + by) / 2
-  return `M ${ax} ${ay} L ${ax} ${midY} L ${bx} ${midY} L ${bx} ${by}`
+  const sY1 = midY >= ay ? 1 : -1
+  const sX  = bx >= ax ? 1 : -1
+  const sY2 = by >= midY ? 1 : -1
+  const r1 = Math.min(CR, Math.abs(midY - ay) / 2, Math.abs(bx - ax) / 2)
+  const r2 = Math.min(CR, Math.abs(bx - ax) / 2, Math.abs(by - midY) / 2)
+  return (
+    `M ${ax} ${ay}` +
+    ` L ${ax} ${midY - sY1 * r1}` +
+    ` Q ${ax} ${midY} ${ax + sX * r1} ${midY}` +
+    ` L ${bx - sX * r2} ${midY}` +
+    ` Q ${bx} ${midY} ${bx} ${midY + sY2 * r2}` +
+    ` L ${bx} ${by}`
+  )
 }
 
 // ── 노드 색상 결정 ──────────────────────────────────────────
@@ -83,36 +127,38 @@ function FlowNode({ node }: { node: NodeSpec }) {
     case 'terminal':
       shape = (
         <rect x={lx} y={ty} width={W} height={H} rx={H / 2}
-          fill={fill} stroke={stroke} strokeWidth={1.6} />
+          fill={fill} stroke={stroke} strokeWidth={1.8}
+          filter="url(#fc-shadow)" />
       )
       break
     case 'decision': {
       const pts = `${node.x},${ty} ${lx + W},${node.y} ${node.x},${ty + H} ${lx},${node.y}`
-      shape = <polygon points={pts} fill={fill} stroke={stroke} strokeWidth={1.6} />
+      shape = <polygon points={pts} fill={fill} stroke={stroke} strokeWidth={1.6} filter="url(#fc-shadow)" />
       break
     }
     case 'output':
       shape = (
-        <>
-          <rect x={lx} y={ty} width={W} height={H} fill={fill} stroke={stroke} strokeWidth={1.6} />
-          <rect x={lx + 3} y={ty + 3} width={W - 6} height={H - 6} fill="none" stroke={stroke} strokeWidth={0.8} />
-        </>
+        <g filter="url(#fc-shadow)">
+          <rect x={lx} y={ty} width={W} height={H} rx={3} fill={fill} stroke={stroke} strokeWidth={1.8} />
+          <rect x={lx + 3} y={ty + 3} width={W - 6} height={H - 6} rx={1} fill="none" stroke={stroke} strokeWidth={0.7} />
+        </g>
       )
       break
     case 'subprocess':
       shape = (
-        <>
-          <rect x={lx} y={ty} width={W} height={H} rx={2} fill={fill} stroke={stroke} strokeWidth={1.6} />
+        <g filter="url(#fc-shadow)">
+          <rect x={lx} y={ty} width={W} height={H} rx={3} fill={fill} stroke={stroke} strokeWidth={1.6} />
           <line x1={lx + 10} y1={ty} x2={lx + 10} y2={ty + H} stroke={stroke} strokeWidth={1} />
           <line x1={lx + W - 10} y1={ty} x2={lx + W - 10} y2={ty + H} stroke={stroke} strokeWidth={1} />
-        </>
+        </g>
       )
       break
     default: // process, input
       shape = (
         <rect x={lx} y={ty} width={W} height={H}
-          rx={node.kind === 'process' ? 5 : 2}
-          fill={fill} stroke={stroke} strokeWidth={1.5} />
+          rx={node.kind === 'process' ? 5 : 3}
+          fill={fill} stroke={stroke} strokeWidth={1.6}
+          filter="url(#fc-shadow)" />
       )
   }
 
@@ -215,9 +261,11 @@ function FlowEdge({
       <path
         d={d}
         stroke={color}
-        strokeWidth={1.8}
+        strokeWidth={edge.color === 'ok' || edge.color === 'ng' ? 1.7 : 1.5}
         fill="none"
         strokeDasharray={dash}
+        strokeLinecap="round"
+        strokeLinejoin="round"
         markerEnd={marker}
       />
       {edge.label && (
