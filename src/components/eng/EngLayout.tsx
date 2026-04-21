@@ -377,7 +377,7 @@ export function EngParamGrid({
 // ── 정보 팝오버 (ⓘ 버튼 클릭 → 패널) ──────────────────────
 export function EngPopover({ title, children }: { title?: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false)
-  const [pos, setPos] = useState({ top: 0, left: 0 })
+  const [pos, setPos] = useState({ top: 0, left: 0, openUp: false })
   const btnRef = useRef<HTMLButtonElement>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
@@ -398,9 +398,33 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
       const r = btnRef.current.getBoundingClientRect()
       const panelW = 480
       const left = Math.min(r.left, window.innerWidth - panelW - 12)
-      setPos({ top: r.bottom + 6, left: Math.max(8, left) })
+      // 버튼 아래 공간이 부족하면 위쪽으로 열기
+      const spaceBelow = window.innerHeight - r.bottom - 12
+      const openUp = spaceBelow < 320 && r.top > 200
+      setPos({ top: openUp ? r.top - 6 : r.bottom + 6, left: Math.max(8, left), openUp })
     }
     setOpen(v => !v)
+  }
+
+  const panelStyle: React.CSSProperties = {
+    position: 'fixed',
+    left: pos.left,
+    zIndex: 9999,
+    background: 'white',
+    border: `1px solid ${T.borderDark}`,
+    borderRadius: 3,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+    padding: '14px 16px',
+    width: 480,
+    maxHeight: '65vh',
+    overflowY: 'auto',
+    fontSize: '12px',
+    lineHeight: 1.75,
+    color: T.textPrimary,
+    fontFamily: T.fontSans,
+    ...(pos.openUp
+      ? { bottom: window.innerHeight - pos.top, top: 'auto' }
+      : { top: pos.top, bottom: 'auto' }),
   }
 
   return (
@@ -423,27 +447,7 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
         ⓘ
       </button>
       {open && createPortal(
-        <div
-          ref={panelRef}
-          style={{
-            position: 'fixed',
-            top: pos.top,
-            left: pos.left,
-            zIndex: 9999,
-            background: 'white',
-            border: `1px solid ${T.borderDark}`,
-            borderRadius: 3,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-            padding: '14px 16px',
-            width: 480,
-            maxHeight: '70vh',
-            overflowY: 'auto',
-            fontSize: '12px',
-            lineHeight: 1.75,
-            color: T.textPrimary,
-            fontFamily: T.fontSans,
-          }}
-        >
+        <div ref={panelRef} style={panelStyle}>
           {title && (
             <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>
               {title}

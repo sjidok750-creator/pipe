@@ -283,31 +283,41 @@ function FlowEdge({
   )
 }
 
-// ── 범례 ────────────────────────────────────────────────────
-function Legend({ x, y }: { x: number; y: number }) {
-  const items = [
-    { color: '#edf2f8', stroke: '#9aaccb', label: '입력 파라미터' },
-    { color: '#f4f7fb', stroke: T.bgActive, label: '계산 단계' },
-    { color: T.bgWarn,  stroke: '#c8900a', label: '판정 분기' },
-    { color: T.bgOK,    stroke: T.textOK,  label: 'O.K.' },
-    { color: T.bgNG,    stroke: T.textNG,  label: 'N.G.' },
-  ]
+// ── 범례 (SVG 외부 HTML 가로바) ─────────────────────────────
+const LEGEND_ITEMS = [
+  { color: '#edf2f8', stroke: '#9aaccb', label: '입력 파라미터' },
+  { color: '#f4f7fb', stroke: T.bgActive, label: '계산 단계' },
+  { color: T.bgWarn,  stroke: '#c8900a', label: '판정 분기' },
+  { color: T.bgOK,    stroke: T.textOK,  label: 'O.K.' },
+  { color: T.bgNG,    stroke: T.textNG,  label: 'N.G.' },
+]
+
+function FlowLegend() {
   return (
-    <g transform={`translate(${x},${y})`}>
-      <rect x={0} y={0} width={128} height={items.length * 16 + 10} rx={3}
-        fill="white" stroke={T.border} strokeWidth={1} opacity={0.92} />
-      <text x={64} y={13} textAnchor="middle" fontSize={9} fontWeight={700}
-        fill={T.textAccent} fontFamily={T.fontSans}>범 례</text>
-      {items.map((item, i) => (
-        <g key={i} transform={`translate(6, ${18 + i * 16})`}>
-          <rect x={0} y={0} width={14} height={11} rx={2}
-            fill={item.color} stroke={item.stroke} strokeWidth={1} />
-          <text x={20} y={9.5} fontSize={8.5} fill={T.textLabel} fontFamily={T.fontSans}>
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 18,
+      padding: '5px 14px',
+      background: '#f7f9fb',
+      border: `1px solid ${T.borderLight}`,
+      borderTop: 'none',
+      borderRadius: '0 0 4px 4px',
+      flexWrap: 'wrap',
+    }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: T.textAccent, fontFamily: T.fontSans, letterSpacing: 0.5 }}>
+        범례
+      </span>
+      {LEGEND_ITEMS.map((item, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <div style={{
+            width: 16, height: 11, borderRadius: 2, flexShrink: 0,
+            background: item.color, border: `1.5px solid ${item.stroke}`,
+          }} />
+          <span style={{ fontSize: 10, color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>
             {item.label}
-          </text>
-        </g>
+          </span>
+        </div>
       ))}
-    </g>
+    </div>
   )
 }
 
@@ -327,14 +337,12 @@ export default function FlowChartSVG({ spec }: { spec: FlowSpec }) {
           fontFamily: T.fontSans,
           background: '#fafbfc',
           border: `1px solid ${T.borderLight}`,
-          borderRadius: 4,
+          borderRadius: spec.legend ? '4px 4px 0 0' : 4,
           display: 'block',
-          maxHeight: 960,
         }}
       >
         <Markers />
 
-        {/* 배경 그리드 (선택) */}
         <rect x={0} y={0} width={W} height={H} fill="#fafbfc" />
 
         {/* 제목 */}
@@ -359,12 +367,10 @@ export default function FlowChartSVG({ spec }: { spec: FlowSpec }) {
         {nodes.map(n => (
           <FlowNode key={n.id} node={n} />
         ))}
-
-        {/* 범례 */}
-        {spec.legend && (
-          <Legend x={W - 140} y={H - 110} />
-        )}
       </svg>
+
+      {/* 범례 — SVG 외부 가로바 */}
+      {spec.legend && <FlowLegend />}
     </div>
   )
 }
