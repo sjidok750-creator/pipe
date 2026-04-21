@@ -434,17 +434,25 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
         onClick={handleClick}
         title="설명 보기"
         style={{
-          width: 18, height: 18, borderRadius: '50%',
-          border: `1px solid ${T.bgActive}`,
-          background: open ? T.bgActive : T.bgPanel,
-          color: open ? 'white' : T.bgActive,
-          fontSize: '11px', fontWeight: 700, lineHeight: '16px',
-          cursor: 'pointer', padding: 0,
-          fontFamily: T.fontSans,
+          display: 'inline-flex', alignItems: 'center',
+          padding: '1px 7px',
+          borderRadius: 3,
+          border: 'none',
+          background: open ? '#0f1c2e' : '#1e2b3a',
+          color: open ? '#ffb3c1' : '#e8909f',
+          fontSize: '10px', fontWeight: 600,
+          fontFamily: T.fontMono,
+          fontStyle: 'italic',
+          letterSpacing: '0.04em',
+          lineHeight: '16px',
+          cursor: 'pointer',
           flexShrink: 0,
+          whiteSpace: 'nowrap',
+          transition: 'background 0.12s, color 0.12s',
+          boxShadow: open ? 'inset 0 0 0 1px #e8909f44' : 'none',
         }}
       >
-        ⓘ
+        Expl.
       </button>
       {open && createPortal(
         <div ref={panelRef} style={panelStyle}>
