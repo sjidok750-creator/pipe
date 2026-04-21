@@ -749,7 +749,7 @@ export default function SeismicDetailInputPage() {
         {/* 응답변위법 개념도 */}
         <EngPanel title="매설관로 응답변위법 개념도  (평가요령 부록 C)">
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-            <BuriedPipeResponseSVG width={300} height={120}/>
+            <BuriedPipeResponseSVG width={300} height={160}/>
           </div>
           <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.7, marginTop: 4 }}>
             지반변위(실선) → 관로 변형(점선) → 이음부/관체 응력 산정<br/>
