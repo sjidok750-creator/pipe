@@ -127,14 +127,14 @@ export function ResponseSpectrumSVG({
         </g>
       ))}
 
-      {/* ── Tg (관로·지반 고유주기) ── */}
+      {/* ── Ts,pipe (표층지반 응답주기 = 1.25×TG) ── */}
       {Ts > 0 && Ts <= maxT && (
         <g>
           <line x1={tx(Ts)} y1={py} x2={tx(Ts)} y2={py + gh}
             stroke="#c0392b" strokeWidth="1.3" strokeDasharray="4 2" />
           <text x={tx(Ts) + 3} y={py + 10}
             fontSize="7.5" fill="#c0392b" fontFamily={T.fontMono}>
-            Tg={Ts.toFixed(2)}
+            Ts,pipe={Ts.toFixed(2)}
           </text>
         </g>
       )}
