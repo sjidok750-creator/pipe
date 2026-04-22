@@ -16,7 +16,7 @@ function Markers() {
         <polygon points="0,0.5 7.5,3 0,5.5" fill={T.textNG}/>
       </marker>
       <filter id="fc-shadow" x="-10%" y="-10%" width="120%" height="140%">
-        <feDropShadow dx="0" dy="1.5" stdDeviation="2" floodColor="rgba(0,30,60,0.10)"/>
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" floodColor="rgba(0,30,60,0.10)"/>
       </filter>
     </defs>
   )
@@ -35,8 +35,8 @@ function getPt(node: NodeSpec, side: string): [number, number] {
   }
 }
 
-// ── SVG 경로 문자열 생성 (모서리 라운딩 처리) ───────────────
-const CR = 7 // corner radius
+// ── SVG 경로 문자열 생성 ───────────────────────────────────
+const CR = 6
 
 function buildPath(
   [ax, ay]: [number, number],
@@ -45,7 +45,6 @@ function buildPath(
   viaY?: number,
 ): string {
   if (viaX !== undefined && viaY === undefined) {
-    // H → V → H routing
     const sAV = viaX >= ax ? 1 : -1
     const sVY = by >= ay ? 1 : -1
     const sVB = bx >= viaX ? 1 : -1
@@ -62,7 +61,6 @@ function buildPath(
     )
   }
   if (viaY !== undefined && viaX === undefined) {
-    // V → H → V routing
     const sAV = viaY >= ay ? 1 : -1
     const sVX = bx >= ax ? 1 : -1
     const sVB = by >= viaY ? 1 : -1
@@ -81,7 +79,6 @@ function buildPath(
   if (Math.abs(ax - bx) < 2) {
     return `M ${ax} ${ay} L ${bx} ${by}`
   }
-  // L-shape via midY with rounded corners
   const midY = (ay + by) / 2
   const sY1 = midY >= ay ? 1 : -1
   const sX  = bx >= ax ? 1 : -1
@@ -98,22 +95,22 @@ function buildPath(
   )
 }
 
-// ── 노드 색상 결정 ──────────────────────────────────────────
+// ── 노드 색상 ──────────────────────────────────────────────
 function nodeColors(node: NodeSpec): { fill: string; stroke: string; text: string } {
-  if (node.emphasis === 'ok')   return { fill: T.bgOK,      stroke: T.textOK,      text: T.textOK }
-  if (node.emphasis === 'ng')   return { fill: T.bgNG,      stroke: T.textNG,      text: T.textNG }
-  if (node.emphasis === 'info') return { fill: '#e8f0ff',   stroke: '#3060c0',     text: '#1a3060' }
+  if (node.emphasis === 'ok')   return { fill: T.bgOK,    stroke: T.textOK,    text: T.textOK }
+  if (node.emphasis === 'ng')   return { fill: T.bgNG,    stroke: T.textNG,    text: T.textNG }
+  if (node.emphasis === 'info') return { fill: '#e8f0ff', stroke: '#3060c0',   text: '#1a3060' }
   switch (node.kind) {
-    case 'terminal':   return { fill: T.bgHeader,   stroke: T.bgHeader,    text: 'white' }
-    case 'input':      return { fill: '#edf2f8',    stroke: '#9aaccb',     text: T.textLabel }
-    case 'decision':   return { fill: T.bgWarn,     stroke: '#c8900a',     text: '#5a4000' }
-    case 'output':     return { fill: T.bgPanel,    stroke: T.bgActive,    text: T.textAccent }
-    case 'subprocess': return { fill: '#f0f4ff',    stroke: '#6080c0',     text: T.textPrimary }
-    default:           return { fill: '#f4f7fb',    stroke: T.bgActive,    text: T.textPrimary }
+    case 'terminal':   return { fill: T.bgHeader,  stroke: T.bgHeader,  text: 'white' }
+    case 'input':      return { fill: '#edf2f8',   stroke: '#9aaccb',   text: T.textLabel }
+    case 'decision':   return { fill: T.bgWarn,    stroke: '#c8900a',   text: '#5a4000' }
+    case 'output':     return { fill: T.bgPanel,   stroke: T.bgActive,  text: T.textAccent }
+    case 'subprocess': return { fill: '#f0f4ff',   stroke: '#6080c0',   text: T.textPrimary }
+    default:           return { fill: '#f4f7fb',   stroke: T.bgActive,  text: T.textPrimary }
   }
 }
 
-// ── 개별 노드 렌더링 ────────────────────────────────────────
+// ── 개별 노드 렌더링 (foreignObject로 텍스트 자동 줄바꿈) ──
 function FlowNode({ node }: { node: NodeSpec }) {
   const W = node.w ?? 160
   const H = node.h ?? 50
@@ -153,7 +150,7 @@ function FlowNode({ node }: { node: NodeSpec }) {
         </g>
       )
       break
-    default: // process, input
+    default:
       shape = (
         <rect x={lx} y={ty} width={W} height={H}
           rx={node.kind === 'process' ? 5 : 3}
@@ -162,64 +159,95 @@ function FlowNode({ node }: { node: NodeSpec }) {
       )
   }
 
-  // 텍스트 Y 위치
-  const hasSub  = !!node.sub
-  const hasSub2 = !!node.sub2
-  let titleY: number
-  if (hasSub && hasSub2) titleY = node.y - 12
-  else if (hasSub)       titleY = node.y - 7
-  else                   titleY = node.y + 4
+  // decision 노드는 대각선 모양이라 foreignObject 영역이 작으므로 별도 처리
+  const isDecision = node.kind === 'decision'
+  const foPad = isDecision ? 20 : (node.kind === 'terminal' ? 16 : 8)
+  const foW = W - foPad * 2
+  const foX = lx + foPad
+  // codeRef 태그 높이 예약
+  const codeH = node.codeRef ? 14 : 0
+  const foH = H - codeH - (isDecision ? 10 : 4)
+  const foY = ty + (isDecision ? 5 : 2)
+
+  const titleSize  = node.kind === 'terminal' ? 10.5 : 10
+  const subSize    = 8
 
   return (
     <g>
       {shape}
 
-      {/* 타이틀 */}
-      <text
-        x={node.x} y={titleY}
-        textAnchor="middle"
-        fontSize={node.kind === 'terminal' ? 11.5 : 11}
-        fontWeight={700}
-        fill={text}
-        fontFamily={T.fontSans}
-      >
-        {node.title}
-      </text>
-
-      {/* 수식/서브텍스트 */}
-      {hasSub && (
-        <text
-          x={node.x} y={node.y + (hasSub2 ? 4 : 8)}
-          textAnchor="middle" fontSize={8.5}
-          fill={node.kind === 'terminal' ? 'rgba(255,255,255,0.8)' : T.textMuted}
-          fontFamily={T.fontMono}
+      {/* foreignObject: HTML 텍스트 자동 줄바꿈 */}
+      <foreignObject x={foX} y={foY} width={foW} height={foH}>
+        <div
+          // @ts-ignore
+          xmlns="http://www.w3.org/1999/xhtml"
+          style={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+          }}
         >
-          {node.sub}
-        </text>
-      )}
-      {hasSub2 && (
-        <text
-          x={node.x} y={node.y + 16}
-          textAnchor="middle" fontSize={8.5}
-          fill={T.textMuted} fontFamily={T.fontMono}
-        >
-          {node.sub2}
-        </text>
-      )}
+          <div style={{
+            fontSize: titleSize,
+            fontWeight: 700,
+            color: text,
+            fontFamily: T.fontSans,
+            textAlign: 'center',
+            lineHeight: 1.25,
+            wordBreak: 'keep-all',
+            overflowWrap: 'break-word',
+          }}>
+            {node.title}
+          </div>
+          {node.sub && (
+            <div style={{
+              fontSize: subSize,
+              color: node.kind === 'terminal' ? 'rgba(255,255,255,0.75)' : T.textMuted,
+              fontFamily: T.fontMono,
+              textAlign: 'center',
+              lineHeight: 1.2,
+              marginTop: 2,
+              wordBreak: 'break-all',
+              overflowWrap: 'break-word',
+            }}>
+              {node.sub}
+            </div>
+          )}
+          {node.sub2 && (
+            <div style={{
+              fontSize: subSize,
+              color: T.textMuted,
+              fontFamily: T.fontMono,
+              textAlign: 'center',
+              lineHeight: 1.2,
+              marginTop: 1,
+              wordBreak: 'break-all',
+              overflowWrap: 'break-word',
+            }}>
+              {node.sub2}
+            </div>
+          )}
+        </div>
+      </foreignObject>
 
       {/* KDS 기준 태그 (우하단) */}
       {node.codeRef && (
         <>
           <rect
-            x={lx + W - Math.min(node.codeRef.length * 6 + 6, 90)}
-            y={ty + H - 13}
-            width={Math.min(node.codeRef.length * 6 + 6, 90)}
-            height={12}
-            rx={2} fill={T.bgHeader} opacity={0.9}
+            x={lx + W - Math.min(node.codeRef.length * 5.8 + 6, 96)}
+            y={ty + H - 14}
+            width={Math.min(node.codeRef.length * 5.8 + 6, 96)}
+            height={13}
+            rx={2} fill={T.bgHeader} opacity={0.88}
           />
           <text
             x={lx + W - 3} y={ty + H - 4}
-            textAnchor="end" fontSize={7.5}
+            textAnchor="end" fontSize={7}
             fill="white" fontFamily={T.fontMono}
           >
             {node.codeRef}
@@ -230,52 +258,35 @@ function FlowNode({ node }: { node: NodeSpec }) {
   )
 }
 
-// ── 엣지 (연결선) 렌더링 ────────────────────────────────────
-function FlowEdge({
-  edge,
-  nodeMap,
-}: {
-  edge: EdgeSpec
-  nodeMap: Map<string, NodeSpec>
-}) {
+// ── 엣지 렌더링 ────────────────────────────────────────────
+function FlowEdge({ edge, nodeMap }: { edge: EdgeSpec; nodeMap: Map<string, NodeSpec> }) {
   const from = nodeMap.get(edge.from)
   const to   = nodeMap.get(edge.to)
   if (!from || !to) return null
 
   const fromPt = getPt(from, edge.fromSide ?? 'bottom')
   const toPt   = getPt(to,   edge.toSide   ?? 'top')
-
   const d = buildPath(fromPt, toPt, edge.viaX, edge.viaY)
 
-  const colorMap = { default: '#666', ok: T.textOK, ng: T.textNG }
+  const colorMap = { default: '#6a7a8a', ok: T.textOK, ng: T.textNG }
   const color  = colorMap[edge.color ?? 'default']
   const marker = edge.color === 'ok' ? 'url(#fc-arOK)' : edge.color === 'ng' ? 'url(#fc-arNG)' : 'url(#fc-ar)'
   const dash   = edge.kind === 'dashed' ? '5,3' : undefined
 
-  // 라벨 위치: fromPt 근처
   const lx = fromPt[0] + (edge.labelDx ?? 4)
   const ly = fromPt[1] + (edge.labelDy ?? 13)
 
   return (
     <>
       <path
-        d={d}
-        stroke={color}
-        strokeWidth={edge.color === 'ok' || edge.color === 'ng' ? 1.7 : 1.5}
-        fill="none"
-        strokeDasharray={dash}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+        d={d} stroke={color}
+        strokeWidth={edge.color === 'ok' || edge.color === 'ng' ? 1.7 : 1.4}
+        fill="none" strokeDasharray={dash}
+        strokeLinecap="round" strokeLinejoin="round"
         markerEnd={marker}
       />
       {edge.label && (
-        <text
-          x={lx} y={ly}
-          fontSize={9.5}
-          fontWeight={700}
-          fill={color}
-          fontFamily={T.fontMono}
-        >
+        <text x={lx} y={ly} fontSize={9} fontWeight={700} fill={color} fontFamily={T.fontMono}>
           {edge.label}
         </text>
       )}
@@ -283,7 +294,7 @@ function FlowEdge({
   )
 }
 
-// ── 범례 (SVG 외부 HTML 가로바) ─────────────────────────────
+// ── 범례 ───────────────────────────────────────────────────
 const LEGEND_ITEMS = [
   { color: '#edf2f8', stroke: '#9aaccb', label: '입력 파라미터' },
   { color: '#f4f7fb', stroke: T.bgActive, label: '계산 단계' },
@@ -295,21 +306,19 @@ const LEGEND_ITEMS = [
 function FlowLegend() {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 18,
-      padding: '5px 14px',
+      display: 'flex', alignItems: 'center', gap: 14,
+      padding: '5px 12px',
       background: '#f7f9fb',
       border: `1px solid ${T.borderLight}`,
       borderTop: 'none',
       borderRadius: '0 0 4px 4px',
       flexWrap: 'wrap',
     }}>
-      <span style={{ fontSize: 10, fontWeight: 700, color: T.textAccent, fontFamily: T.fontSans, letterSpacing: 0.5 }}>
-        범례
-      </span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: T.textAccent, fontFamily: T.fontSans }}>범례</span>
       {LEGEND_ITEMS.map((item, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <div style={{
-            width: 16, height: 11, borderRadius: 2, flexShrink: 0,
+            width: 14, height: 10, borderRadius: 2, flexShrink: 0,
             background: item.color, border: `1.5px solid ${item.stroke}`,
           }} />
           <span style={{ fontSize: 10, color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>
@@ -321,13 +330,13 @@ function FlowLegend() {
   )
 }
 
-// ── 메인 FlowChartSVG 컴포넌트 ─────────────────────────────
+// ── 메인 FlowChartSVG ──────────────────────────────────────
 export default function FlowChartSVG({ spec }: { spec: FlowSpec }) {
   const { width: W, height: H, nodes, edges } = spec
   const nodeMap = new Map(nodes.map(n => [n.id, n]))
 
   return (
-    <div style={{ overflowX: 'auto' }}>
+    <div style={{ maxWidth: 620, margin: '0 auto' }}>
       <svg
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
@@ -342,34 +351,20 @@ export default function FlowChartSVG({ spec }: { spec: FlowSpec }) {
         }}
       >
         <Markers />
-
         <rect x={0} y={0} width={W} height={H} fill="#fafbfc" />
 
         {/* 제목 */}
         <text
-          x={W / 2} y={22}
-          textAnchor="middle"
-          fontSize={12}
-          fontWeight={700}
-          fill={T.textAccent}
-          fontFamily={T.fontSans}
-          letterSpacing={0.3}
+          x={W / 2} y={18}
+          textAnchor="middle" fontSize={10.5} fontWeight={700}
+          fill={T.textAccent} fontFamily={T.fontSans} letterSpacing={0.2}
         >
           {spec.title}
         </text>
 
-        {/* 엣지 (노드 아래에 그려짐) */}
-        {edges.map((e, i) => (
-          <FlowEdge key={i} edge={e} nodeMap={nodeMap} />
-        ))}
-
-        {/* 노드 */}
-        {nodes.map(n => (
-          <FlowNode key={n.id} node={n} />
-        ))}
+        {edges.map((e, i) => <FlowEdge key={i} edge={e} nodeMap={nodeMap} />)}
+        {nodes.map(n => <FlowNode key={n.id} node={n} />)}
       </svg>
-
-      {/* 범례 — SVG 외부 가로바 */}
       {spec.legend && <FlowLegend />}
     </div>
   )
