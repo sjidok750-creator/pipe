@@ -38,6 +38,13 @@ const DEFAULT_DETAIL = {
   D_out: 322,
   P: 0.5,
   hCover: 1.5,
+  // 탄성계수 직접 입력
+  E_manual: false,         // true: 직접입력, false: 관종 자동
+  E_steel: 206000,         // MPa (강관 기본값)
+  E_ductile: 170000,       // MPa (덕타일 주철관 기본값)
+  // 차량하중 및 지반반력계수
+  Pm: 0,                   // kN/輪 (후륜 1륜 하중, 0=차량없음)
+  Kv: 0,                   // kN/m³ (연직방향 지반반력계수, 0=자동)
   // 분절관
   Lj: 6,
   isSeismicJoint: false,
@@ -91,6 +98,8 @@ function calcDetail(inp) {
     pipeType, zone, seismicGrade, soilType,
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
     deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
+    E_manual, E_steel, E_ductile,
+    Pm, Kv,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
   const I_seismic = RISK_FACTOR[seismicGrade === 'I' ? 1000 : 500]
@@ -99,12 +108,21 @@ function calcDetail(inp) {
   const Fv_table = ampEntry?.Fv ?? [1.0, 1.0, 1.0]
   const z_pipe = hCover + D_out / 1000 / 2
 
+  // 탄성계수: 직접입력 or 관종 자동
+  const E_default_seg  = 170000  // 덕타일 주철관 (MPa)
+  const E_default_cont = 206000  // 강관 (MPa)
+  const E_use = E_manual
+    ? (pipeType === 'segmented' ? (E_ductile ?? E_default_seg) : (E_steel ?? E_default_cont))
+    : (pipeType === 'segmented' ? E_default_seg : E_default_cont)
+
   if (pipeType === 'segmented') {
     return evalSegmented({
       DN, t: thickness, D: D_out,
       Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
-      Lj, h_cover: hCover, z_pipe, isSeismicJoint,
+      l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
+      E: E_use,
+      Pm: Pm ?? 0, Kv: Kv ?? 0,
     })
   } else {
     return evalContinuous({
@@ -113,6 +131,8 @@ function calcDetail(inp) {
       layers, Vbs, P,
       deltaT, D_settle, L_settle, strainCriterion,
       h_cover: hCover, z_pipe,
+      E: E_use,
+      Pm: Pm ?? 0, Kv: Kv ?? 0,
     })
   }
 }

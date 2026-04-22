@@ -422,6 +422,213 @@ export default function SeismicDetailInputPage() {
             <EngInput value={inp.hCover} onChange={v => set({ hCover: parseFloat(v)||1.5 })} min={0.3} step={0.1} width={90}/>
           </EngRow>
 
+          {/* 탄성계수 */}
+          <EngDivider label="탄성계수"/>
+          <EngRow label="입력 방식" popover={
+            <EngPopover title="탄성계수 E 입력 방식">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>KS D 3565 (강관) / KS D 4311 (덕타일 주철관)</strong>
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  탄성계수 E는 지진 축응력·변형률, 이음부 신축량, 파장 등 핵심 계산 전반에 사용됨.<br/>
+                  <b>자동(관종 기본값)</b> 선택 시 관종에 따라 아래 표준값이 적용됨:
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+                  <thead>
+                    <tr style={{ background: '#f0f4f8' }}>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>표준 E 값</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>근거</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>강관 (연속관)</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>206,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 3565 / 지침 예제</td>
+                    </tr>
+                    <tr style={{ background: '#fafafa' }}>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>덕타일 주철관 (분절관)</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>170,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 4311 / 지침 예제</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  스크린샷에서 본 타 프로그램은 E를 직접 입력.<br/>
+                  특수 강종(SS490, SM490 등) 사용 시 직접입력 선택.
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngRadio
+              options={[
+                { key: 'auto',   label: `자동  (${inp.pipeType === 'segmented' ? '170,000' : '206,000'} MPa)` },
+                { key: 'manual', label: '직접 입력' },
+              ]}
+              value={inp.E_manual ? 'manual' : 'auto'}
+              onChange={v => set({ E_manual: v === 'manual' })}
+            />
+          </EngRow>
+          {inp.E_manual && (
+            <EngRow label="E" unit="MPa" popover={
+              <EngPopover title="탄성계수 E (직접 입력)">
+                <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                  <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                    <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
+                  </div>
+                  <div style={{ fontSize: 11 }}>
+                    관의 탄성계수(Young's Modulus). 지침 부록C 예제 기준값:
+                  </div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+                    <thead>
+                      <tr style={{ background: '#f0f4f8' }}>
+                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
+                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (MPa)</th>
+                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (kN/m²)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        ['강관 SS400', '206,000', '206,000,000'],
+                        ['강관 SS490/SM490', '206,000', '206,000,000'],
+                        ['덕타일 주철관', '170,000', '170,000,000'],
+                        ['주철관 (회주철)', '100,000~150,000', '—'],
+                      ].map(([m, e, ek], i) => (
+                        <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{m}</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{e}</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono, fontSize: 10 }}>{ek}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div style={{ marginTop: 6, padding: '4px 8px', background: '#e8f0fb', border: '1px solid #5b9bd5', borderRadius: 2, fontSize: 10 }}>
+                    E는 단면적 A, 단면2차모멘트 I와 함께 지반-관 상호작용 파라미터<br/>
+                    λ1 = ⁴√(K1/EA), λ2 = ⁴√(K2/EI) 산정에 직접 사용됨.
+                  </div>
+                </div>
+              </EngPopover>
+            }>
+              <EngInput
+                value={inp.pipeType === 'segmented' ? (inp.E_ductile ?? 170000) : (inp.E_steel ?? 206000)}
+                onChange={v => {
+                  const val = parseFloat(v) || (inp.pipeType === 'segmented' ? 170000 : 206000)
+                  inp.pipeType === 'segmented'
+                    ? set({ E_ductile: val })
+                    : set({ E_steel: val })
+                }}
+                min={50000} max={300000} step={1000} width={110}
+              />
+            </EngRow>
+          )}
+
+          {/* 차량하중 및 지반반력계수 */}
+          <EngDivider label="차량하중 · 지반반력계수"/>
+          <EngRow label="차량하중 Pm" unit="kN/輪" popover={
+            <EngPopover title="차량하중 Pm (후륜 1輪당 하중)">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                  지침 필수 하중 조합 항목 — σ_total = σ_i + σ_o + σ_x (분절관)
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  차량이 관 위를 통과할 때 발생하는 차량하중 Wm을 산정하기 위한 입력값.<br/>
+                  도로 매설 구간 적용. 차량 없는 구간(비도로, 전용 부지)은 0 입력.
+                </div>
+                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
+                  Wm = Pm × (1+i) × b × a / (b+2h)(a+2h)  [kN/m]<br/>
+                  σ_o = 0.322 × Wm × (EI/KvD)^0.25 / Z  [kN/m²]
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+                  <thead>
+                    <tr style={{ background: '#f0f4f8' }}>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>설계차량</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Pm (kN/輪)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-24 (후륜 1輪)</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>96</td>
+                    </tr>
+                    <tr style={{ background: '#fafafa' }}>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-13.5 (후륜 1輪)</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>54</td>
+                    </tr>
+                    <tr>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>차량 없음</td>
+                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fee2e2', border: '1px solid #ef4444', borderRadius: 2, fontSize: 10 }}>
+                  <strong>주의:</strong> 이전 버전에서 σ_o가 0으로 처리되던 원인이 바로 Pm=0 미입력.<br/>
+                  도로 매설 구간에서 Pm=0 입력 시 σ_o가 누락되어 <b>과소 평가(불안전 측)</b> 됨.
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngInput value={inp.Pm ?? 0} onChange={v => set({ Pm: parseFloat(v)||0 })} min={0} step={1} width={90}/>
+            <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
+              {(inp.Pm ?? 0) === 0 ? '차량 없음' : `DB 하중 적용`}
+            </span>
+          </EngRow>
+          <EngRow label="지반반력계수 Kv" unit="kN/m³" popover={
+            <EngPopover title="연직방향 지반반력계수 Kv">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                  Winkler 탄성지반 위 보 모델의 지반 스프링 상수
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  차량하중 Pm &gt; 0인 경우 반드시 입력.<br/>
+                  σ_o 산정에서 <b>관의 처짐량을 결정하는 핵심 파라미터</b>.<br/>
+                  Kv가 클수록 지반이 단단하고 처짐이 작아 σ_o가 감소.
+                </div>
+                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
+                  σ_o ∝ (EI / Kv·D)^0.25<br/>
+                  Kv ↑ → σ_o ↓  (지반이 단단할수록 유리)
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+                  <thead>
+                    <tr style={{ background: '#f0f4f8' }}>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Kv 범위 (kN/m³)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['연약 점토 (N < 4)',       '500 ~ 1,000'],
+                      ['보통 점토 (N = 4~8)',     '1,000 ~ 2,000'],
+                      ['굳은 점토 (N > 8)',       '1,500 ~ 3,000'],
+                      ['느슨한 모래 (N < 10)',    '1,000 ~ 2,500'],
+                      ['중간 모래 (N = 10~30)',   '2,500 ~ 8,000'],
+                      ['조밀한 모래·자갈 (N>30)', '8,000 ~ 25,000'],
+                    ].map(([g, k], i) => (
+                      <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{g}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{k}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  지침 예제 역산값: Kv ≈ 1,848 kN/m³ (굳은 점토)<br/>
+                  지반조사 자료 없는 경우 지반종류에 따른 하한값 적용 권장 (보수적).
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={90}/>
+            {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
+              <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans, marginLeft: 4 }}>
+                ※ Kv 입력 필요
+              </span>
+            )}
+          </EngRow>
+
           {/* 분절관 추가 입력 */}
           {inp.pipeType === 'segmented' && (
             <>
