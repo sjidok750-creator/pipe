@@ -452,10 +452,155 @@ export default function SeismicDetailReportPage() {
           </FormulaRow>
         </FormulaBlock>
 
-        {/* ② 속도응답스펙트럼 */}
+        {/* ② 속도응답스펙트럼 + 감쇠보정계수 */}
         <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
-          ② 기반면에서의 설계속도응답스펙트럼 (S<sub>v</sub>) 산정
+          ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (η) 산정
         </div>
+
+        {/* 삽도: 기반암 표준 속도응답스펙트럼 */}
+        {(() => {
+          const S_val   = rs.S ?? 0.154
+          const T_A     = rs.T_A ?? 0.06
+          const T_B     = rs.T_B ?? 0.3
+          const Sas_val = S_val * 2.5          // 암반 기준 단주기 스펙트럼가속도
+          const g       = 9.81
+          // 붕괴방지 η
+          const eta_c = Math.sqrt(10 / (5 + 20))
+          // 기능수행 η
+          const eta_f = Math.sqrt(10 / (5 + 10))
+          // Sv 플래토 (감쇠보정 후)
+          const Sv_plateau_c = Sas_val * g * T_B / (2 * Math.PI) * eta_c
+          const Sv_plateau_f = Sas_val * g * T_B / (2 * Math.PI) * eta_f
+          // SVG 그래프
+          const W = 420, H = 180
+          const ml = 52, mr = 16, mt = 24, mb = 36
+          const gW = W - ml - mr, gH = H - mt - mb
+          const T_MAX = 4.0
+          const SV_MAX = Math.max(Sv_plateau_c, Sv_plateau_f) * 1.5
+          const tx = (t: number) => ml + (t / T_MAX) * gW
+          const ty = (sv: number) => mt + gH - (sv / SV_MAX) * gH
+          // 곡선 포인트 생성
+          const pts = (eta: number) => {
+            const plateau = Sas_val * g * T_B / (2 * Math.PI) * eta
+            const svAt = (t: number) => {
+              if (t <= T_A) return Sas_val * g * t / (2 * Math.PI) * (0.4 + 0.6 * t / T_A) * eta
+              if (t <= T_B) return Sas_val * g * t / (2 * Math.PI) * eta
+              return plateau * T_B / t  // Ts > T_B: Sv = plateau × T_B / T (감소)
+            }
+            const ts = [0, T_A, T_B, ...Array.from({length: 36}, (_, i) => T_B + (T_MAX - T_B) * (i + 1) / 36)]
+            return ts.map(t => `${tx(t).toFixed(1)},${ty(svAt(t)).toFixed(1)}`).join(' ')
+          }
+          const Ts_val = rs.Ts ?? 0
+          // 현재 Ts에서의 Sv값 (붕괴, 기능)
+          const svAtTs = (eta: number) => {
+            const plateau = Sas_val * g * T_B / (2 * Math.PI) * eta
+            if (Ts_val <= T_A) return Sas_val * g * Ts_val / (2 * Math.PI) * (0.4 + 0.6 * Ts_val / T_A) * eta
+            if (Ts_val <= T_B) return Sas_val * g * Ts_val / (2 * Math.PI) * eta
+            return plateau
+          }
+          const yAxisVals = [0, SV_MAX * 0.25, SV_MAX * 0.5, SV_MAX * 0.75, SV_MAX].map(v => v)
+          return (
+            <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 8 }}>
+              <svg width={W} height={H} style={{ border: '1px solid #ccc', background: 'white', flexShrink: 0 }}>
+                {/* 격자 */}
+                {yAxisVals.map((v, i) => (
+                  <line key={i} x1={ml} y1={ty(v)} x2={ml + gW} y2={ty(v)} stroke="#e8e8e8" strokeWidth={1}/>
+                ))}
+                {[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4].map((t, i) => (
+                  <line key={i} x1={tx(t)} y1={mt} x2={tx(t)} y2={mt + gH} stroke="#e8e8e8" strokeWidth={1}/>
+                ))}
+                {/* 축 */}
+                <line x1={ml} y1={mt} x2={ml} y2={mt + gH} stroke="#333" strokeWidth={1.5}/>
+                <line x1={ml} y1={mt + gH} x2={ml + gW} y2={mt + gH} stroke="#333" strokeWidth={1.5}/>
+                {/* Y축 눈금/레이블 */}
+                {yAxisVals.map((v, i) => (
+                  <g key={i}>
+                    <line x1={ml - 3} y1={ty(v)} x2={ml} y2={ty(v)} stroke="#333" strokeWidth={1}/>
+                    <text x={ml - 5} y={ty(v) + 3} textAnchor="end" fontSize={8} fill="#333">{v.toFixed(2)}</text>
+                  </g>
+                ))}
+                {/* X축 눈금/레이블 */}
+                {[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4].map((t, i) => (
+                  <g key={i}>
+                    <line x1={tx(t)} y1={mt + gH} x2={tx(t)} y2={mt + gH + 3} stroke="#333" strokeWidth={1}/>
+                    <text x={tx(t)} y={mt + gH + 12} textAnchor="middle" fontSize={8} fill="#333">{t}</text>
+                  </g>
+                ))}
+                {/* 축 제목 */}
+                <text x={ml + gW / 2} y={H - 4} textAnchor="middle" fontSize={9} fill="#333">Natural Period (Ts, sec)</text>
+                <text x={10} y={mt + gH / 2} textAnchor="middle" fontSize={9} fill="#333" transform={`rotate(-90, 10, ${mt + gH / 2})`}>Sv (m/s)</text>
+                <text x={ml + gW / 2} y={mt - 8} textAnchor="middle" fontSize={10} fontWeight="bold" fill={NAVY}>Standard Velocity Response Spectrum</text>
+                {/* 붕괴방지 곡선 (실선) */}
+                <polyline points={pts(eta_c)} fill="none" stroke="#1a3a5c" strokeWidth={1.8}/>
+                {/* 기능수행 곡선 (점선) */}
+                <polyline points={pts(eta_f)} fill="none" stroke="#1a3a5c" strokeWidth={1.2} strokeDasharray="5,3"/>
+                {/* 플래토 값 레이블 */}
+                <text x={tx(T_B) + 4} y={ty(Sv_plateau_c) - 3} fontSize={8} fill="#1a3a5c" fontWeight="bold">{Sv_plateau_c.toFixed(4)}</text>
+                <text x={tx(T_B) + 4} y={ty(Sv_plateau_f) - 3} fontSize={8} fill="#555">{Sv_plateau_f.toFixed(4)}</text>
+                {/* Ts 수직선 */}
+                {Ts_val > 0 && (
+                  <line x1={tx(Ts_val)} y1={mt} x2={tx(Ts_val)} y2={mt + gH} stroke="#e03" strokeWidth={1} strokeDasharray="3,2"/>
+                )}
+                {/* 범례 */}
+                <rect x={ml + gW - 100} y={mt + 6} width={96} height={34} fill="white" stroke="#ccc" strokeWidth={1}/>
+                <line x1={ml + gW - 94} y1={mt + 16} x2={ml + gW - 78} y2={mt + 16} stroke="#1a3a5c" strokeWidth={1.8}/>
+                <text x={ml + gW - 74} y={mt + 19} fontSize={8} fill="#333">붕괴방지수준</text>
+                <line x1={ml + gW - 94} y1={mt + 30} x2={ml + gW - 78} y2={mt + 30} stroke="#1a3a5c" strokeWidth={1.2} strokeDasharray="5,3"/>
+                <text x={ml + gW - 74} y={mt + 33} fontSize={8} fill="#333">기능수행수준</text>
+              </svg>
+
+              {/* 우측: Sv 표 */}
+              <table style={{ ...TABLE, fontSize: 9.5, width: 'auto' }}>
+                <thead>
+                  <tr>
+                    <th style={{ ...TH, fontSize: 9 }} colSpan={2}>설계속도응답스펙트럼</th>
+                    <th style={{ ...TH, fontSize: 9 }}>기능수행<br/>S<sub>v</sub> (m/s)</th>
+                    <th style={{ ...TH, fontSize: 9 }}>붕괴방지<br/>S<sub>v</sub> (m/s)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ['0 ≤ Ts < 0.06', 'Sv = (1+30T)×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
+                    ['0.06 ≤ Ts < 0.30', 'Sv = 2.5×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
+                    ['0.30 ≤ Ts < 3.00', 'Sv = 0.84/T×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
+                  ].map(([range, formula, svf, svc], i) => {
+                    const isActive = i === (Ts_val < 0.06 ? 0 : Ts_val < 0.30 ? 1 : 2)
+                    return (
+                      <tr key={i} style={{ background: isActive ? '#fffbe6' : i % 2 === 0 ? '#f8f8f8' : 'white' }}>
+                        <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO, whiteSpace: 'nowrap' }}>{range}</td>
+                        <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO }}>{formula}</td>
+                        <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>{(svf as number).toFixed(4)}</td>
+                        <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>{(svc as number).toFixed(4)}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
+        })()}
+
+        {/* 감쇠보정계수 산정 */}
+        <FormulaBlock>
+          <FormulaRow>
+            <strong>감쇠비 보정계수 η = √(10 / (5 + ξ))</strong>&nbsp;&nbsp;[KDS 17 10 00]
+          </FormulaRow>
+          <FormulaRow>
+            기능수행수준 (ξ = 10%): η =&nbsp;
+            <Sqrt inner={<>10 / (5 + 10)</>} />
+            &nbsp;= <strong>{Math.sqrt(10/15).toFixed(4)}</strong>
+          </FormulaRow>
+          <FormulaRow>
+            붕괴방지수준 (ξ = 20%): η =&nbsp;
+            <Sqrt inner={<>10 / (5 + 20)</>} />
+            &nbsp;= <strong>{Math.sqrt(10/25).toFixed(4)}</strong>
+          </FormulaRow>
+          <FormulaRow>
+            적용 η ({rs.xi === 10 ? '기능수행' : '붕괴방지'}, ξ = {rs.xi}%) =&nbsp;
+            <strong>{rs.eta?.toFixed(4)}</strong>
+          </FormulaRow>
+        </FormulaBlock>
+
         <FormulaBlock>
           <FormulaRow>
             설계지반가속도: S = Z {G.times} I = {Z} {G.times} {(rs.S / Z)?.toFixed(2)} =&nbsp;
