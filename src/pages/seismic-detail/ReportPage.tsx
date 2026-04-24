@@ -131,7 +131,7 @@ export default function SeismicDetailReportPage() {
   const today = new Date().toLocaleDateString('ko-KR')
 
   const nu = isSegmented ? 0.26 : 0.30
-  const E_MPa = isSegmented ? 170000 : 206000
+  const E_MPa = rs.E_use ?? (isSegmented ? 170000 : 206000)
 
   const D_m = inp.D_out / 1000
   const t_m = inp.thickness / 1000

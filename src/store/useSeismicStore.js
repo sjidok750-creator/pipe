@@ -52,7 +52,7 @@ const DEFAULT_DETAIL = {
   deltaT: 20,
   D_settle: 0,
   L_settle: 0,
-  strainCriterion: 'yield',  // 'yield' (σ_y/E) | 'buckling' (46t/D)
+  strainCriterion: 'buckling',  // 'yield' (σ_y/E) | 'buckling' (46t/D, 실무기준)
   // 지반 층
   layers: [
     { H: 5, Vs: 150 },
@@ -108,15 +108,17 @@ function calcDetail(inp) {
   const Fv_table = ampEntry?.Fv ?? [1.0, 1.0, 1.0]
   const z_pipe = hCover + D_out / 1000 / 2
 
-  // 탄성계수: 직접입력 or 관종 자동
+  // 탄성계수: 직접입력(E_manual=true) 시 사용자 입력값, 아니면 관종 기본값
   const E_default_seg  = 170000  // 덕타일 주철관 (MPa)
   const E_default_cont = 206000  // 강관 (MPa)
   const E_use = E_manual
     ? (pipeType === 'segmented' ? (E_ductile ?? E_default_seg) : (E_steel ?? E_default_cont))
     : (pipeType === 'segmented' ? E_default_seg : E_default_cont)
+  // ※ E_use는 입력 모드에 따라 결정됨. 자동(auto) 모드면 기본값, 직접입력(manual)이면 E_steel/E_ductile 사용
 
+  let result
   if (pipeType === 'segmented') {
-    return evalSegmented({
+    result = evalSegmented({
       DN, t: thickness, D: D_out,
       Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
@@ -125,7 +127,7 @@ function calcDetail(inp) {
       Pm: Pm ?? 0, Kv: Kv ?? 0,
     })
   } else {
-    return evalContinuous({
+    result = evalContinuous({
       DN, t: thickness, D_out,
       seismicGrade, Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
@@ -135,6 +137,8 @@ function calcDetail(inp) {
       Pm: Pm ?? 0, Kv: Kv ?? 0,
     })
   }
+  // E_use를 결과에 포함시켜 ReportPage 등에서 하드코딩 없이 사용 가능하게 함
+  return { ...result, E_use }
 }
 
 // ── Store ────────────────────────────────────────────────────
