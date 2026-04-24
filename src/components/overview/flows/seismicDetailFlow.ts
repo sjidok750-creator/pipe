@@ -140,41 +140,47 @@ export const seismicDetailFlow: FlowSpec = {
     { from: 'g1', to: 'g3', fromSide: 'bottom', toSide: 'left' },
     { from: 'g2', to: 'g3', fromSide: 'bottom', toSide: 'right' },
     { from: 'g3', to: 'd_type' },
+    // 판단→연속관: 왼쪽으로 나간 뒤 아래로 내려가서 연속관 상단으로
     {
       from: 'd_type', to: 'c1',
       fromSide: 'left', toSide: 'top',
-      label: '연속관', labelDx: 3, labelDy: -4,
+      label: '연속관', labelDx: 3, labelDy: 14,
+      viaX: 50,
     },
+    // 판단→분절관: 오른쪽으로 나간 뒤 아래로 내려가서 분절관 상단으로
     {
       from: 'd_type', to: 'seg1',
       fromSide: 'right', toSide: 'top',
-      label: '분절관', labelDx: 3, labelDy: -4,
+      label: '분절관', labelDx: 3, labelDy: 14,
+      viaX: 470,
     },
     { from: 'c1', to: 'c2' },
     { from: 'c2', to: 'c3' },
     { from: 'seg1', to: 'seg2' },
     { from: 'seg2', to: 'seg3' },
+    // O.K. 경로: 양쪽에서 취약부 검토로 합류
     {
       from: 'c3', to: 'vul',
       fromSide: 'bottom', toSide: 'left',
       color: 'ok', label: 'O.K.',
-      viaY: 656, labelDx: 4, labelDy: 12,
+      viaY: 658, labelDx: 4, labelDy: 12,
     },
     {
       from: 'seg3', to: 'vul',
       fromSide: 'bottom', toSide: 'right',
       color: 'ok',
-      viaY: 656,
+      viaY: 658,
     },
+    // N.G. 경로: 왼쪽 바깥으로 돌아 N.G. 출력으로
     {
       from: 'c3', to: 'ng_out',
-      fromSide: 'left', toSide: 'left',
+      fromSide: 'left', toSide: 'top',
       color: 'ng', kind: 'dashed', label: 'N.G.',
-      viaX: 22, labelDx: 3, labelDy: -5,
+      viaX: 22, labelDx: 3, labelDy: 14,
     },
     {
       from: 'seg3', to: 'ng_out',
-      fromSide: 'left', toSide: 'left',
+      fromSide: 'left', toSide: 'top',
       color: 'ng', kind: 'dashed',
       viaX: 22,
     },
@@ -183,13 +189,13 @@ export const seismicDetailFlow: FlowSpec = {
       from: 'd_all', to: 'ok_out',
       fromSide: 'right', toSide: 'top',
       color: 'ok', label: 'O.K.',
-      viaX: 420, labelDx: 5, labelDy: -4,
+      viaX: 470, labelDx: 5, labelDy: 14,
     },
     {
       from: 'd_all', to: 'ng_out',
-      fromSide: 'left', toSide: 'left',
+      fromSide: 'left', toSide: 'top',
       color: 'ng', kind: 'dashed', label: 'N.G.',
-      viaX: 22, labelDx: 4, labelDy: -5,
+      viaX: 22, labelDx: 4, labelDy: 14,
     },
   ],
 }

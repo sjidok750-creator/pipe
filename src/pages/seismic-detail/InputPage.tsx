@@ -8,7 +8,7 @@ import {
   EngRadio, EngSegment, EngDivider, EngValue, EngPopover,
 } from '../../components/eng/EngLayout'
 import { T } from '../../components/eng/tokens'
-import { ResponseSpectrumSVG } from '../../components/eng/diagrams/ResponseSpectrumSVG'
+import { RockSpectrumSVG } from '../../components/eng/diagrams/RockSpectrumSVG'
 import { BuriedPipeResponseSVG } from '../../components/eng/diagrams/BuriedPipeResponseSVG'
 import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented.js'
 import { calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES } from '../../engine/seismicConstants.js'
@@ -123,7 +123,7 @@ export default function SeismicDetailInputPage() {
   // 실시간 스펙트럼 파라미터 (삽도용) — 붕괴방지
   let specParams = { SDS: 0, SD1: 0, T0: 0, TS: 0, Ts: 0, TG: 0, Fa: 0, Fv: 0 }
   let specFunc: { SDS_func?: number; SD1_func?: number } = {}
-  let svCalc = { Sv_collapse: 0, Sv_func: 0, Uh: 0, L: 0, Vds: 0 }
+  let svCalc = { Sv_collapse: 0, Sv_func: 0, Uh: 0, L: 0, Vds: 0, S_collapse: 0, S_func: 0, Ts: 0 }
   try {
     const Fa_t = ampEntry?.Fa ?? [1.0, 1.0, 1.0]
     const Fv_t = ampEntry?.Fv ?? [1.0, 1.0, 1.0]
@@ -134,26 +134,22 @@ export default function SeismicDetailInputPage() {
     const Ts = calcTs(TG)
     const { Vds } = calcVds(inp.layers, Ts)
     const { L } = calcWavelength(Ts, Vds, inp.Vbs)
-    // KDS 17 10 00 그림 2.1.2: T₀ = 0.2×SD1/SDS, Tₛ = SD1/SDS
     const T0_design = SDS > 0 ? 0.2 * SD1 / SDS : 0.06
     const TS_design = SDS > 0 ? SD1 / SDS : 0.3
     specParams = { SDS, SD1, T0: T0_design, TS: TS_design, Ts, TG, Fa, Fv }
-    // 기능수행 스펙트럼
     const I_func = inp.seismicGrade === 'I' ? 0.57 : 0.40
-    const S_func = Z * I_func
-    const Fa_f = interpAmpFactor(Fa_t, S_func)
-    const Fv_f = interpAmpFactor(Fv_t, S_func)
-    const { SDS: SDS_f, SD1: SD1_f } = calcDesignSpectrum(S_func, Fa_f, Fv_f)
+    const S_func_val = Z * I_func
+    const Fa_f = interpAmpFactor(Fa_t, S_func_val)
+    const Fv_f = interpAmpFactor(Fv_t, S_func_val)
+    const { SDS: SDS_f, SD1: SD1_f } = calcDesignSpectrum(S_func_val, Fa_f, Fv_f)
     specFunc = { SDS_func: SDS_f, SD1_func: SD1_f }
-    // 실제 계산에 사용되는 기반면 Sv (암반, 감쇠보정 포함)
     const z_pipe = inp.hCover + inp.D_out / 1000 / 2
     const H_total = inp.layers.reduce((s: number, l: {H: number}) => s + l.H, 0)
     const { Sv: Sv_c } = calcSv(S, Ts, 'collapse')
-    const { Sv: Sv_f } = calcSv(S_func, Ts, 'functional')
-    // Uh = (2/π²) × Sv × Ts × (z_pipe/H_total 감소 적용)
+    const { Sv: Sv_f } = calcSv(S_func_val, Ts, 'functional')
     const depth_factor = Math.max(0, 1 - z_pipe / H_total)
     const Uh_c = (2 / (Math.PI ** 2)) * Sv_c * Ts * depth_factor
-    svCalc = { Sv_collapse: Sv_c, Sv_func: Sv_f, Uh: Uh_c, L, Vds }
+    svCalc = { Sv_collapse: Sv_c, Sv_func: Sv_f, Uh: Uh_c, L, Vds, S_collapse: S, S_func: S_func_val, Ts }
   } catch {}
 
   function handleCalc() {
@@ -1040,65 +1036,38 @@ export default function SeismicDetailInputPage() {
 
       {/* ── 우측: 삽도 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-        {/* 설계응답스펙트럼 */}
-        <EngPanel title="설계응답스펙트럼  (KDS 17 10 00 그림 2.1.2)">
+        {/* 설계응답스펙트럼 — 암반 기반면 (보고서와 동일) */}
+        <EngPanel title="암반 기반면 설계속도응답스펙트럼  (평가요령 부록C 그림 C.1.3)">
           <div style={{ display: 'flex', justifyContent: 'center', padding: '4px 0' }}>
-            <ResponseSpectrumSVG
-              SDS={specParams.SDS} SD1={specParams.SD1}
-              T0={specParams.T0} TS={specParams.TS} Ts={specParams.Ts}
-              SDS_func={specFunc.SDS_func} SD1_func={specFunc.SD1_func}
-              width={380} height={200}
+            <RockSpectrumSVG
+              S_collapse={svCalc.S_collapse}
+              S_func={svCalc.S_func}
+              Ts={svCalc.Ts}
+              width={380} height={210}
             />
           </div>
-          {/* ── 표층 설계스펙트럼 파라미터 ── */}
+          {/* 파라미터 요약 */}
           <div style={{
-            marginTop: 6,
-            padding: '6px 10px',
-            background: '#f0f4f8',
-            border: '1px solid #c8d8e8',
-            borderRadius: 3,
-            fontSize: 10,
-            fontFamily: T.fontMono,
-            lineHeight: 1.9,
-            color: T.textPrimary,
+            marginTop: 6, padding: '6px 10px',
+            background: '#f0f4f8', border: '1px solid #c8d8e8',
+            borderRadius: 3, fontSize: 10,
+            fontFamily: T.fontMono, lineHeight: 1.9, color: T.textPrimary,
           }}>
             <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2, fontFamily: T.fontSans, fontSize: 10.5 }}>
-              ① 표층 설계스펙트럼  (KDS 17 10 00 그림 2.1.2 — 위 그래프)
+              스펙트럼 파라미터  (Fa=Fv=1.0, 암반 기반면)
             </div>
-            <div>Fa = {specParams.Fa.toFixed(3)} &nbsp;|&nbsp; Fv = {specParams.Fv.toFixed(3)} &nbsp;|&nbsp; S = Z×I = {S.toFixed(3)} g</div>
-            <div>SDS = Fa·S·2.5 = <strong>{specParams.SDS.toFixed(4)} g</strong> &nbsp;|&nbsp; SD1 = Fv·S = <strong>{specParams.SD1.toFixed(4)} g</strong></div>
-            <div>T<sub>s,design</sub> = SD1/SDS = <strong>{specParams.TS.toFixed(3)} s</strong> &nbsp;|&nbsp; TG(지반고유주기) = <strong>{specParams.TG.toFixed(3)} s</strong> &nbsp;|&nbsp; Ts = 1.25·TG = <strong>{specParams.Ts.toFixed(3)} s</strong></div>
-            <div style={{ marginTop: 4, padding: '3px 6px', background: '#fff3cd', border: '1px solid #f0c040', borderRadius: 2, color: '#7a5c00', fontSize: 9.5, fontFamily: T.fontSans }}>
-              ※ 위 그래프의 Sv 피크값(SD1·g/2π)은 <b>표층 지반증폭이 반영된</b> 설계스펙트럼 속도입니다.<br/>
-              실제 내진평가 계산에는 아래 ②의 <b>기반면(암반) Sv</b>가 사용됩니다.
-            </div>
-          </div>
-
-          {/* ── 실제 계산 사용값 ── */}
-          <div style={{
-            marginTop: 6,
-            padding: '6px 10px',
-            background: '#e8f0ff',
-            border: '1px solid #3060c0',
-            borderRadius: 3,
-            fontSize: 10,
-            fontFamily: T.fontMono,
-            lineHeight: 1.9,
-            color: T.textPrimary,
-          }}>
-            <div style={{ fontWeight: 700, color: '#1a3060', marginBottom: 2, fontFamily: T.fontSans, fontSize: 10.5 }}>
-              ② 실제 계산 사용값  (평가요령 해설식 5.3.6 — 기반면 암반 스펙트럼 + 감쇠보정)
-            </div>
+            <div>S(붕괴방지) = Z×I = {svCalc.S_collapse.toFixed(3)} g &nbsp;|&nbsp; S(기능수행) = {svCalc.S_func.toFixed(3)} g</div>
+            <div>TG(지반고유주기) = <strong>{specParams.TG.toFixed(3)} s</strong> &nbsp;|&nbsp; Ts = 1.25·TG = <strong>{svCalc.Ts.toFixed(3)} s</strong></div>
             <div>
-              Sv(붕괴방지, ξ=20%) = <strong style={{ color: '#1a3060' }}>{svCalc.Sv_collapse.toFixed(4)} m/s</strong>
+              Sv(붕괴방지, ξ=20%) = <strong style={{ color: T.bgActive }}>{svCalc.Sv_collapse.toFixed(4)} m/s</strong>
               &nbsp;|&nbsp;
               Sv(기능수행, ξ=10%) = <strong style={{ color: '#2e7d32' }}>{svCalc.Sv_func.toFixed(4)} m/s</strong>
             </div>
             <div>Vds(등가전단속도) = {svCalc.Vds.toFixed(1)} m/s &nbsp;|&nbsp; L(파장) = {svCalc.L.toFixed(1)} m</div>
             <div>Uh(지반변위, 붕괴방지) ≈ <strong style={{ color: '#c0392b' }}>{(svCalc.Uh * 1000).toFixed(2)} mm</strong></div>
-            <div style={{ marginTop: 4, padding: '3px 6px', background: 'white', border: '1px solid #9aaccb', borderRadius: 2, color: '#33466a', fontSize: 9.5, fontFamily: T.fontSans }}>
-              기반면 Sv = 암반 스펙트럼(Fa=Fv=1.0) × 감쇠보정계수 η = √(10/(5+ξ))<br/>
-              지표면 설계스펙트럼(①)과 값이 다른 것은 정상입니다 — 지침 해설 §5.3 참조.
+            <div style={{ marginTop: 4, padding: '3px 6px', background: '#fff3cd', border: '1px solid #f0c040', borderRadius: 2, color: '#7a5c00', fontSize: 9.5, fontFamily: T.fontSans }}>
+              ※ 암반 기반면 스펙트럼(Fa=Fv=1.0) + 감쇠보정 η=√(10/(5+ξ)) 적용 — 평가요령 해설식 5.3.6<br/>
+              붉은 수직선(Ts)에서의 Sv값이 실제 계산에 사용되는 설계속도입니다.
             </div>
           </div>
         </EngPanel>
