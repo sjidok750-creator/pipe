@@ -604,6 +604,73 @@ export default function SeismicDetailReportPage() {
                 {G.epsilon}<Sub>eq</Sub> = <strong>{rs.epsilon_eq?.toExponential(4)}</strong>
               </FormulaRow>
             </ResultBlock>
+
+            {/* ── 상세 전개: ξ, L1, ε_L 산정 ── */}
+            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 12, marginBottom: 4, color: NAVY }}>
+              ⑤-상세 특성길이(ξ) 및 축변형률(ε<Sub>L</Sub>) 산정 과정
+            </div>
+            <FormulaBlock>
+              {/* ξ 산정 */}
+              <FormulaRow>
+                특성길이: {G.xi} = 2{G.sqrt}2 &times;&nbsp;
+                <Frac top={<>E &times; t</>} bot={<>{G.tau}</>} />
+                &nbsp;= 2{G.sqrt}2 &times;&nbsp;
+                <Frac
+                  top={<>{(E_MPa * 1000).toExponential(3)} &times; {t_m.toFixed(4)}</>}
+                  bot={<>{rs.tau ?? 10}</>}
+                />
+                &nbsp;= <strong>{rs.xi?.toFixed(1)} m</strong>
+              </FormulaRow>
+              {/* L1 산정 */}
+              <FormulaRow>
+                기준길이: L<Sub>1</Sub> = {G.xi} &times; {G.epsilon}<Sub>y</Sub>
+                &nbsp;= {rs.xi?.toFixed(1)} &times; {rs.epsilon_y?.toExponential(4)}
+                &nbsp;= <strong>{rs.Ly?.toFixed(2)} m</strong>
+              </FormulaRow>
+              {/* L vs L1 비교 */}
+              <FormulaRow>
+                파장(L) = {rs.L?.toFixed(2)} m &nbsp;{rs.usedFriction ? '<' : '>'}&nbsp; L<Sub>1</Sub> = {rs.Ly?.toFixed(2)} m
+                &nbsp;→&nbsp;
+                {rs.usedFriction
+                  ? <><strong>L &le; L₁ (마찰지배)</strong>: {G.epsilon}<Sub>L</Sub> = L / {G.xi}</>
+                  : <><strong>L &gt; L₁ (일반식)</strong>: {G.epsilon}<Sub>L</Sub> = {G.alpha}<Sub>1</Sub> &times; {G.epsilon}<Sub>G</Sub></>
+                }
+              </FormulaRow>
+              {/* ε_L 계산 */}
+              {rs.usedFriction ? (
+                <FormulaRow>
+                  {G.epsilon}<Sub>L</Sub> =&nbsp;
+                  <Frac top="L" bot={G.xi} />
+                  &nbsp;=&nbsp;
+                  <Frac top={rs.L?.toFixed(2)} bot={rs.xi?.toFixed(1)} />
+                  &nbsp;= <strong>{rs.epsilon_eq_L?.toExponential(4)}</strong>
+                </FormulaRow>
+              ) : (
+                <FormulaRow>
+                  {G.epsilon}<Sub>L</Sub> = {G.alpha}<Sub>1</Sub> &times; {G.epsilon}<Sub>G</Sub>
+                  &nbsp;= {rs.alpha1?.toFixed(4)} &times; {rs.epsilon_G?.toExponential(4)}
+                  &nbsp;= <strong>{rs.epsilon_eq_L?.toExponential(4)}</strong>
+                </FormulaRow>
+              )}
+              {/* ε_B 계산 */}
+              <FormulaRow>
+                {G.epsilon}<Sub>B</Sub> = {G.alpha}<Sub>2</Sub> &times;&nbsp;
+                <Frac top={<>2{G.pi}D</>} bot="L" />
+                &nbsp;&times; {G.epsilon}<Sub>G</Sub>
+                &nbsp;= {rs.alpha2?.toFixed(4)} &times;&nbsp;
+                <Frac top={<>2{G.pi} &times; {D_m.toFixed(3)}</>} bot={rs.L?.toFixed(2)} />
+                &nbsp;&times; {rs.epsilon_G?.toExponential(4)}
+                &nbsp;= <strong>{rs.epsilon_eq_B?.toExponential(4)}</strong>
+              </FormulaRow>
+              {/* 합성 */}
+              <FormulaRow>
+                {G.epsilon}<Sub>eq</Sub> =&nbsp;
+                <Sqrt inner={<>{G.epsilon}<Sub>L</Sub><Sup>2</Sup> + {G.epsilon}<Sub>B</Sub><Sup>2</Sup></>} />
+                &nbsp;=&nbsp;
+                <Sqrt inner={<>{rs.epsilon_eq_L?.toExponential(4)}<Sup>2</Sup> + {rs.epsilon_eq_B?.toExponential(4)}<Sup>2</Sup></>} />
+                &nbsp;= <strong>{rs.epsilon_eq?.toExponential(4)}</strong>
+              </FormulaRow>
+            </FormulaBlock>
           </>
         )}
 

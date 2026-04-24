@@ -289,7 +289,7 @@ export function evalContinuous(params) {
     // alias (보고서/결과 페이지 호환)
     epsilon_eq: epsilon_x, epsilon_eq_L: epsilon_L, epsilon_eq_B: epsilon_B,
     // L1(Ly) 비교
-    xi, Ly, usedFriction,
+    xi, Ly, usedFriction, tau,
     // 합산
     epsilon_total, epsilon_allow, strainCriterion, strainOK,
     // 허용
