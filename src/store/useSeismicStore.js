@@ -104,7 +104,9 @@ function calcDetail(inp) {
     Pm, Kv,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
-  const I_seismic = RISK_FACTOR[seismicGrade === 'I' ? 1000 : 500]
+  const gradeInfo = SEISMIC_GRADE[seismicGrade]
+  const I_seismic  = gradeInfo.I_collapse  // 붕괴방지 위험도계수
+  const I_func     = gradeInfo.I_func      // 기능수행 위험도계수
   const ampEntry = AMP_FACTOR[soilType]
   const Fa_table = ampEntry?.Fa ?? [1.0, 1.0, 1.0]
   const Fv_table = ampEntry?.Fv ?? [1.0, 1.0, 1.0]
@@ -140,8 +142,8 @@ function calcDetail(inp) {
       Pm: Pm ?? 0, Kv: Kv ?? 0,
     })
   }
-  // E_use를 결과에 포함시켜 ReportPage 등에서 하드코딩 없이 사용 가능하게 함
-  return { ...result, E_use }
+  // E_use, I_func를 결과에 포함 — ReportPage에서 기능수행 Sv 별도 계산에 사용
+  return { ...result, E_use, Z, I_collapse: I_seismic, I_func }
 }
 
 // ── Store ────────────────────────────────────────────────────
