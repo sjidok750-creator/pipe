@@ -11,44 +11,101 @@ import { T } from '../../components/eng/tokens'
 import { ResponseSpectrumSVG } from '../../components/eng/diagrams/ResponseSpectrumSVG'
 import { BuriedPipeResponseSVG } from '../../components/eng/diagrams/BuriedPipeResponseSVG'
 import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented.js'
-import { calcTG, calcTs, calcVds, calcWavelength } from '../../engine/seismicConstants.js'
+import { calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES } from '../../engine/seismicConstants.js'
+
+type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
+
+const LAYER_NAMES = ['매립층', '퇴적층', '충적층', '풍화토층', '풍화암층', '연암층', '경암층', '보통암층', '기반암층', '기타']
+const INPUT_H = 22
 
 // 지반층 입력 컴포넌트
 function LayerEditor({ layers, setLayers }: {
-  layers: { H: number; Vs: number }[]
-  setLayers: (l: { H: number; Vs: number }[]) => void
+  layers: Layer[]
+  setLayers: (l: Layer[]) => void
 }) {
-  const add = () => setLayers([...layers, { H: 5, Vs: 200 }])
-  const rm = (i: number) => setLayers(layers.filter((_, j) => j !== i))
-  const upd = (i: number, k: 'H' | 'Vs', v: string) => {
-    const n = [...layers]; n[i] = { ...n[i], [k]: parseFloat(v) || 0 }; setLayers(n)
+  const upd = (i: number, patch: Partial<Layer>) => {
+    const next = [...layers]
+    const merged = { ...next[i], ...patch }
+    // 토층명이 암반이면 isRock 자동 설정
+    if (patch.name !== undefined) merged.isRock = ROCK_LAYER_NAMES.includes(patch.name)
+    merged.Vs = deriveVs(merged)
+    next[i] = merged
+    setLayers(next)
   }
+  const add = () => {
+    const blank: Layer = { name: '퇴적층', H: 5, N: null, Vs_manual: null, isRock: false, Vs: 200 }
+    setLayers([...layers, { ...blank, Vs: deriveVs(blank) }])
+  }
+  const rm = (i: number) => setLayers(layers.filter((_, j) => j !== i))
+
+  const cellStyle: React.CSSProperties = {
+    fontSize: 10, fontWeight: 700, color: T.textMuted,
+    fontFamily: T.fontSans, textAlign: 'center' as const, padding: '0 2px',
+  }
+
   return (
-    <div>
-      <div style={{ display: 'flex', gap: 4, fontSize: 10, color: T.textMuted, fontWeight: 700, marginBottom: 3, fontFamily: T.fontSans }}>
-        <span style={{ width: 24 }}>층</span>
-        <span style={{ width: 80 }}>두께 H (m)</span>
-        <span style={{ width: 90 }}>Vs (m/s)</span>
+    <div style={{ overflowX: 'auto' }}>
+      {/* 헤더 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '22px 90px 52px 52px 52px 62px 20px', gap: 3, marginBottom: 4 }}>
+        <span style={cellStyle}></span>
+        <span style={cellStyle}>토층명</span>
+        <span style={cellStyle}>H (m)</span>
+        <span style={cellStyle}>N치</span>
+        <span style={cellStyle}>Vs입력</span>
+        <span style={{ ...cellStyle, color: T.textAccent }}>Vs 결과</span>
+        <span></span>
       </div>
-      {layers.map((l, i) => (
-        <div key={i} style={{ display: 'flex', gap: 4, marginBottom: 3, alignItems: 'center' }}>
-          <span style={{ width: 24, fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>L{i + 1}</span>
-          <input type="number" value={l.H} onChange={e => upd(i, 'H', e.target.value)} min={0.1} step={0.5}
-            style={{ width: 80, height: T.inputH, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
-          <input type="number" value={l.Vs} onChange={e => upd(i, 'Vs', e.target.value)} min={50} step={10}
-            style={{ width: 90, height: T.inputH, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
-          {layers.length > 1 && (
-            <button onClick={() => rm(i)} style={{ fontSize: 10, padding: '1px 6px', cursor: 'pointer', border: `1px solid ${T.border}`, background: 'white', color: T.textMuted }}>×</button>
-          )}
-        </div>
-      ))}
-      <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
+      {layers.map((l, i) => {
+        const vsAuto = calcVsFromN(l.N)
+        const vsSource = l.Vs_manual ? '직접' : l.isRock || ROCK_LAYER_NAMES.includes(l.name) ? '암반' : vsAuto ? 'N치' : '—'
+        const vsColor = l.Vs_manual ? T.textPrimary : T.textAccent
+        return (
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '22px 90px 52px 52px 52px 62px 20px', gap: 3, marginBottom: 3, alignItems: 'center' }}>
+            <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>L{i+1}</span>
+            {/* 토층명 */}
+            <select value={l.name} onChange={e => upd(i, { name: e.target.value })}
+              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.borderDark}`, padding: '0 2px', width: '100%' }}>
+              {LAYER_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+            {/* H */}
+            <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
+              min={0.1} step={0.5}
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+            {/* N치 */}
+            <input type="number" value={l.N ?? ''} placeholder="—"
+              onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+              min={1} max={300} step={1}
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+            {/* Vs 직접입력 */}
+            <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
+              onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+              min={50} step={10}
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+            {/* Vs 결과 */}
+            <div style={{ textAlign: 'center', fontSize: 11, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
+              {l.Vs.toFixed(0)}
+              <span style={{ fontSize: 9, color: T.textMuted, marginLeft: 2 }}>({vsSource})</span>
+            </div>
+            {/* 삭제 */}
+            {layers.length > 1
+              ? <button onClick={() => rm(i)} style={{ fontSize: 10, padding: '1px 4px', cursor: 'pointer', border: `1px solid ${T.border}`, background: 'white', color: T.textMuted }}>×</button>
+              : <span/>
+            }
+          </div>
+        )
+      })}
+      {/* 합계 및 추가 버튼 */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
         <button onClick={add} style={{ fontSize: 11, padding: '2px 10px', cursor: 'pointer', border: `1px solid ${T.borderDark}`, background: 'white', color: T.textAccent, fontFamily: T.fontSans }}>
           + 층 추가
         </button>
         <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
           H_total = {layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m
         </span>
+      </div>
+      <div style={{ marginTop: 5, fontSize: 9, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.6 }}>
+        * Vs 우선순위: 직접입력 &gt; 암반(760) &gt; N치 공식(65.64×N⁰·⁴⁰⁷)<br/>
+        * N치만 입력 시 자동 계산 / 직접입력 시 N치 무시
       </div>
     </div>
   )

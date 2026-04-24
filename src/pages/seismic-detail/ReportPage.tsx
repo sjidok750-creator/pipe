@@ -191,24 +191,35 @@ export default function SeismicDetailReportPage() {
         <table style={TABLE}>
           <thead>
             <tr>
-              <th style={{ ...TH, width: 30 }}>층번</th>
-              <th style={TH}>층 두께 H<sub>i</sub> (m)</th>
-              <th style={TH}>전단파속도 V<sub>si</sub> (m/s)</th>
+              <th style={{ ...TH, width: 24 }}>층번</th>
+              <th style={TH}>토층명</th>
+              <th style={TH}>층두께 H<sub>i</sub> (m)</th>
+              <th style={TH}>N치</th>
+              <th style={TH}>V<sub>si</sub> (m/s)</th>
+              <th style={TH}>산정방법</th>
               <th style={TH}>H<sub>i</sub>/V<sub>si</sub> (s)</th>
             </tr>
           </thead>
           <tbody>
-            {inp.layers.map((l, i) => (
-              <tr key={i} style={{ background: i % 2 === 0 ? '#f8f8f8' : 'white' }}>
-                <td style={TDC}>{i + 1}</td>
-                <td style={TDC}>{l.H.toFixed(1)}</td>
-                <td style={TDC}>{l.Vs.toFixed(0)}</td>
-                <td style={TDC}>{(l.H / l.Vs).toFixed(4)}</td>
-              </tr>
-            ))}
+            {inp.layers.map((l: any, i: number) => {
+              const vsMethod = l.Vs_manual ? '직접입력' : (l.isRock || ['연암층','경암층','보통암층','기반암층','풍화암층'].includes(l.name)) ? '암반(760)' : l.N ? `N치공식` : '직접입력'
+              return (
+                <tr key={i} style={{ background: i % 2 === 0 ? '#f8f8f8' : 'white' }}>
+                  <td style={TDC}>{i + 1}</td>
+                  <td style={TD}>{(l as any).name ?? `층${i+1}`}</td>
+                  <td style={TDC}>{l.H.toFixed(1)}</td>
+                  <td style={TDC}>{(l as any).N != null ? (l as any).N : '—'}</td>
+                  <td style={TDC}>{l.Vs.toFixed(0)}</td>
+                  <td style={TDC}>{vsMethod}</td>
+                  <td style={TDC}>{(l.H / l.Vs).toFixed(4)}</td>
+                </tr>
+              )
+            })}
             <tr style={{ background: '#eef2f8', fontWeight: 700 }}>
-              <td style={TDC}>합계</td>
+              <td style={TDC} colSpan={2}>합계</td>
               <td style={TDC}>{G.Sigma}H<sub>i</sub> = {H_total.toFixed(1)} m</td>
+              <td style={TDC}></td>
+              <td style={TDC}></td>
               <td style={TDC}></td>
               <td style={TDC}>{G.Sigma}H<sub>i</sub>/V<sub>si</sub> = {sumHV.toFixed(4)} s</td>
             </tr>

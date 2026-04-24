@@ -133,6 +133,23 @@ export function calcSeismicGroup(seismicityGroup, VI) {
   return 'deferred'                                           // 내진성능 유보상수도
 }
 
+// ── N치 → Vs 변환 (Sun et al. 2013) ──────────────────────────
+// 엑셀 공식: Vs = 65.64 × N^0.407 (m/s), 암반층은 760 m/s 고정
+export const ROCK_LAYER_NAMES = ['연암층', '경암층', '보통암층', '기반암층', '풍화암층']
+
+export function calcVsFromN(N) {
+  if (!N || N <= 0) return null
+  return Math.round(65.64 * Math.pow(N, 0.407) * 100) / 100
+}
+
+// 레이어 Vs 도출: Vs_manual 우선 → 암반 760 → N치 공식
+export function deriveVs(layer) {
+  if (layer.Vs_manual != null && layer.Vs_manual > 0) return layer.Vs_manual
+  if (layer.isRock || ROCK_LAYER_NAMES.includes(layer.name)) return 760
+  const fromN = calcVsFromN(layer.N)
+  return fromN ?? layer.Vs ?? 200
+}
+
 // ── 본평가 공통 지반 파라미터 ──────────────────────────────
 
 // 표층지반 특성치 TG 계산

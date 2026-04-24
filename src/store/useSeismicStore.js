@@ -9,7 +9,7 @@ import {
   AMP_FACTOR, getSeismicityGroup, calcFLEX,
   KIND_INDEX, EARTH_INDEX, SIZE_INDEX,
   CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
-  getSizeIndex, calcSeismicGroup,
+  getSizeIndex, calcSeismicGroup, deriveVs,
 } from '../engine/seismicConstants.js'
 import { interpAmpFactor } from '../engine/seismicSegmented.js'
 
@@ -54,11 +54,12 @@ const DEFAULT_DETAIL = {
   D_settle: 0,
   L_settle: 0,
   strainCriterion: 'buckling',  // 'yield' (σ_y/E) | 'buckling' (46t/D, 실무기준)
-  // 지반 층
+  // 지반 층 (name, H, N, Vs_manual, isRock, Vs)
+  // Vs = Vs_manual ?? (isRock ? 760 : 65.64*N^0.407)
   layers: [
-    { H: 5, Vs: 150 },
-    { H: 10, Vs: 250 },
-    { H: 5, Vs: 350 },
+    { name: '매립층',   H: 5,  N: null, Vs_manual: null, isRock: false, Vs: 150 },
+    { name: '퇴적층',   H: 10, N: null, Vs_manual: null, isRock: false, Vs: 250 },
+    { name: '풍화토층', H: 5,  N: null, Vs_manual: null, isRock: false, Vs: 350 },
   ],
   Vbs: 500,
 }
@@ -175,9 +176,10 @@ export const useSeismicStore = create((set, get) => ({
     set(state => ({ detailInputs: { ...state.detailInputs, ...partial }, detailResult: null }))
   },
 
-  // 지반 층 업데이트
+  // 지반 층 업데이트 (Vs 자동 도출 포함)
   setDetailLayers: (layers) => {
-    set(state => ({ detailInputs: { ...state.detailInputs, layers }, detailResult: null }))
+    const derived = layers.map(l => ({ ...l, Vs: deriveVs(l) }))
+    set(state => ({ detailInputs: { ...state.detailInputs, layers: derived }, detailResult: null }))
   },
 
   // 상세평가 계산
