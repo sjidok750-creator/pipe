@@ -457,125 +457,178 @@ export default function SeismicDetailReportPage() {
           ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (η) 산정
         </div>
 
-        {/* 삽도: 기반암 표준 속도응답스펙트럼 */}
+        {/* 삽도: 기반암 표준 속도응답스펙트럼 (지침서 부록C 그림 C.1.3/C.2.4 작도법) */}
         {(() => {
-          const S_val   = rs.S ?? 0.154
-          const T_A     = rs.T_A ?? 0.06
-          const T_B     = rs.T_B ?? 0.3
-          const Sas_val = S_val * 2.5          // 암반 기준 단주기 스펙트럼가속도
-          const g       = 9.81
-          // 붕괴방지 η
-          const eta_c = Math.sqrt(10 / (5 + 20))
-          // 기능수행 η
-          const eta_f = Math.sqrt(10 / (5 + 10))
-          // Sv 플래토 (감쇠보정 후)
-          const Sv_plateau_c = Sas_val * g * T_B / (2 * Math.PI) * eta_c
-          const Sv_plateau_f = Sas_val * g * T_B / (2 * Math.PI) * eta_f
-          // SVG 그래프
-          const W = 420, H = 180
-          const ml = 52, mr = 16, mt = 24, mb = 36
+          // 엔진(calcSv)과 동일한 KDS 암반 스펙트럼 공식
+          // Sas = S × 2.5 (암반 단주기 증폭), T_A=0.06, T_B=0.3
+          // Sa(T): T≤T_A → Sas×(0.4+0.6T/T_A), T_A~T_B → Sas, T>T_B → Sas×T_B/T
+          // Sv(T) = Sa(T)·g·T/(2π):
+          //   T≤T_A:   Sv = Sas·(0.4+0.6T/T_A)·g·T/(2π)   [상승]
+          //   T_A~T_B: Sv = Sas·g·T/(2π)                   [선형 상승, 최고점 T=T_B]
+          //   T>T_B:   Sv = Sas·g·T_B/(2π) = plateau       [상수: T항 소거]
+          //   (T_s=3.0 이후 장주기 영역은 그래프 표시용으로 plateau 유지)
+          const S_val = rs.S ?? 0.154
+          const Sas   = S_val * 2.5     // 암반 단주기 스펙트럼 가속도 (g)
+          const T_A   = 0.06
+          const T_B   = 0.3
+          const T_s   = 3.0             // 장주기 전이주기 (축 레이블용)
+          const g     = 9.81
+          const eta_c = Math.sqrt(10 / (5 + 20))   // 붕괴방지 ξ=20%
+          const eta_f = Math.sqrt(10 / (5 + 10))   // 기능수행 ξ=10%
+          // plateau = Sas·g·T_B/(2π) — T>T_B 구간 Sv 상수값
+          const plateau_c = Sas * g * T_B / (2 * Math.PI) * eta_c
+          const plateau_f = Sas * g * T_B / (2 * Math.PI) * eta_f
+
+          // Sv(T, η) 계산 함수 — 엔진 calcSv와 동일 로직
+          const svAt = (t: number, eta: number): number => {
+            if (t <= 0) return 0
+            if (t <= T_A) return Sas * (0.4 + 0.6 * t / T_A) * g * t / (2 * Math.PI) * eta
+            if (t <= T_B) return Sas * g * t / (2 * Math.PI) * eta
+            return Sas * g * T_B / (2 * Math.PI) * eta  // plateau (T_B 이후 상수)
+          }
+
+          const Ts_val = rs.Ts ?? 0
+
+          // SVG 그래프 설정
+          const W = 420, H = 200
+          const ml = 52, mr = 16, mt = 28, mb = 40
           const gW = W - ml - mr, gH = H - mt - mb
           const T_MAX = 4.0
-          const SV_MAX = Math.max(Sv_plateau_c, Sv_plateau_f) * 1.5
+          const SV_MAX = Math.max(plateau_c, plateau_f) * 1.3
           const tx = (t: number) => ml + (t / T_MAX) * gW
-          const ty = (sv: number) => mt + gH - (sv / SV_MAX) * gH
-          // 곡선 포인트 생성
-          const pts = (eta: number) => {
-            const plateau = Sas_val * g * T_B / (2 * Math.PI) * eta
-            const svAt = (t: number) => {
-              if (t <= T_A) return Sas_val * g * t / (2 * Math.PI) * (0.4 + 0.6 * t / T_A) * eta
-              if (t <= T_B) return Sas_val * g * t / (2 * Math.PI) * eta
-              return plateau * T_B / t  // Ts > T_B: Sv = plateau × T_B / T (감소)
-            }
-            const ts = [0, T_A, T_B, ...Array.from({length: 36}, (_, i) => T_B + (T_MAX - T_B) * (i + 1) / 36)]
-            return ts.map(t => `${tx(t).toFixed(1)},${ty(svAt(t)).toFixed(1)}`).join(' ')
+          const ty = (sv: number) => mt + gH - Math.min(sv / SV_MAX, 1.0) * gH
+
+          // 곡선 포인트 배열 생성 — 전이점에서 꺾임이 정확하도록 주요 T 포함
+          const makePts = (eta: number) => {
+            const keyTs = [
+              0, 0.01, 0.02, 0.03, 0.04, 0.05,
+              T_A,
+              ...Array.from({length: 14}, (_, i) => T_A + (T_B - T_A) * (i + 1) / 15),
+              T_B,
+              T_B + 0.01, 0.5, 1.0, 1.5, 2.0, 2.5, T_s, 3.5, 4.0,
+            ]
+            return keyTs.map(t => `${tx(t).toFixed(1)},${ty(svAt(t, eta)).toFixed(1)}`).join(' ')
           }
-          const Ts_val = rs.Ts ?? 0
-          // 현재 Ts에서의 Sv값 (붕괴, 기능)
-          const svAtTs = (eta: number) => {
-            const plateau = Sas_val * g * T_B / (2 * Math.PI) * eta
-            if (Ts_val <= T_A) return Sas_val * g * Ts_val / (2 * Math.PI) * (0.4 + 0.6 * Ts_val / T_A) * eta
-            if (Ts_val <= T_B) return Sas_val * g * Ts_val / (2 * Math.PI) * eta
-            return plateau
-          }
-          const yAxisVals = [0, SV_MAX * 0.25, SV_MAX * 0.5, SV_MAX * 0.75, SV_MAX].map(v => v)
+
+          // T_B 전이점 Sv값 (두 곡선의 피크)
+          const peak_c = svAt(T_B, eta_c)
+          const peak_f = svAt(T_B, eta_f)
+
+          const yTicks = [0, SV_MAX * 0.25, SV_MAX * 0.5, SV_MAX * 0.75, SV_MAX]
+
           return (
             <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 8 }}>
               <svg width={W} height={H} style={{ border: '1px solid #ccc', background: 'white', flexShrink: 0 }}>
                 {/* 격자 */}
-                {yAxisVals.map((v, i) => (
-                  <line key={i} x1={ml} y1={ty(v)} x2={ml + gW} y2={ty(v)} stroke="#e8e8e8" strokeWidth={1}/>
+                {yTicks.map((v, i) => (
+                  <line key={`gy${i}`} x1={ml} y1={ty(v)} x2={ml + gW} y2={ty(v)} stroke="#e8e8e8" strokeWidth={1}/>
                 ))}
-                {[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4].map((t, i) => (
-                  <line key={i} x1={tx(t)} y1={mt} x2={tx(t)} y2={mt + gH} stroke="#e8e8e8" strokeWidth={1}/>
+                {[0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0].map((t, i) => (
+                  <line key={`gx${i}`} x1={tx(t)} y1={mt} x2={tx(t)} y2={mt + gH} stroke="#e8e8e8" strokeWidth={1}/>
                 ))}
                 {/* 축 */}
                 <line x1={ml} y1={mt} x2={ml} y2={mt + gH} stroke="#333" strokeWidth={1.5}/>
                 <line x1={ml} y1={mt + gH} x2={ml + gW} y2={mt + gH} stroke="#333" strokeWidth={1.5}/>
-                {/* Y축 눈금/레이블 */}
-                {yAxisVals.map((v, i) => (
-                  <g key={i}>
-                    <line x1={ml - 3} y1={ty(v)} x2={ml} y2={ty(v)} stroke="#333" strokeWidth={1}/>
-                    <text x={ml - 5} y={ty(v) + 3} textAnchor="end" fontSize={8} fill="#333">{v.toFixed(2)}</text>
+                {/* Y축 눈금 */}
+                {yTicks.map((v, i) => (
+                  <g key={`yt${i}`}>
+                    <line x1={ml - 4} y1={ty(v)} x2={ml} y2={ty(v)} stroke="#333" strokeWidth={1}/>
+                    <text x={ml - 6} y={ty(v) + 3.5} textAnchor="end" fontSize={8} fill="#333">{v.toFixed(3)}</text>
                   </g>
                 ))}
-                {/* X축 눈금/레이블 */}
-                {[0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4].map((t, i) => (
-                  <g key={i}>
-                    <line x1={tx(t)} y1={mt + gH} x2={tx(t)} y2={mt + gH + 3} stroke="#333" strokeWidth={1}/>
-                    <text x={tx(t)} y={mt + gH + 12} textAnchor="middle" fontSize={8} fill="#333">{t}</text>
+                {/* X축 눈금 */}
+                {[0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0].map((t, i) => (
+                  <g key={`xt${i}`}>
+                    <line x1={tx(t)} y1={mt + gH} x2={tx(t)} y2={mt + gH + 4} stroke="#333" strokeWidth={1}/>
+                    <text x={tx(t)} y={mt + gH + 14} textAnchor="middle" fontSize={8} fill="#333">{t}</text>
+                  </g>
+                ))}
+                {/* T_A, T_B 전이주기 표시 */}
+                {[{t: T_A, label: 'T_A=0.06'}, {t: T_B, label: 'T_B=0.30'}].map(({t, label}) => (
+                  <g key={label}>
+                    <line x1={tx(t)} y1={mt} x2={tx(t)} y2={mt + gH} stroke="#aaa" strokeWidth={0.8} strokeDasharray="3,2"/>
+                    <text x={tx(t)} y={mt + gH + 24} textAnchor="middle" fontSize={7} fill="#666">{label}</text>
                   </g>
                 ))}
                 {/* 축 제목 */}
-                <text x={ml + gW / 2} y={H - 4} textAnchor="middle" fontSize={9} fill="#333">Natural Period (Ts, sec)</text>
-                <text x={10} y={mt + gH / 2} textAnchor="middle" fontSize={9} fill="#333" transform={`rotate(-90, 10, ${mt + gH / 2})`}>Sv (m/s)</text>
-                <text x={ml + gW / 2} y={mt - 8} textAnchor="middle" fontSize={10} fontWeight="bold" fill={NAVY}>Standard Velocity Response Spectrum</text>
+                <text x={ml + gW / 2} y={H - 4} textAnchor="middle" fontSize={9} fill="#333">주기 T (sec)</text>
+                <text x={10} y={mt + gH / 2} textAnchor="middle" fontSize={9} fill="#333"
+                  transform={`rotate(-90, 10, ${mt + gH / 2})`}>속도응답스펙트럼 Sv (m/s)</text>
+                <text x={ml + gW / 2} y={mt - 10} textAnchor="middle" fontSize={10} fontWeight="bold" fill={NAVY}>
+                  암반지반 기반면에서의 설계속도응답스펙트럼
+                </text>
                 {/* 붕괴방지 곡선 (실선) */}
-                <polyline points={pts(eta_c)} fill="none" stroke="#1a3a5c" strokeWidth={1.8}/>
+                <polyline points={makePts(eta_c)} fill="none" stroke="#1a3a5c" strokeWidth={2}/>
                 {/* 기능수행 곡선 (점선) */}
-                <polyline points={pts(eta_f)} fill="none" stroke="#1a3a5c" strokeWidth={1.2} strokeDasharray="5,3"/>
-                {/* 플래토 값 레이블 */}
-                <text x={tx(T_B) + 4} y={ty(Sv_plateau_c) - 3} fontSize={8} fill="#1a3a5c" fontWeight="bold">{Sv_plateau_c.toFixed(4)}</text>
-                <text x={tx(T_B) + 4} y={ty(Sv_plateau_f) - 3} fontSize={8} fill="#555">{Sv_plateau_f.toFixed(4)}</text>
-                {/* Ts 수직선 */}
-                {Ts_val > 0 && (
-                  <line x1={tx(Ts_val)} y1={mt} x2={tx(Ts_val)} y2={mt + gH} stroke="#e03" strokeWidth={1} strokeDasharray="3,2"/>
+                <polyline points={makePts(eta_f)} fill="none" stroke="#1a3a5c" strokeWidth={1.3} strokeDasharray="5,3"/>
+                {/* plateau 레이블 (T_B 직후) */}
+                <text x={tx(T_B) + 5} y={ty(plateau_c) - 4} fontSize={8} fill="#1a3a5c" fontWeight="bold">
+                  {plateau_c.toFixed(4)}
+                </text>
+                <text x={tx(T_B) + 5} y={ty(plateau_f) + 12} fontSize={8} fill="#555">
+                  {plateau_f.toFixed(4)}
+                </text>
+                {/* Ts 지반주기 수직선 */}
+                {Ts_val > 0 && Ts_val <= T_MAX && (
+                  <g>
+                    <line x1={tx(Ts_val)} y1={mt} x2={tx(Ts_val)} y2={mt + gH}
+                      stroke="#e03" strokeWidth={1.2} strokeDasharray="3,2"/>
+                    <text x={tx(Ts_val) + 3} y={mt + 12} fontSize={8} fill="#e03">Ts={Ts_val.toFixed(3)}</text>
+                    {/* Ts 에서 Sv 교점 표시 */}
+                    <circle cx={tx(Ts_val)} cy={ty(svAt(Ts_val, eta_c))} r={3} fill="#e03" opacity={0.8}/>
+                    <text x={tx(Ts_val) + 5} y={ty(svAt(Ts_val, eta_c)) - 4} fontSize={8} fill="#e03" fontWeight="bold">
+                      {svAt(Ts_val, eta_c).toFixed(4)}
+                    </text>
+                  </g>
                 )}
                 {/* 범례 */}
-                <rect x={ml + gW - 100} y={mt + 6} width={96} height={34} fill="white" stroke="#ccc" strokeWidth={1}/>
-                <line x1={ml + gW - 94} y1={mt + 16} x2={ml + gW - 78} y2={mt + 16} stroke="#1a3a5c" strokeWidth={1.8}/>
-                <text x={ml + gW - 74} y={mt + 19} fontSize={8} fill="#333">붕괴방지수준</text>
-                <line x1={ml + gW - 94} y1={mt + 30} x2={ml + gW - 78} y2={mt + 30} stroke="#1a3a5c" strokeWidth={1.2} strokeDasharray="5,3"/>
-                <text x={ml + gW - 74} y={mt + 33} fontSize={8} fill="#333">기능수행수준</text>
+                <rect x={ml + 6} y={mt + 6} width={100} height={36} fill="white" stroke="#ccc" strokeWidth={1} opacity={0.9}/>
+                <line x1={ml + 12} y1={mt + 17} x2={ml + 28} y2={mt + 17} stroke="#1a3a5c" strokeWidth={2}/>
+                <text x={ml + 32} y={mt + 20} fontSize={8} fill="#333">붕괴방지수준</text>
+                <line x1={ml + 12} y1={mt + 32} x2={ml + 28} y2={mt + 32} stroke="#1a3a5c" strokeWidth={1.3} strokeDasharray="5,3"/>
+                <text x={ml + 32} y={mt + 35} fontSize={8} fill="#333">기능수행수준</text>
               </svg>
 
               {/* 우측: Sv 표 */}
-              <table style={{ ...TABLE, fontSize: 9.5, width: 'auto' }}>
-                <thead>
-                  <tr>
-                    <th style={{ ...TH, fontSize: 9 }} colSpan={2}>설계속도응답스펙트럼</th>
-                    <th style={{ ...TH, fontSize: 9 }}>기능수행<br/>S<sub>v</sub> (m/s)</th>
-                    <th style={{ ...TH, fontSize: 9 }}>붕괴방지<br/>S<sub>v</sub> (m/s)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    ['0 ≤ Ts < 0.06', 'Sv = (1+30T)×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
-                    ['0.06 ≤ Ts < 0.30', 'Sv = 2.5×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
-                    ['0.30 ≤ Ts < 3.00', 'Sv = 0.84/T×S×9.81×η×T/2π', svAtTs(eta_f), svAtTs(eta_c)],
-                  ].map(([range, formula, svf, svc], i) => {
-                    const isActive = i === (Ts_val < 0.06 ? 0 : Ts_val < 0.30 ? 1 : 2)
-                    return (
-                      <tr key={i} style={{ background: isActive ? '#fffbe6' : i % 2 === 0 ? '#f8f8f8' : 'white' }}>
-                        <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO, whiteSpace: 'nowrap' }}>{range}</td>
-                        <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO }}>{formula}</td>
-                        <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>{(svf as number).toFixed(4)}</td>
-                        <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>{(svc as number).toFixed(4)}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <div>
+                <table style={{ ...TABLE, fontSize: 9.5, width: 'auto' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...TH, fontSize: 9 }}>주기 구간</th>
+                      <th style={{ ...TH, fontSize: 9 }}>Sv 산정식</th>
+                      <th style={{ ...TH, fontSize: 9 }}>기능수행<br/>S<sub>v</sub> (m/s)</th>
+                      <th style={{ ...TH, fontSize: 9 }}>붕괴방지<br/>S<sub>v</sub> (m/s)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { range: '0 ≤ T ≤ 0.06',  formula: 'Sas·(0.4+0.6T/T_A)·gT/2π·η', zone: 0 },
+                      { range: '0.06 < T ≤ 0.30', formula: 'Sas·g·T/(2π)·η',            zone: 1 },
+                      { range: 'T > 0.30',         formula: 'Sas·g·T_B/(2π)·η (상수)',   zone: 2 },
+                    ].map(({ range, formula, zone }, i) => {
+                      const isActive = zone === (Ts_val <= T_A ? 0 : Ts_val <= T_B ? 1 : 2)
+                      return (
+                        <tr key={i} style={{ background: isActive ? '#fffbe6' : i % 2 === 0 ? '#f8f8f8' : 'white' }}>
+                          <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO, whiteSpace: 'nowrap' }}>{range}</td>
+                          <td style={{ ...TD, fontSize: 9, fontFamily: F_MONO, whiteSpace: 'nowrap' }}>{formula}</td>
+                          <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>
+                            {svAt(Ts_val, eta_f).toFixed(4)}
+                          </td>
+                          <td style={{ ...TDR, fontSize: 9, fontWeight: isActive ? 700 : 400 }}>
+                            {svAt(Ts_val, eta_c).toFixed(4)}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+                <div style={{ fontSize: 9, color: '#555', marginTop: 4, lineHeight: 1.6 }}>
+                  S = {S_val.toFixed(3)} g,&nbsp; Sas = S × 2.5 = {(S_val * 2.5).toFixed(3)} g<br/>
+                  η<sub>붕괴</sub> = {eta_c.toFixed(4)},&nbsp; η<sub>기능</sub> = {eta_f.toFixed(4)}<br/>
+                  적용 구간: {Ts_val <= T_A ? '① 단주기 상승' : Ts_val <= T_B ? '② 정가속도 상승' : '③ plateau (Sv 일정)'}<br/>
+                  S<sub>v</sub> (붕괴방지) = <strong>{svAt(Ts_val, eta_c).toFixed(4)} m/s</strong>
+                </div>
+              </div>
             </div>
           )
         })()}
