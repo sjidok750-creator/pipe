@@ -2,6 +2,8 @@ import React from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 
+const PIXEL_FONT = "'Press Start 2P', monospace"
+
 const MODULES = [
   {
     id: 'structural',
@@ -37,39 +39,47 @@ export default function Home() {
   const { history, loadFromHistory, deleteHistory } = useStore()
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
+    <div style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
 
       {/* 앱 타이틀 헤더 */}
       <div style={{
-        background: 'linear-gradient(135deg, #003366 60%, #1a5c99)',
-        borderRadius: 12,
-        padding: '20px 28px',
+        background: 'linear-gradient(135deg, #05082a 0%, #0f2640 60%, #1a3a5c)',
+        borderRadius: 10,
+        padding: '16px 24px',
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
+        gap: 20,
+        border: '1px solid #1a3a6a',
       }}>
-        <svg width="44" height="44" viewBox="0 0 64 64" style={{ flexShrink: 0 }}>
-          <circle cx="32" cy="32" r="30" stroke="white" strokeWidth="3" fill="none"/>
-          <circle cx="32" cy="32" r="18" stroke="white" strokeWidth="3" fill="none"/>
-          <circle cx="32" cy="32" r="8" fill="white" opacity="0.3"/>
-          <line x1="10" y1="32" x2="54" y2="32" stroke="white" strokeWidth="2" opacity="0.5"/>
-          <line x1="32" y1="10" x2="32" y2="54" stroke="white" strokeWidth="2" opacity="0.5"/>
+        {/* 픽셀 파이프 아이콘 */}
+        <svg width="36" height="18" viewBox="0 0 80 40" style={{ flexShrink: 0, imageRendering: 'pixelated' }}>
+          <rect x="0" y="10" width="80" height="20" fill="#1a3a6a" />
+          <rect x="0" y="10" width="80" height="4" fill="#3a6aaa" />
+          <rect x="0" y="26" width="80" height="4" fill="#0a1a3a" />
+          <rect x="4" y="14" width="72" height="12" fill="#0d2040" />
+          <rect x="30" y="6" width="20" height="28" fill="#2a4a7a" />
+          <rect x="30" y="6" width="20" height="4" fill="#4a7aaa" />
+          <rect x="30" y="30" width="20" height="4" fill="#0a1a3a" />
         </svg>
         <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: 'white', letterSpacing: 0.5 }}>PipeCheck KDS</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>
+          {/* STEP-PIPE 픽셀 타이틀 */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 0, marginBottom: 6 }}>
+            <span style={{ fontFamily: PIXEL_FONT, fontSize: 16, color: '#ffe600', letterSpacing: 2 }}>STEP-</span>
+            <span style={{ fontFamily: PIXEL_FONT, fontSize: 16, color: '#4af', letterSpacing: 2 }}>PIPE</span>
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 2, fontFamily: "'Noto Sans KR', sans-serif" }}>
             KDS 57 00 00 : 2022 기반 매설관로 구조·내진 안전성 자동 검토
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 1 }}>
-            강관(KS D 3565) / 덕타일 주철관(KS D 4311) | DB-24 차량하중 | AWWA M11 / DIPRA
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: "'Noto Sans KR', sans-serif" }}>
+            강관(KS D 3565) / 덕타일 주철관(KS D 4311) | DB-24 | AWWA M11 / DIPRA
           </div>
         </div>
       </div>
 
       {/* 검토 모듈 */}
       <div>
-        <div style={{ fontSize: 11, fontWeight: 700, color: '#003366', padding: '0 2px 6px' }}>검토 모듈</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#003366', padding: '0 2px 5px', letterSpacing: 0.5 }}>검토 모듈</div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           {MODULES.map((mod) => (
             <Link
               key={mod.id}
@@ -77,21 +87,21 @@ export default function Home() {
               style={{
                 display: 'block',
                 background: 'white',
-                borderRadius: 10,
-                padding: '14px 18px',
+                borderRadius: 8,
+                padding: '11px 16px',
                 textDecoration: 'none',
                 border: mod.active ? '1.5px solid #b0c8e8' : '1.5px solid #e0e0e0',
-                opacity: mod.active ? 1 : 0.7,
-                boxShadow: mod.active ? '0 1px 4px rgba(0,51,102,0.08)' : 'none',
+                opacity: mod.active ? 1 : 0.65,
+                boxShadow: mod.active ? '0 1px 3px rgba(0,51,102,0.07)' : 'none',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#003366' }}>{mod.title}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#003366' }}>{mod.title}</span>
                     <span style={{ fontSize: 10, color: '#5580aa', fontWeight: 500 }}>{mod.sub}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: '#888', marginBottom: 8 }}>{mod.desc}</div>
+                  <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>{mod.desc}</div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {mod.items.map((item) => (
                       <span key={item} style={{
