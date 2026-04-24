@@ -536,6 +536,43 @@ export default function SeismicDetailInputPage() {
 
           {/* 차량하중 및 지반반력계수 */}
           <EngDivider label="차량하중 · 지반반력계수"/>
+          <EngRow label="흙 단위중량 γ" unit="kN/m³" popover={
+            <EngPopover title="흙 단위중량 γ (Unit Weight of Soil)">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>사용처: 지반강성계수 K1, K2 산정</strong><br/>
+                  K1 = 1.5 × γ × Vds² / g<br/>
+                  K2 = 3.0 × γ × Vds² / g
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 4 }}>
+                  <thead>
+                    <tr style={{ background: '#f0f4f8' }}>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>γ (kN/m³)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['연약 점토 / 실트', '14 ~ 17'],
+                      ['일반 점토 / 모래', '17 ~ 19'],
+                      ['조밀한 모래 / 자갈', '19 ~ 21'],
+                      ['포화 점토 (수중)', '8 ~ 11 (부력 고려)'],
+                    ].map(([g, v], i) => (
+                      <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{g}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{v}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  지반조사 자료 없는 경우 18 kN/m³ (표준값) 적용 권장
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngInput value={inp.gammaSoil ?? 18} onChange={v => set({ gammaSoil: parseFloat(v)||18 })} min={10} max={25} step={0.5} width={90}/>
+          </EngRow>
           <EngRow label="차량하중 Pm" unit="kN/輪" popover={
             <EngPopover title="차량하중 Pm (후륜 1輪당 하중)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>

@@ -43,6 +43,7 @@ const DEFAULT_DETAIL = {
   E_steel: 206000,         // MPa (강관 기본값)
   E_ductile: 170000,       // MPa (덕타일 주철관 기본값)
   // 차량하중 및 지반반력계수
+  gammaSoil: 18,            // kN/m³ (흙 단위중량)
   Pm: 0,                   // kN/輪 (후륜 1륜 하중, 0=차량없음)
   Kv: 0,                   // kN/m³ (연직방향 지반반력계수, 0=자동)
   // 분절관
@@ -131,6 +132,7 @@ function calcDetail(inp) {
       DN, t: thickness, D_out,
       seismicGrade, Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
+      gamma: inp.gammaSoil ?? 18,
       deltaT, D_settle, L_settle, strainCriterion,
       h_cover: hCover, z_pipe,
       E: E_use,
