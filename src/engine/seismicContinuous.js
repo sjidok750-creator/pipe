@@ -60,7 +60,7 @@ export function calcStrainSettlement(D_settle, L_settle) {
 // 해설식(5.3.44): ε_B = α2 × (2πD/L) × ε_G  (굽힘 변형률)
 // 해설식(5.3.45): ε_x = √(ε_L² + ε_B²)
 // 해설식(5.3.52~53): L과 L1(Ly)을 비교하여 ε_L 결정
-//   ξ = 2√(2Et/τ)  (지침 해설식 5.3.52)
+//   ξ = 2√2 × E×t/τ  (지침 해설식 5.3.52 / sipc 식(52): √는 숫자 2에만 적용)
 //   L1 = ξ × ε_y  (항복점 변형률)
 //   L > L1 → ε_L = α1 × ε_G  (일반식)
 //   L ≤ L1 → ε_L = L / ξ     (마찰 지배)
@@ -69,8 +69,8 @@ export function calcStrainSettlement(D_settle, L_settle) {
 export function calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_y) {
   const epsilon_G = calcGroundStrain(Uh, L)
 
-  // L1(Ly) 계산: 지침 해설식(5.3.52): ξ = 2√(2Et/τ)
-  const xi = 2 * Math.sqrt(2 * E_kN * t_m / tau)    // m
+  // L1(Ly) 계산: ξ = 2√2 × E×t/τ  (√는 숫자 2에만 적용)
+  const xi = 2 * Math.SQRT2 * E_kN * t_m / tau      // m
   const L1 = xi * epsilon_y                          // m
 
   let epsilon_L
