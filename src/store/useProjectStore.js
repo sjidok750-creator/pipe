@@ -36,6 +36,16 @@ export const useProjectStore = create((set, get) => ({
   openNewModal: () => set({ isNewModalOpen: true }),
   closeNewModal: () => set({ isNewModalOpen: false }),
 
+  // ── Discard current session (홈화면 X버튼) ────────────────
+
+  discardSession: () => {
+    storage.remove(SESSION_KEY)
+    useStore.getState().resetInputs()
+    useSeismicStore.getState().resetPrelim()
+    useSeismicStore.getState().resetDetail()
+    set({ projectId: null, projectName: '', enabledModules: [], isDirty: false, lastSavedAt: null })
+  },
+
   // ── Start fresh ───────────────────────────────────────────
 
   startNew: async (modules, name = '') => {

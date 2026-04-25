@@ -65,7 +65,16 @@ export default function Layout() {
           </button>
 
           {/* 로고 */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
+            {/* 관로 단면 아이콘 */}
+            <svg width="22" height="22" viewBox="0 0 48 48">
+              <rect width="48" height="48" rx="11" fill="#0B1E36" />
+              <circle cx="24" cy="24" r="15" fill="none" stroke="#ADC6E5" strokeWidth="6" />
+              <circle cx="24" cy="24" r="7.5" fill="none" stroke="#3A6FB0" strokeWidth="1.2" strokeDasharray="2.5 2" />
+              <line x1="20" y1="24" x2="28" y2="24" stroke="#5599DD" strokeWidth="1.2" />
+              <line x1="24" y1="20" x2="24" y2="28" stroke="#5599DD" strokeWidth="1.2" />
+              <circle cx="36" cy="12" r="3" fill="#FFE600" />
+            </svg>
             <span style={{ fontFamily: PIXEL_FONT, fontSize: 10, color: '#FFE600', letterSpacing: 1 }}>STEP-</span>
             <span style={{ fontFamily: PIXEL_FONT, fontSize: 10, color: '#44AAFF', letterSpacing: 1 }}>PIPE</span>
           </Link>
