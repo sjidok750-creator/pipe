@@ -87,7 +87,7 @@ body {
   /* A4 페이지 설정 */
   @page {
     size: A4 portrait;
-    margin: 18mm 18mm 22mm 18mm;
+    margin: 14mm 12mm 18mm 12mm;
   }
 
   /* 헤더/푸터/사이드바/네비게이션 숨기기 */

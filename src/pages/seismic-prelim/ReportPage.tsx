@@ -48,7 +48,7 @@ export default function SeismicPrelimReportPage() {
       </div>
 
       {/* 보고서 본문 */}
-      <div className="report-body" style={{ background: 'white', border: `1px solid ${T.border}`, padding: '28px 36px', fontFamily: F, fontSize: 11 }}>
+      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
         {/* ── 표지 ── */}
         <div className="keep-together" style={{ textAlign: 'center', marginBottom: 28, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 18 }}>
@@ -206,10 +206,10 @@ export default function SeismicPrelimReportPage() {
   )
 }
 
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }
-const TH: React.CSSProperties = { padding: '4px 8px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
-const TD: React.CSSProperties = { padding: '4px 8px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 5 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
 const RH: React.CSSProperties = {
-  background: '#eef2f8', padding: '4px 10px', fontWeight: 700, fontSize: 11.5,
-  color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', margin: '14px 0 6px',
+  background: '#eef2f8', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
+  color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', margin: '10px 0 5px',
 }

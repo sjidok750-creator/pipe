@@ -6,9 +6,9 @@ import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } fro
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '4px 8px', fontSize: 10.5, fontWeight: 700, color: '#1a3a5c', borderBottom: '1px solid #bbb', textAlign: 'left', background: '#eef2f8' }
-const TD: React.CSSProperties = { padding: '4px 8px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
-const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 14, marginBottom: 4 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#1a3a5c', borderBottom: '1px solid #bbb', textAlign: 'left', background: '#eef2f8' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
+const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 8, marginBottom: 3 }
 const NOTE: React.CSSProperties = { fontSize: 9.5, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
@@ -64,8 +64,8 @@ export default function ReportPage() {
   const verdictItems = Object.entries(verdict).filter(([k]) => k !== 'overallOK') as [string, any][]
 
   const rh: React.CSSProperties = {
-    background: T.bgSection, padding: '4px 10px', fontWeight: 700, fontSize: 12,
-    color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '14px 0 6px',
+    background: T.bgSection, padding: '3px 10px', fontWeight: 700, fontSize: 12,
+    color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '10px 0 5px',
     fontFamily: F,
   }
 
@@ -82,7 +82,7 @@ export default function ReportPage() {
         </button>
       </div>
 
-      <div className="report-body" style={{ background: 'white', border: `1px solid ${T.border}`, padding: '28px 36px', fontFamily: F, fontSize: 11 }}>
+      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
         {/* ── 표지 ── */}
         <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 16 }}>

@@ -13,15 +13,15 @@ const F_MONO = 'Consolas, "Courier New", monospace'
 
 const SEC_TITLE: React.CSSProperties = {
   fontSize: 12.5, fontWeight: 700, color: NAVY,
-  borderBottom: `2px solid ${NAVY}`, paddingBottom: 3, marginTop: 20, marginBottom: 8,
+  borderBottom: `2px solid ${NAVY}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
 }
 const SUB_TITLE: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, color: NAVY,
-  borderLeft: `3px solid ${NAVY}`, paddingLeft: 6, marginTop: 12, marginBottom: 4,
+  borderLeft: `3px solid ${NAVY}`, paddingLeft: 6, marginTop: 8, marginBottom: 3,
 }
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 6 }
-const TH: React.CSSProperties = { background: NAVY, color: 'white', padding: '4px 7px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
-const TD: React.CSSProperties = { padding: '3px 7px', border: '1px solid #bbb', verticalAlign: 'middle', fontSize: 10 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5 }
+const TH: React.CSSProperties = { background: NAVY, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
+const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #bbb', verticalAlign: 'middle', fontSize: 10 }
 const TDB: React.CSSProperties = { ...TD, fontWeight: 700 }
 const TDR: React.CSSProperties = { ...TD, textAlign: 'right', fontFamily: F_MONO }
 const TDC: React.CSSProperties = { ...TD, textAlign: 'center' }
@@ -159,7 +159,7 @@ export default function SeismicDetailReportPage() {
         </button>
       </div>
 
-      <div className="report-body" style={{ background: 'white', border: '1px solid #ccc', padding: '28px 36px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.7, color: '#111' }}>
+      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.45, color: '#111' }}>
 
         {/* ── 표지 ── */}
         <div className="keep-together" style={{ textAlign: 'center', borderBottom: `2px solid ${NAVY}`, paddingBottom: 16, marginBottom: 18 }}>
@@ -295,7 +295,7 @@ export default function SeismicDetailReportPage() {
         </table>
 
         <div style={SUB_TITLE}>라. 지반분류</div>
-        <div style={{ fontSize: 10.5, lineHeight: 2, paddingLeft: 8 }}>
+        <div style={{ fontSize: 10.5, lineHeight: 1.55, paddingLeft: 8 }}>
           기반암 깊이가 {H_total.toFixed(1)} m이고, 토층평균전단파속도가 {Vs_avg.toFixed(0)} m/s로&nbsp;
           {inp.soilType} 지반으로 분류된다.
         </div>
@@ -430,7 +430,7 @@ export default function SeismicDetailReportPage() {
         <div style={SUB_TITLE}>
           {isSegmented ? '다.' : '마.'} 지진시의 {isSegmented ? <>축응력 ({G.sigma}<Sub>x</Sub>)</> : '축변형률'}
         </div>
-        <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2, marginBottom: 4 }}>
+        <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
           지진시 축응력은 기능수행수준과 붕괴방지수준에 동일한 절차로 진행되므로,
           지진력이 낮은 기능수행수준은 붕괴방지수준을 만족하는 경우 동일하게 만족하는 것으로 간주한다.
         </div>
@@ -510,7 +510,7 @@ export default function SeismicDetailReportPage() {
           const pyC = ty(plat_c), pyF = ty(plat_f)
 
           return (
-            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 8, pageBreakInside: 'avoid', breakInside: 'avoid' }}>
               {/* ── SVG 그래프 ── */}
               <svg width={W} height={H} style={{ border: '1px solid #ccc', background: 'white', flexShrink: 0 }}>
                 {/* 격자선 */}
@@ -879,7 +879,7 @@ export default function SeismicDetailReportPage() {
         {isSegmented ? (
           <>
             <div style={SEC_TITLE} className="page-break-before">C.1.2 라. 관체응력에 의한 내진안전성의 조사</div>
-            <div style={{ fontSize: 10.5, lineHeight: 2, marginBottom: 6 }}>
+            <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 발생응력과 지진시의 발생응력을 합산하고 이것이 허용응력 이하인지 조사한다.
             </div>
             <table style={TABLE}>
@@ -1088,7 +1088,7 @@ export default function SeismicDetailReportPage() {
           <>
             {/* 연속관: 축변형률 내진안전성 */}
             <div style={SEC_TITLE} className="page-break-before">C.2.3 축변형률에 의한 내진안전성의 조사</div>
-            <div style={{ fontSize: 10.5, lineHeight: 2, marginBottom: 6 }}>
+            <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 축변형률과 지진시의 축변형률을 합산하고 이것이 허용변형률 이하인지 조사한다.
             </div>
 
@@ -1310,7 +1310,7 @@ export default function SeismicDetailReportPage() {
           </tbody>
         </table>
 
-        <div style={{ fontSize: 10.5, lineHeight: 2, padding: '6px 0', marginTop: 4 }}>
+        <div style={{ fontSize: 10.5, lineHeight: 1.55, padding: '6px 0', marginTop: 4 }}>
           {r.ok
             ? '본 관로는 응답변위법에 의한 내진성능 본평가 결과 모든 검토항목에서 허용기준을 만족한다. 내진안전성이 확보된 것으로 판단한다.'
             : '본 관로는 응답변위법에 의한 내진성능 본평가 결과 일부 검토항목에서 허용기준을 초과한다. 내진 보강공법을 검토하여야 한다.'}
