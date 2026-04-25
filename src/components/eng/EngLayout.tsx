@@ -1,82 +1,167 @@
-// 공학 프로그램 스타일 공통 레이아웃 컴포넌트
+// 공학 프로그램 스타일 공통 레이아웃 컴포넌트 — Design System v2
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { T } from './tokens'
 
-// ── 패널 (헤더 바 + 흰 본문) ────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// useNumberField — 숫자 입력 훅 (커서 끊김 없이 자유롭게 타이핑)
+// ══════════════════════════════════════════════════════════════
+export function useNumberField(
+  storedValue: number | null | undefined,
+  onCommit: (n: number | null) => void,
+  opts: { min?: number; max?: number; decimals?: number } = {}
+) {
+  const [draft, setDraft] = useState<string>(
+    storedValue == null ? '' : String(storedValue)
+  )
+  const [focused, setFocused] = useState(false)
+
+  // 포커스가 없을 때만 스토어 값으로 동기화
+  useEffect(() => {
+    if (!focused) {
+      setDraft(storedValue == null ? '' : String(storedValue))
+    }
+  }, [storedValue, focused])
+
+  const commit = () => {
+    setFocused(false)
+    if (draft.trim() === '' || draft === '-' || draft === '.') {
+      onCommit(null)
+      return
+    }
+    let n = parseFloat(draft)
+    if (Number.isNaN(n)) { onCommit(null); return }
+    if (opts.min != null) n = Math.max(opts.min, n)
+    if (opts.max != null) n = Math.min(opts.max, n)
+    if (opts.decimals != null) n = +n.toFixed(opts.decimals)
+    onCommit(n)
+    setDraft(String(n))
+  }
+
+  return {
+    value: draft,
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      const v = e.target.value
+      if (/^-?\d*\.?\d*$/.test(v) || v === '') setDraft(v)
+    },
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      setFocused(true)
+      e.target.select()  // 탭 탭 시 전체 선택
+    },
+    onBlur: commit,
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+      if (e.key === 'Escape') {
+        setDraft(storedValue == null ? '' : String(storedValue))
+        ;(e.target as HTMLInputElement).blur()
+      }
+    },
+    inputMode: 'decimal' as const,
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// EngPanel — 헤더 바 + 흰 본문 카드
+// ══════════════════════════════════════════════════════════════
 export function EngPanel({
-  title, children, style, bodyStyle,
+  title, children, style, bodyStyle, collapsible = false, defaultOpen = true,
 }: {
   title: string
   children: React.ReactNode
   style?: React.CSSProperties
   bodyStyle?: React.CSSProperties
+  collapsible?: boolean
+  defaultOpen?: boolean
 }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <div style={{
       border: `1px solid ${T.border}`,
-      borderRadius: 2,
+      borderRadius: T.radiusMd,
       overflow: 'hidden',
+      boxShadow: T.shadow1,
       marginBottom: 8,
       ...style,
     }}>
-      <div style={{
-        background: T.bgHeader,
-        color: T.textActive,
-        fontSize: T.fontSzHeader,
-        fontWeight: 700,
-        padding: '4px 10px',
-        lineHeight: '20px',
-        letterSpacing: 0.3,
-        fontFamily: T.fontSans,
-      }}>
-        {title}
+      <div
+        onClick={collapsible ? () => setOpen(v => !v) : undefined}
+        style={{
+          background: T.bgHeader,
+          color: T.textOnDark,
+          fontSize: T.fs.md,
+          fontWeight: T.fw.semibold,
+          fontFamily: T.fontSans,
+          padding: '7px 12px',
+          lineHeight: '22px',
+          letterSpacing: 0.2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: collapsible ? 'pointer' : 'default',
+          userSelect: 'none',
+        }}
+      >
+        <span>{title}</span>
+        {collapsible && (
+          <span style={{ fontSize: T.fs.xs, opacity: 0.7 }}>{open ? '▲' : '▼'}</span>
+        )}
       </div>
-      <div style={{
-        background: T.bgPanel,
-        padding: T.panelP,
-        ...bodyStyle,
-      }}>
-        {children}
-      </div>
+      {(!collapsible || open) && (
+        <div style={{
+          background: T.bgPanel,
+          padding: T.panelP,
+          ...bodyStyle,
+        }}>
+          {children}
+        </div>
+      )}
     </div>
   )
 }
 
-// ── 서브 섹션 헤더 (패널 내부 구분) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngSection — 패널 내부 섹션 구분
+// ══════════════════════════════════════════════════════════════
 export function EngSection({ title }: { title: string }) {
   return (
     <div style={{
       background: T.bgSection,
       color: T.textAccent,
-      fontSize: '11px',
-      fontWeight: 700,
-      padding: '3px 8px',
-      marginBottom: 6,
-      marginTop: 10,
-      borderLeft: `3px solid ${T.bgActive}`,
+      fontSize: T.fs.sm,
+      fontWeight: T.fw.semibold,
       fontFamily: T.fontSans,
+      padding: '4px 10px',
+      marginBottom: 8,
+      marginTop: 12,
+      borderLeft: `3px solid ${T.bgActive}`,
+      borderRadius: `0 ${T.radiusSm}px ${T.radiusSm}px 0`,
     }}>
       {title}
     </div>
   )
 }
 
-// ── 구분선 ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngDivider — 구분선
+// ══════════════════════════════════════════════════════════════
 export function EngDivider({ label }: { label?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '8px 0 6px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '10px 0 8px' }}>
       {label && (
-        <span style={{ fontSize: '10px', color: T.textMuted, whiteSpace: 'nowrap', fontFamily: T.fontSans }}>{label}</span>
+        <span style={{ fontSize: T.fs.xs, color: T.textMuted, whiteSpace: 'nowrap', fontFamily: T.fontSans }}>
+          {label}
+        </span>
       )}
       <div style={{ flex: 1, height: 1, background: T.borderLight }} />
     </div>
   )
 }
 
-// ── 2컬럼 그리드 행 (라벨 + 컨트롤) ────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngRow — 라벨 + 입력 2컬럼 행
+// ══════════════════════════════════════════════════════════════
 export function EngRow({
-  label, children, labelWidth = 110, unit, popover,
+  label, children, labelWidth = 116, unit, popover,
 }: {
   label: string
   children: React.ReactNode
@@ -89,94 +174,121 @@ export function EngRow({
       display: 'flex',
       alignItems: 'center',
       minHeight: T.rowH,
-      marginBottom: 3,
+      marginBottom: 4,
+      gap: 0,
     }}>
       <div style={{
         width: labelWidth,
         flexShrink: 0,
-        fontSize: T.fontSzLabel,
+        fontSize: T.fs.sm,
         color: T.textLabel,
-        fontWeight: 600,
+        fontWeight: T.fw.medium,
         fontFamily: T.fontSans,
-        paddingRight: 6,
+        lineHeight: T.lh.normal,
+        paddingRight: 8,
       }}>
         {label}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, flexWrap: 'wrap' }}>
         {children}
         {unit && (
-          <span style={{ fontSize: '11px', color: T.textMuted, whiteSpace: 'nowrap', marginLeft: 2 }}>{unit}</span>
+          <span style={{ fontSize: T.fs.xs, color: T.textMuted, whiteSpace: 'nowrap' }}>{unit}</span>
         )}
-        {popover}
+        {popover && <span style={{ marginLeft: 2 }}>{popover}</span>}
       </div>
     </div>
   )
 }
 
-// ── 숫자 입력 ────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngInput — 숫자 입력칸 (useNumberField 사용 권장)
+// ══════════════════════════════════════════════════════════════
 export function EngInput({
-  value, onChange, min, max, step, width = 90, disabled,
+  value, onChange, min, max, step, width = 96, disabled, compact,
 }: {
   value: string | number
   onChange?: (v: string) => void
   min?: number; max?: number; step?: number
   width?: number
   disabled?: boolean
+  compact?: boolean
 }) {
+  const h = compact ? T.inputHCompact : T.inputH
   return (
     <input
-      type="number"
+      type="text"
+      inputMode="decimal"
       value={value}
       onChange={onChange ? e => onChange(e.target.value) : undefined}
-      min={min} max={max} step={step}
       disabled={disabled}
       style={{
         width,
-        height: T.inputH,
-        border: `1px solid ${disabled ? T.borderLight : T.borderDark}`,
-        borderRadius: 0,
-        padding: '0 5px',
-        fontSize: T.fontSzInput,
+        height: h,
+        border: `1px solid ${disabled ? T.borderLight : T.border}`,
+        borderRadius: T.radiusSm,
+        padding: '0 8px',
+        fontSize: T.fs.base,
         fontFamily: T.fontMono,
-        background: disabled ? T.bgRow : T.bgInput,
-        color: T.textPrimary,
+        background: disabled ? T.bgInputDisabled : T.bgInput,
+        color: disabled ? T.textDisabled : T.textPrimary,
         outline: 'none',
         textAlign: 'right',
+        boxSizing: 'border-box',
+        touchAction: 'manipulation',
+        transition: `border-color 120ms, box-shadow 120ms`,
+      }}
+      onFocus={e => {
+        e.target.style.borderColor = T.borderFocus
+        e.target.style.boxShadow = T.shadowFocus
+        e.target.select()
+      }}
+      onBlur={e => {
+        e.target.style.borderColor = disabled ? T.borderLight : T.border
+        e.target.style.boxShadow = T.shadow0
       }}
     />
   )
 }
 
-// ── 텍스트 표시 (읽기전용 숫자) ─────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngValue — 읽기전용 계산값 표시
+// ══════════════════════════════════════════════════════════════
 export function EngValue({
-  value, unit, width = 90, color,
+  value, unit, width = 96, color, compact,
 }: {
   value: string | number
   unit?: string
   width?: number
   color?: string
+  compact?: boolean
 }) {
+  const h = compact ? T.inputHCompact : T.inputH
   return (
     <span style={{
-      display: 'inline-block',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 3,
       width,
-      height: T.inputH,
+      height: h,
       border: `1px solid ${T.borderLight}`,
-      background: T.bgRow,
-      padding: '0 5px',
-      fontSize: T.fontSzInput,
+      borderRadius: T.radiusSm,
+      background: T.bgPanelAlt,
+      padding: '0 8px',
+      fontSize: T.fs.base,
       fontFamily: T.fontMono,
       color: color ?? T.textNumber,
-      lineHeight: T.inputH,
-      textAlign: 'right',
+      boxSizing: 'border-box',
     }}>
-      {typeof value === 'number' ? value.toFixed(3) : value}
-      {unit && <span style={{ fontSize: '10px', color: T.textMuted, marginLeft: 2 }}>{unit}</span>}
+      <span>{typeof value === 'number' ? value.toFixed(3) : value}</span>
+      {unit && <span style={{ fontSize: T.fs.xs, color: T.textMuted }}>{unit}</span>}
     </span>
   )
 }
 
-// ── 라디오 그룹 ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngRadio — 라디오 버튼 그룹
+// ══════════════════════════════════════════════════════════════
 export function EngRadio({
   options, value, onChange, row = true,
 }: {
@@ -186,31 +298,36 @@ export function EngRadio({
   row?: boolean
 }) {
   return (
-    <div style={{ display: 'flex', flexDirection: row ? 'row' : 'column', gap: row ? 8 : 4 }}>
+    <div style={{ display: 'flex', flexDirection: row ? 'row' : 'column', gap: row ? 12 : 6 }}>
       {options.map(opt => {
         const active = opt.key === value
         return (
-          <label key={opt.key}
+          <label
+            key={opt.key}
             onClick={() => onChange(opt.key)}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4,
+              display: 'flex', alignItems: 'center', gap: 6,
               cursor: 'pointer', userSelect: 'none',
-            }}>
+              minHeight: 36, touchAction: 'manipulation',
+            }}
+          >
             <span style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              width: 13, height: 13, borderRadius: '50%',
-              border: `1.5px solid ${active ? T.bgActive : T.borderDark}`,
+              width: 16, height: 16, borderRadius: '50%', flexShrink: 0,
+              border: `2px solid ${active ? T.bgActive : T.border}`,
               background: active ? T.bgActive : T.bgPanel,
-              flexShrink: 0,
+              transition: 'border-color 120ms, background 120ms',
             }}>
-              {active && <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white' }} />}
+              {active && <span style={{ width: 6, height: 6, borderRadius: '50%', background: T.textOnDark }} />}
             </span>
             <span style={{
-              fontSize: '12px',
-              color: active ? T.textAccent : T.textPrimary,
-              fontWeight: active ? 700 : 400,
+              fontSize: T.fs.base,
+              color: active ? T.textAccent : T.textLabel,
+              fontWeight: active ? T.fw.semibold : T.fw.regular,
               fontFamily: T.fontSans,
-            }}>{opt.label}</span>
+            }}>
+              {opt.label}
+            </span>
           </label>
         )
       })}
@@ -218,7 +335,9 @@ export function EngRadio({
   )
 }
 
-// ── 버튼형 라디오 (세그먼트 컨트롤) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngSegment — 세그먼트 컨트롤 (버튼형 라디오)
+// ══════════════════════════════════════════════════════════════
 export function EngSegment({
   options, value, onChange,
 }: {
@@ -227,7 +346,12 @@ export function EngSegment({
   onChange: (key: string) => void
 }) {
   return (
-    <div style={{ display: 'flex', border: `1px solid ${T.borderDark}`, borderRadius: 2, overflow: 'hidden' }}>
+    <div style={{
+      display: 'flex',
+      border: `1px solid ${T.border}`,
+      borderRadius: T.radiusSm,
+      overflow: 'hidden',
+    }}>
       {options.map((opt, i) => {
         const active = opt.key === value
         return (
@@ -236,22 +360,26 @@ export function EngSegment({
             onClick={() => onChange(opt.key)}
             style={{
               flex: 1,
-              padding: '3px 8px',
-              borderTop: 'none',
-              borderBottom: 'none',
-              borderLeft: 'none',
-              borderRight: i < options.length - 1 ? `1px solid ${T.borderDark}` : 'none',
+              padding: '5px 10px',
+              minHeight: T.buttonH,
+              borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
+              borderRight: i < options.length - 1 ? `1px solid ${T.border}` : 'none',
               background: active ? T.bgActive : T.bgPanel,
-              color: active ? T.textActive : T.textPrimary,
-              fontSize: '11px',
-              fontWeight: active ? 700 : 400,
-              cursor: 'pointer',
+              color: active ? T.textOnDark : T.textLabel,
+              fontSize: T.fs.sm,
+              fontWeight: active ? T.fw.semibold : T.fw.regular,
               fontFamily: T.fontSans,
-              lineHeight: '18px',
+              cursor: 'pointer',
+              transition: 'background 120ms, color 120ms',
+              touchAction: 'manipulation',
             }}
           >
             <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.label}</div>
-            {opt.sub && <div style={{ fontSize: '9px', opacity: 0.75, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.sub}</div>}
+            {opt.sub && (
+              <div style={{ fontSize: T.fs.xs, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {opt.sub}
+              </div>
+            )}
           </button>
         )
       })}
@@ -259,7 +387,9 @@ export function EngSegment({
   )
 }
 
-// ── 결과 테이블 ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngTable — 결과 테이블
+// ══════════════════════════════════════════════════════════════
 export function EngTable({
   rows,
 }: {
@@ -273,46 +403,55 @@ export function EngTable({
   }[]
 }) {
   return (
-    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', fontFamily: T.fontSans }}>
+    <table style={{
+      width: '100%', borderCollapse: 'collapse',
+      fontSize: T.fs.sm, fontFamily: T.fontSans,
+      borderRadius: T.radiusMd, overflow: 'hidden',
+    }}>
       <thead>
         <tr style={{ background: T.bgSection }}>
-          <th style={{ ...thStyle, width: '38%', textAlign: 'left' }}>항목</th>
-          <th style={{ ...thStyle, width: '28%', textAlign: 'right' }}>계산값</th>
-          <th style={{ ...thStyle, width: '20%', textAlign: 'right' }}>허용값</th>
-          <th style={{ ...thStyle, width: '14%', textAlign: 'center' }}>판정</th>
+          <th style={{ ...thS, width: '38%', textAlign: 'left' }}>항목</th>
+          <th style={{ ...thS, width: '28%', textAlign: 'right' }}>계산값</th>
+          <th style={{ ...thS, width: '20%', textAlign: 'right' }}>허용값</th>
+          <th style={{ ...thS, width: '14%', textAlign: 'center' }}>판정</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((row, i) => (
-          <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>
-            <td style={{ ...tdStyle }}>
-              <div style={{ fontWeight: 600, color: T.textLabel }}>{row.label}</div>
-              {row.formula && <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontMono }}>{row.formula}</div>}
+          <tr
+            key={i}
+            style={{ background: i % 2 === 0 ? T.bgPanel : T.bgRow }}
+          >
+            <td style={{ ...tdS }}>
+              <div style={{ fontWeight: T.fw.medium, color: T.textLabel }}>{row.label}</div>
+              {row.formula && (
+                <div style={{ fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontMono, marginTop: 1 }}>
+                  {row.formula}
+                </div>
+              )}
             </td>
-            <td style={{ ...tdStyle, textAlign: 'right', fontFamily: T.fontMono, color: T.textNumber, fontWeight: 600 }}>
+            <td style={{ ...tdS, textAlign: 'right', fontFamily: T.fontMono, color: T.textNumber, fontWeight: T.fw.semibold }}>
               {typeof row.value === 'number'
-                ? (Math.abs(row.value) < 0.001 && row.value !== 0
-                  ? row.value.toExponential(3)
-                  : row.value.toFixed(4))
+                ? (Math.abs(row.value) < 0.001 && row.value !== 0 ? row.value.toExponential(3) : row.value.toFixed(4))
                 : row.value}
-              {row.unit && <span style={{ fontSize: '10px', color: T.textMuted, marginLeft: 3 }}>{row.unit}</span>}
+              {row.unit && <span style={{ fontSize: T.fs.xs, color: T.textMuted, marginLeft: 3 }}>{row.unit}</span>}
             </td>
-            <td style={{ ...tdStyle, textAlign: 'right', fontFamily: T.fontMono, color: T.textMuted }}>
+            <td style={{ ...tdS, textAlign: 'right', fontFamily: T.fontMono, color: T.textMuted }}>
               {row.limit !== undefined
                 ? (typeof row.limit === 'number'
                   ? (Math.abs(row.limit) < 0.001 ? row.limit.toExponential(3) : row.limit.toFixed(4))
                   : row.limit)
                 : '—'}
-              {row.limit !== undefined && row.unit && <span style={{ fontSize: '10px', marginLeft: 2 }}>{row.unit}</span>}
+              {row.limit !== undefined && row.unit && <span style={{ fontSize: T.fs.xs, marginLeft: 2 }}>{row.unit}</span>}
             </td>
-            <td style={{ ...tdStyle, textAlign: 'center' }}>
+            <td style={{ ...tdS, textAlign: 'center' }}>
               {row.ok !== undefined && (
                 <span style={{
-                  fontSize: '11px', fontWeight: 700, padding: '1px 6px',
+                  fontSize: T.fs.xs, fontWeight: T.fw.bold,
+                  padding: '2px 8px', borderRadius: T.radiusSm,
                   background: row.ok ? T.bgOK : T.bgNG,
                   color: row.ok ? T.textOK : T.textNG,
-                  border: `1px solid ${row.ok ? '#a3d9b5' : '#f5b3b3'}`,
-                  borderRadius: 2,
+                  border: `1px solid ${row.ok ? T.borderOK : T.borderNG}`,
                 }}>
                   {row.ok ? 'O.K.' : 'N.G.'}
                 </span>
@@ -325,20 +464,22 @@ export function EngTable({
   )
 }
 
-const thStyle: React.CSSProperties = {
-  padding: '4px 6px',
-  fontSize: '11px',
-  fontWeight: 700,
+const thS: React.CSSProperties = {
+  padding: '6px 8px',
+  fontSize: T.fs.xs,
+  fontWeight: T.fw.bold,
   color: T.textAccent,
   borderBottom: `1px solid ${T.border}`,
 }
-const tdStyle: React.CSSProperties = {
-  padding: '4px 6px',
+const tdS: React.CSSProperties = {
+  padding: '5px 8px',
   borderBottom: `1px solid ${T.borderLight}`,
   verticalAlign: 'middle',
 }
 
-// ── 파라미터 그리드 (결과 수치 표시) ─────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngParamGrid — 파라미터 그리드
+// ══════════════════════════════════════════════════════════════
 export function EngParamGrid({
   params,
 }: {
@@ -347,26 +488,28 @@ export function EngParamGrid({
   return (
     <div style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(176px, 1fr))',
       gap: '1px',
       border: `1px solid ${T.border}`,
+      borderRadius: T.radiusMd,
       background: T.border,
+      overflow: 'hidden',
     }}>
       {params.map((p, i) => (
         <div key={i} style={{
-          background: i % 2 === 0 ? T.bgRowAlt : T.bgRow,
-          padding: '4px 8px',
+          background: i % 2 === 0 ? T.bgPanel : T.bgRow,
+          padding: '5px 10px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 8,
         }}>
-          <span style={{ fontSize: '11px', color: T.textLabel, fontFamily: T.fontSans }}>{p.label}</span>
-          <span style={{ fontSize: '12px', fontFamily: T.fontMono, color: T.textNumber, fontWeight: 600, whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: T.fs.xs, color: T.textLabel, fontFamily: T.fontSans }}>{p.label}</span>
+          <span style={{ fontSize: T.fs.sm, fontFamily: T.fontMono, color: T.textNumber, fontWeight: T.fw.semibold, whiteSpace: 'nowrap' }}>
             {typeof p.value === 'number'
               ? (Math.abs(p.value) < 0.0001 && p.value !== 0 ? p.value.toExponential(3) : p.value.toFixed(4))
               : p.value}
-            {p.unit && <span style={{ fontSize: '10px', color: T.textMuted, marginLeft: 2 }}>{p.unit}</span>}
+            {p.unit && <span style={{ fontSize: T.fs.xs, color: T.textMuted, marginLeft: 3 }}>{p.unit}</span>}
           </span>
         </div>
       ))}
@@ -374,8 +517,14 @@ export function EngParamGrid({
   )
 }
 
-// ── 정보 팝오버 (ⓘ 버튼 클릭 → 패널) ──────────────────────
-export function EngPopover({ title, children }: { title?: string; children: React.ReactNode }) {
+// ══════════════════════════════════════════════════════════════
+// EngPopover — 클릭형 설명 패널 (개선: 버튼 스타일 + 360px)
+// ══════════════════════════════════════════════════════════════
+export function EngPopover({ title, children, width = 360 }: {
+  title?: string
+  children: React.ReactNode
+  width?: number
+}) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0, openUp: false })
   const btnRef = useRef<HTMLButtonElement>(null)
@@ -389,42 +538,24 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
         panelRef.current && !panelRef.current.contains(e.target as Node)
       ) setOpen(false)
     }
+    const kbHandler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('keydown', kbHandler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', kbHandler)
+    }
   }, [open])
 
   const handleClick = () => {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      const panelW = 480
-      const left = Math.min(r.left, window.innerWidth - panelW - 12)
-      // 버튼 아래 공간이 부족하면 위쪽으로 열기
+      const left = Math.min(r.left, window.innerWidth - width - 12)
       const spaceBelow = window.innerHeight - r.bottom - 12
-      const openUp = spaceBelow < 320 && r.top > 200
+      const openUp = spaceBelow < 300 && r.top > 200
       setPos({ top: openUp ? r.top - 6 : r.bottom + 6, left: Math.max(8, left), openUp })
     }
     setOpen(v => !v)
-  }
-
-  const panelStyle: React.CSSProperties = {
-    position: 'fixed',
-    left: pos.left,
-    zIndex: 9999,
-    background: 'white',
-    border: `1px solid ${T.borderDark}`,
-    borderRadius: 3,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
-    padding: '14px 16px',
-    width: 480,
-    maxHeight: '65vh',
-    overflowY: 'auto',
-    fontSize: '12px',
-    lineHeight: 1.75,
-    color: T.textPrimary,
-    fontFamily: T.fontSans,
-    ...(pos.openUp
-      ? { bottom: window.innerHeight - pos.top, top: 'auto' }
-      : { top: pos.top, bottom: 'auto' }),
   }
 
   return (
@@ -434,30 +565,57 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
         onClick={handleClick}
         title="설명 보기"
         style={{
-          display: 'inline-flex', alignItems: 'center',
-          padding: '1px 7px',
-          borderRadius: 3,
-          border: 'none',
-          background: open ? '#0f1c2e' : '#1e2b3a',
-          color: open ? '#ffb3c1' : '#e8909f',
-          fontSize: '10px', fontWeight: 600,
-          fontFamily: T.fontMono,
-          fontStyle: 'italic',
-          letterSpacing: '0.04em',
-          lineHeight: '16px',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          padding: '0 8px',
+          height: 22,
+          borderRadius: T.radiusSm,
+          border: `1px solid ${open ? T.bgActive : T.border}`,
+          background: open ? T.bgActive : T.bgPanelAlt,
+          color: open ? T.textOnDark : T.textMuted,
+          fontSize: T.fs.xs,
+          fontWeight: T.fw.medium,
+          fontFamily: T.fontSans,
+          letterSpacing: 0.2,
           cursor: 'pointer',
           flexShrink: 0,
           whiteSpace: 'nowrap',
-          transition: 'background 0.12s, color 0.12s',
-          boxShadow: open ? 'inset 0 0 0 1px #e8909f44' : 'none',
+          transition: 'background 120ms, color 120ms, border-color 120ms',
+          touchAction: 'manipulation',
         }}
       >
-        Expl.
+        설명
       </button>
       {open && createPortal(
-        <div ref={panelRef} style={panelStyle}>
+        <div
+          ref={panelRef}
+          style={{
+            position: 'fixed',
+            left: pos.left,
+            zIndex: 9999,
+            background: T.bgPanel,
+            border: `1px solid ${T.border}`,
+            borderRadius: T.radiusMd,
+            boxShadow: T.shadow3,
+            padding: '14px 16px',
+            width,
+            maxHeight: 'min(60vh, 480px)',
+            overflowY: 'auto',
+            fontSize: T.fs.sm,
+            lineHeight: T.lh.relaxed,
+            color: T.textPrimary,
+            fontFamily: T.fontSans,
+            ...(pos.openUp
+              ? { bottom: window.innerHeight - pos.top, top: 'auto' }
+              : { top: pos.top, bottom: 'auto' }),
+          }}
+        >
           {title && (
-            <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 8, color: '#003366', borderBottom: '1px solid #dde8f5', paddingBottom: 6 }}>
+            <div style={{
+              fontWeight: T.fw.bold, fontSize: T.fs.base,
+              marginBottom: 10, color: T.textAccent,
+              borderBottom: `1px solid ${T.borderLight}`,
+              paddingBottom: 8, fontFamily: T.fontSans,
+            }}>
               {title}
             </div>
           )}
@@ -469,21 +627,27 @@ export function EngPopover({ title, children }: { title?: string; children: Reac
   )
 }
 
-// ── 상태 바 (계산 전/후) ─────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// EngStatusBar — 계산 결과 상태 바
+// ══════════════════════════════════════════════════════════════
 export function EngStatusBar({ ok, message }: { ok?: boolean; message: string }) {
-  const bg = ok === undefined ? '#e8edf2' : ok ? T.bgOK : T.bgNG
-  const color = ok === undefined ? T.textAccent : ok ? T.textOK : T.textNG
+  const bg =     ok === undefined ? T.bgSection : ok ? T.bgOK    : T.bgNG
+  const color =  ok === undefined ? T.textAccent : ok ? T.textOK  : T.textNG
+  const border = ok === undefined ? T.border     : ok ? T.borderOK : T.borderNG
   return (
     <div style={{
-      background: bg, color, fontWeight: 700,
-      fontSize: '12px', padding: '5px 12px',
-      border: `1px solid ${ok === undefined ? T.border : ok ? '#a3d9b5' : '#f5b3b3'}`,
-      borderRadius: 2, marginTop: 8,
+      background: bg, color,
+      fontWeight: T.fw.semibold,
+      fontSize: T.fs.base,
       fontFamily: T.fontSans,
+      padding: '7px 14px',
+      border: `1px solid ${border}`,
+      borderRadius: T.radiusMd,
+      marginTop: 10,
       display: 'flex', alignItems: 'center', gap: 8,
     }}>
-      {ok !== undefined && <span>{ok ? '▶ O.K.' : '▶ N.G.'}</span>}
-      <span style={{ fontWeight: ok !== undefined ? 400 : 700 }}>{message}</span>
+      {ok !== undefined && <span style={{ fontWeight: T.fw.bold }}>{ok ? '▶ O.K.' : '▶ N.G.'}</span>}
+      <span style={{ fontWeight: ok !== undefined ? T.fw.regular : T.fw.semibold }}>{message}</span>
     </div>
   )
 }

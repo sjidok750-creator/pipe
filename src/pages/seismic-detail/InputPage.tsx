@@ -19,7 +19,7 @@ import {
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
 
 const LAYER_NAMES = ['매립층', '퇴적층', '충적층', '풍화토층', '풍화암층', '연암층', '경암층', '보통암층', '기반암층', '기타']
-const INPUT_H = 32  // 태블릿 터치 대응 (권장 최소 32px)
+const INPUT_H = '36px'  // T.inputH — 통일된 입력칸 높이
 
 // 지반층 입력 컴포넌트
 function LayerEditor({ layers, setLayers }: {
@@ -67,23 +67,23 @@ function LayerEditor({ layers, setLayers }: {
             <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>L{i+1}</span>
             {/* 토층명 */}
             <select value={l.name} onChange={e => upd(i, { name: e.target.value })}
-              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.borderDark}`, padding: '0 4px', width: '100%', touchAction: 'manipulation' }}>
+              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.border}`, padding: '0 4px', width: '100%', touchAction: 'manipulation' }}>
               {LAYER_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             {/* H */}
             <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
               min={0.1} step={0.5}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* N치 */}
             <input type="number" value={l.N ?? ''} placeholder="—"
               onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={1} max={300} step={1}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* Vs 직접입력 */}
             <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
               onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={50} step={10}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* Vs 결과 */}
             <div style={{ textAlign: 'center', fontSize: 11, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
               {l.Vs.toFixed(0)}
@@ -91,7 +91,7 @@ function LayerEditor({ layers, setLayers }: {
             </div>
             {/* 삭제 */}
             {layers.length > 1
-              ? <button onClick={() => rm(i)} style={{ fontSize: 13, padding: '4px 6px', minWidth: 32, minHeight: 32, cursor: 'pointer', border: `1px solid ${T.border}`, background: 'white', color: T.textMuted, touchAction: 'manipulation' }}>×</button>
+              ? <button onClick={() => rm(i)} style={{ fontSize: 13, padding: '4px 6px', minWidth: 32, minHeight: 32, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textMuted, touchAction: 'manipulation' }}>×</button>
               : <span/>
             }
           </div>
@@ -99,7 +99,7 @@ function LayerEditor({ layers, setLayers }: {
       })}
       {/* 합계 및 추가 버튼 */}
       <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-        <button onClick={add} style={{ fontSize: 12, padding: '6px 14px', minHeight: 34, cursor: 'pointer', border: `1px solid ${T.borderDark}`, background: 'white', color: T.textAccent, fontFamily: T.fontSans, touchAction: 'manipulation' }}>
+        <button onClick={add} style={{ fontSize: 12, padding: '6px 14px', minHeight: 34, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textAccent, fontFamily: T.fontSans, touchAction: 'manipulation' }}>
           + 층 추가
         </button>
         <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
@@ -184,13 +184,13 @@ export default function SeismicDetailInputPage() {
           <EngRow label="관종 (계산방법)" popover={
             <EngPopover title="관종 및 계산방법 선택">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>KDS 57 17 00 : 2022 §4.2 / 매설관로 내진성능평가 요령 부록 C</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>KDS 57 17 00 : 2022 §4.2 / 매설관로 내진성능평가 요령 부록 C</strong><br/>
                   관종에 따라 이음부 거동이 달라지므로 계산방법이 구분됨
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>방법</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>대상 관종</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>검토 항목</th>
@@ -202,14 +202,14 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>덕타일 주철관, 고무링 이음</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>이음부 신축량 Δ, 굽힘각 θ 검토</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>연속관</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>강관 (용접이음), 플랜지 이음</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>관체 축변형률 ε 검토 (항복 또는 국부좌굴)</td>
                     </tr>
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   <strong>분절관 계산 근거:</strong> 응답변위법 — 지반변위를 파장으로 나누어<br/>
                   이음부 1개소당 신축량·굽힘각 산정 후 허용값 비교<br/>
                   <strong>연속관 계산 근거:</strong> 지반변위에 의한 관체 축변형률 산정 후<br/>
@@ -231,13 +231,13 @@ export default function SeismicDetailInputPage() {
           <EngRow label="지진구역" popover={
             <EngPopover title="지진구역 (Seismic Zone)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>KDS 17 10 00 : 2019 §2.1.1</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>KDS 17 10 00 : 2019 §2.1.1</strong><br/>
                   국내 지진위험도에 따라 전국을 2개 구역으로 구분
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>구역</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Z값</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>해당 지역</th>
@@ -249,14 +249,14 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0.11</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>서울·인천·경기 일부, 강원·충청·경상·전라·제주 주요지역</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0.07</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>위 이외 지역</td>
                     </tr>
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   설계지반가속도 S = Z × I (I: 위험도계수)<br/>
                   상세평가에서 S는 설계응답스펙트럼 SDS, SD1 산정의 기초값
                 </div>
@@ -275,12 +275,12 @@ export default function SeismicDetailInputPage() {
           <EngRow label="내진등급" popover={
             <EngPopover title="내진등급 (Seismic Performance Grade)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>KDS 57 17 00 : 2022 §3.1 / KDS 17 10 00 §2.3</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>KDS 57 17 00 : 2022 §3.1 / KDS 17 10 00 §2.3</strong>
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>등급</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>붕괴방지</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>기능수행</th>
@@ -294,7 +294,7 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 100년</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>1.40 / 0.57</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 500년</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 50년</td>
@@ -302,7 +302,7 @@ export default function SeismicDetailInputPage() {
                     </tr>
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   위험도계수 I는 붕괴방지/기능수행 수준에 각각 적용.<br/>
                   내진 Ⅰ 등급: 급수인구 10만명 이상 또는 주요 간선 관로
                 </div>
@@ -321,13 +321,13 @@ export default function SeismicDetailInputPage() {
           <EngRow label="지반종류" popover={
             <EngPopover title="지반종류 (Site Class)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>KDS 17 10 00 : 2019 §2.2 / 표 2.2.1</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>KDS 17 10 00 : 2019 §2.2 / 표 2.2.1</strong><br/>
                   지표면에서 30m 깊이까지 평균 전단파 속도(Vs,30)로 분류
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>분류</th>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>Vs,30 (m/s)</th>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>지반 특성</th>
@@ -350,7 +350,7 @@ export default function SeismicDetailInputPage() {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#e8f0fb', border: '1px solid #5b9bd5', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgInfo, border: `1px solid ${T.border}`, borderRadius: 2, fontSize: 10 }}>
                   상세평가에서 지반종류는 지반증폭계수(Fa, Fv) 결정에 사용되며<br/>
                   설계응답스펙트럼 SDS = Fa × S × 2.5, SD1 = Fv × S 산정에 직접 영향.<br/>
                   아래 ③ 표층지반조건 입력값과 일치하도록 입력 권장.
@@ -382,14 +382,14 @@ export default function SeismicDetailInputPage() {
           <EngRow label="공칭관경 DN" unit="mm" popover={
             <EngPopover title="공칭관경 DN">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   공칭관경(nominal diameter)으로 계산에는 외경 D_out와 두께 t를 사용.<br/>
                   아래 외경 D_out 및 관두께 t와 일관성 있게 입력할 것.
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   분절관: DN은 이음부 허용변위량 기준 테이블 검색에 사용됨<br/>
                   연속관: 주로 D/t 비로 국부좌굴 한계변형률(46t/D) 산정에 사용
                 </div>
@@ -401,8 +401,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="관두께 t" unit="mm" popover={
             <EngPopover title="관두께 t">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   <strong>연속관(강관)에서 중요:</strong><br/>
@@ -413,7 +413,7 @@ export default function SeismicDetailInputPage() {
                   현재: t = {inp.thickness} mm, D_out = {inp.D_out} mm<br/>
                   46·t/D = {(46 * inp.thickness / inp.D_out * 0.01).toFixed(4)} (소수)
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   구조안전성 검토 시 채택한 두께와 동일한 값 입력 권장
                 </div>
               </div>
@@ -424,8 +424,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="외경 D_out" unit="mm" popover={
             <EngPopover title="외경 D_out (Outer Diameter)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   계산에 사용되는 실제 외경(공칭관경 ≠ 외경).<br/>
@@ -433,7 +433,7 @@ export default function SeismicDetailInputPage() {
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 6 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>관종</th>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>DN300</th>
                       <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>DN400</th>
@@ -447,7 +447,7 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>429</td>
                       <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>635</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>강관 (KS D 3565)</td>
                       <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>318.5</td>
                       <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>406.4</td>
@@ -463,15 +463,15 @@ export default function SeismicDetailInputPage() {
           <EngRow label="설계수압 P" unit="MPa" popover={
             <EngPopover title="설계수압 P">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   내진 상세평가에서 설계수압은 관체 허용변형률 산정 시<br/>
                   내압에 의한 원주방향 응력 성분 제거에 사용됨.<br/>
                   구조안전성 검토의 설계운전압력 Pd와 동일한 값 사용.
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   1 kgf/cm² = 0.098 MPa ≈ 0.1 MPa<br/>
                   예: 6 kgf/cm² → 0.588 MPa → 0.60 MPa 입력
                 </div>
@@ -483,15 +483,15 @@ export default function SeismicDetailInputPage() {
           <EngRow label="토피 h" unit="m" popover={
             <EngPopover title="토피 h (매설 깊이)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   관 상단에서 지표면까지의 거리.<br/>
                   지반변위 산정 시 깊이에 따른 감소 효과가 반영됨.<br/>
                   상수도 관로의 일반적인 토피: 1.0 ~ 1.5 m
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   도로 하부 횡단 구간: 1.2 m 이상 (도로 점용 기준)<br/>
                   한랭지 등 동결심도 이하로 매설 시 그 깊이 적용
                 </div>
@@ -506,8 +506,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="입력 방식" popover={
             <EngPopover title="탄성계수 E 입력 방식">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>KS D 3565 (강관) / KS D 4311 (덕타일 주철관)</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>KS D 3565 (강관) / KS D 4311 (덕타일 주철관)</strong>
                 </div>
                 <div style={{ fontSize: 11 }}>
                   탄성계수 E는 지진 축응력·변형률, 이음부 신축량, 파장 등 핵심 계산 전반에 사용됨.<br/>
@@ -515,7 +515,7 @@ export default function SeismicDetailInputPage() {
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>표준 E 값</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>근거</th>
@@ -527,14 +527,14 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>206,000 MPa</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 3565 / 지침 예제</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>덕타일 주철관 (분절관)</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>170,000 MPa</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 4311 / 지침 예제</td>
                     </tr>
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   스크린샷에서 본 타 프로그램은 E를 직접 입력.<br/>
                   특수 강종(SS490, SM490 등) 사용 시 직접입력 선택.
                 </div>
@@ -554,15 +554,15 @@ export default function SeismicDetailInputPage() {
             <EngRow label="E" unit="MPa" popover={
               <EngPopover title="탄성계수 E (직접 입력)">
                 <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                  <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                    <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
+                  <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                    <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2</strong>
                   </div>
                   <div style={{ fontSize: 11 }}>
                     관의 탄성계수(Young's Modulus). 지침 부록C 예제 기준값:
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                     <thead>
-                      <tr style={{ background: '#f0f4f8' }}>
+                      <tr style={{ background: T.bgInfo }}>
                         <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
                         <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (MPa)</th>
                         <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (kN/m²)</th>
@@ -583,7 +583,7 @@ export default function SeismicDetailInputPage() {
                       ))}
                     </tbody>
                   </table>
-                  <div style={{ marginTop: 6, padding: '4px 8px', background: '#e8f0fb', border: '1px solid #5b9bd5', borderRadius: 2, fontSize: 10 }}>
+                  <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgInfo, border: `1px solid ${T.border}`, borderRadius: 2, fontSize: 10 }}>
                     E는 단면적 A, 단면2차모멘트 I와 함께 지반-관 상호작용 파라미터<br/>
                     λ1 = ⁴√(K1/EA), λ2 = ⁴√(K2/EI) 산정에 직접 사용됨.
                   </div>
@@ -608,14 +608,14 @@ export default function SeismicDetailInputPage() {
           <EngRow label="흙 단위중량 γ" unit="kN/m³" popover={
             <EngPopover title="흙 단위중량 γ (Unit Weight of Soil)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>사용처: 지반강성계수 K1, K2 산정</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>사용처: 지반강성계수 K1, K2 산정</strong><br/>
                   K1 = 1.5 × γ × Vds² / g<br/>
                   K2 = 3.0 × γ × Vds² / g
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 4 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>γ (kN/m³)</th>
                     </tr>
@@ -634,7 +634,7 @@ export default function SeismicDetailInputPage() {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   지반조사 자료 없는 경우 18 kN/m³ (표준값) 적용 권장
                 </div>
               </div>
@@ -645,8 +645,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="차량하중 Pm" unit="kN/輪" popover={
             <EngPopover title="차량하중 Pm (후륜 1輪당 하중)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
                   지침 필수 하중 조합 항목 — σ_total = σ_i + σ_o + σ_x (분절관)
                 </div>
                 <div style={{ fontSize: 11 }}>
@@ -659,7 +659,7 @@ export default function SeismicDetailInputPage() {
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>설계차량</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Pm (kN/輪)</th>
                     </tr>
@@ -669,7 +669,7 @@ export default function SeismicDetailInputPage() {
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-24 (후륜 1輪)</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>96</td>
                     </tr>
-                    <tr style={{ background: '#fafafa' }}>
+                    <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-13.5 (후륜 1輪)</td>
                       <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>54</td>
                     </tr>
@@ -694,8 +694,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="지반반력계수 Kv" unit="kN/m³" popover={
             <EngPopover title="연직방향 지반반력계수 Kv">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
                   Winkler 탄성지반 위 보 모델의 지반 스프링 상수
                 </div>
                 <div style={{ fontSize: 11 }}>
@@ -709,7 +709,7 @@ export default function SeismicDetailInputPage() {
                 </div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                   <thead>
-                    <tr style={{ background: '#f0f4f8' }}>
+                    <tr style={{ background: T.bgInfo }}>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
                       <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Kv 범위 (kN/m³)</th>
                     </tr>
@@ -730,7 +730,7 @@ export default function SeismicDetailInputPage() {
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   지침 예제 역산값: Kv ≈ 1,848 kN/m³ (굳은 점토)<br/>
                   지반조사 자료 없는 경우 지반종류에 따른 하한값 적용 권장 (보수적).
                 </div>
@@ -752,8 +752,8 @@ export default function SeismicDetailInputPage() {
               <EngRow label="관 1본 길이 Lj" unit="m" popover={
                 <EngPopover title="관 1본 길이 Lj">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.2</strong><br/>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.2</strong><br/>
                       이음부 1개소당 신축량·굽힘각 계산의 핵심 입력값
                     </div>
                     <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
@@ -764,7 +764,7 @@ export default function SeismicDetailInputPage() {
                       <strong>일반적인 관 1본 길이</strong>
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 3 }}>
                         <thead>
-                          <tr style={{ background: '#f0f4f8' }}>
+                          <tr style={{ background: T.bgInfo }}>
                             <th style={{ padding: '2px 4px', border: '1px solid #ccc' }}>관종</th>
                             <th style={{ padding: '2px 4px', border: '1px solid #ccc' }}>표준 길이</th>
                           </tr>
@@ -777,7 +777,7 @@ export default function SeismicDetailInputPage() {
                         </tbody>
                       </table>
                     </div>
-                    <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                       Lj가 길수록 이음부 1개소당 신축량이 증가하므로<br/>
                       이음부 허용 신축량을 초과할 위험이 높아짐.
                     </div>
@@ -789,13 +789,13 @@ export default function SeismicDetailInputPage() {
               <EngRow label="이음 종류" popover={
                 <EngPopover title="이음 종류 (Joint Type)">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C 표 C.2.2</strong><br/>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C 표 C.2.2</strong><br/>
                       이음 종류에 따라 허용 신축량과 굽힘각이 다름
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                       <thead>
-                        <tr style={{ background: '#f0f4f8' }}>
+                        <tr style={{ background: T.bgInfo }}>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>이음 종류</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>허용 신축량</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>허용 굽힘각</th>
@@ -807,14 +807,14 @@ export default function SeismicDetailInputPage() {
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>소 (약 10~20 mm)</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>소 (약 2°)</td>
                         </tr>
-                        <tr style={{ background: '#fafafa' }}>
+                        <tr style={{ background: T.bgPanelAlt }}>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>내진형</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>대 (약 50~100 mm)</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>대 (약 5°)</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div style={{ marginTop: 6, padding: '4px 8px', background: '#e8f0fb', border: '1px solid #5b9bd5', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgInfo, border: `1px solid ${T.border}`, borderRadius: 2, fontSize: 10 }}>
                       내진형 이음(NS 이음, SII 이음 등)은 이탈방지 링과<br/>
                       신축구조를 결합하여 지진 시 대변위에 대응 가능.<br/>
                       실제 허용값은 제조사 카탈로그 또는 KS D 4311 부록 참조.
@@ -841,15 +841,15 @@ export default function SeismicDetailInputPage() {
               <EngRow label="온도변화 ΔT" unit="°C" popover={
                 <EngPopover title="온도변화 ΔT">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong><br/>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong><br/>
                       관로 시공 온도와 운용 온도 차이에 의한 열변형률 산정
                     </div>
                     <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
                       ε_T = α × ΔT<br/>
                       α (강관 열팽창계수) = 1.2 × 10⁻⁵ /°C
                     </div>
-                    <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                       지진 하중과 온도 하중은 동시 작용으로 가정하여 변형률 합산.<br/>
                       시공 온도를 알 수 없으면 보수적으로 20°C 적용 권장.
                     </div>
@@ -861,15 +861,15 @@ export default function SeismicDetailInputPage() {
               <EngRow label="부등침하량 δ" unit="m" popover={
                 <EngPopover title="부등침하량 δ">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
                     </div>
                     <div style={{ fontSize: 11 }}>
                       지반 부등침하 또는 지진에 의한 국부 침하 예상량.<br/>
                       지반조사 결과 또는 인근 구조물 침하 실측값 사용.<br/>
                       연약 지반 구간, 성토-절토 경계부에서 특히 중요.
                     </div>
-                    <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                       부등침하가 없는 경우 δ = 0 입력.
                     </div>
                   </div>
@@ -880,8 +880,8 @@ export default function SeismicDetailInputPage() {
               <EngRow label="침하구간 길이" unit="m" popover={
                 <EngPopover title="침하구간 길이 L_settle">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
                     </div>
                     <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
                       굽힘변형률 ε_B = π² · D_out / (2 · L²) · δ
@@ -900,13 +900,13 @@ export default function SeismicDetailInputPage() {
               <EngRow label="판정 기준" popover={
                 <EngPopover title="허용변형률 판정 기준">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C 표 C.2.3</strong><br/>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C 표 C.2.3</strong><br/>
                       연속관(강관)의 축방향 변형률 허용 기준 선택
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                       <thead>
-                        <tr style={{ background: '#f0f4f8' }}>
+                        <tr style={{ background: T.bgInfo }}>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>기준</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>식</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>특성</th>
@@ -918,14 +918,14 @@ export default function SeismicDetailInputPage() {
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>fy / Es</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>항복점 변형률<br/>SS400: 235/206000 = 0.114%<br/>보수적 기준</td>
                         </tr>
-                        <tr style={{ background: '#fafafa' }}>
+                        <tr style={{ background: T.bgPanelAlt }}>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>46·t / D</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>46 × t / D</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>국부좌굴 한계<br/>ASCE / KDS 해설<br/>σ_y/E 대비 약 3배 이상 크며<br/>실무에서 널리 사용</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                       붕괴방지 수준에서 항복을 허용하는 경우 46t/D 기준 적용 가능.<br/>
                       기능수행 수준에서는 항복(σ_y/E) 이하 유지가 원칙.
                     </div>
@@ -965,8 +965,8 @@ export default function SeismicDetailInputPage() {
               <span style={{ fontSize: 11, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontSans }}>지반층 입력</span>
               <EngPopover title="지반층 H / Vs 입력">
                 <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                  <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                    <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.1</strong><br/>
+                  <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                    <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.1</strong><br/>
                     지반 고유주기 TG 및 지반 전파속도 Vds 산정에 사용
                   </div>
                   <div style={{ fontSize: 11 }}>
@@ -979,7 +979,7 @@ export default function SeismicDetailInputPage() {
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 6 }}>
                     <thead>
-                      <tr style={{ background: '#f0f4f8' }}>
+                      <tr style={{ background: T.bgInfo }}>
                         <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>지반 상태</th>
                         <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>Vs 범위 (m/s)</th>
                       </tr>
@@ -999,7 +999,7 @@ export default function SeismicDetailInputPage() {
                       ))}
                     </tbody>
                   </table>
-                  <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                     지반조사 자료 없는 경우: 지반종류(SA~SE)에 상응하는<br/>
                     대표 Vs값(KDS 17 10 00 표 2.2.1) 사용 가능.
                   </div>
@@ -1016,14 +1016,14 @@ export default function SeismicDetailInputPage() {
                 </span>
                 <EngPopover title="기반암까지의 깊이 입력 방식">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: '#2d6a2d' }}>KDS 17 10 00 / 매설관로 내진성능평가 요령 §5.3.2</strong><br/>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>KDS 17 10 00 / 매설관로 내진성능평가 요령 §5.3.2</strong><br/>
                       해설식(5.3.5): Uh = (2/π²)·Sv·Ts·cos(πz/2H)<br/>
                       H = 기반암 상단까지의 표층 두께
                     </div>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 6 }}>
                       <thead>
-                        <tr style={{ background: '#f0f4f8' }}>
+                        <tr style={{ background: T.bgInfo }}>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>모드</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>H 결정 방식</th>
                           <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>적합한 경우</th>
@@ -1035,14 +1035,14 @@ export default function SeismicDetailInputPage() {
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = Σ layer.H</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반층이 기반암까지 완전히 입력된 경우</td>
                         </tr>
-                        <tr style={{ background: '#fafafa' }}>
+                        <tr style={{ background: T.bgPanelAlt }}>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>직접 입력</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = 입력값</td>
                           <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반조사 보고서의 기반암 심도를 직접 알고 있는 경우</td>
                         </tr>
                       </tbody>
                     </table>
-                    <div style={{ padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                    <div style={{ padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                       직접 입력 시 Σ층두께 {'<'} H_bedrock이면, 공백 구간에 최하층 Vs를 자동 적용하여
                       TG·Vds 계산에 사용합니다. 지반변위 Uh는 H_bedrock 기준으로 산정됩니다.
                     </div>
@@ -1105,8 +1105,8 @@ export default function SeismicDetailInputPage() {
           <EngRow label="기반암 Vs (Vbs)" unit="m/s" popover={
             <EngPopover title="기반암 전단파 속도 Vbs">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 부록 C §C.2.1</strong><br/>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.1</strong><br/>
                   지반 전파속도 보정계수 ε 결정에 사용
                 </div>
                 <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
@@ -1118,7 +1118,7 @@ export default function SeismicDetailInputPage() {
                   지반 내 전파 속도와 지진파 입력 속도의 비율 보정계수.<br/>
                   기반암이 단단할수록(Vs 높을수록) ε = 1.0 적용.
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
                   일반적인 기반암(연암 이상): Vbs = 500 ~ 800 m/s<br/>
                   지반조사 자료 없는 경우 Vbs = 500 m/s 권장
                 </div>
@@ -1158,7 +1158,7 @@ export default function SeismicDetailInputPage() {
           {/* 파라미터 요약 */}
           <div style={{
             marginTop: 6, padding: '6px 10px',
-            background: '#f0f4f8', border: '1px solid #c8d8e8',
+            background: T.bgInfo, border: '1px solid #c8d8e8',
             borderRadius: 3, fontSize: 10,
             fontFamily: T.fontMono, lineHeight: 1.9, color: T.textPrimary,
           }}>
@@ -1195,21 +1195,21 @@ export default function SeismicDetailInputPage() {
                 응답변위법 개념도 읽는 법
               </div>
 
-              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+              <div style={{ background: T.bgInfo, borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
                 <strong>🌊 지진이 오면 어떤 일이 생기나?</strong><br/>
                 지진파(S파)가 땅 속을 파도처럼 전파되면, 매설 관로도 지반과 함께
                 <b> 사인파(물결) 형태</b>로 강제로 휘어집니다.<br/>
                 위 그림은 그 변형을 위에서 내려다본 평면도입니다.
               </div>
 
-              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+              <div style={{ background: T.bgInfo, borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
                 <strong>📏 L — 지진파장 (Seismic Wavelength)</strong><br/>
                 지진파 한 주기의 길이 (마루→마루 거리).<br/>
                 L이 클수록 관로 변형이 완만하여 안전합니다.
                 <br/><span style={{ color: '#888' }}>계산: L = Vds × Tg &nbsp;(설계지반속도 × 지반고유주기)</span>
               </div>
 
-              <div style={{ background: '#f0f4f8', borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
+              <div style={{ background: T.bgInfo, borderLeft: '3px solid #c0392b', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.7 }}>
                 <strong>↕ Uh — 최대 지반 횡변위 (Peak Ground Displacement)</strong><br/>
                 지진 시 지반이 가장 많이 움직이는 거리 (기준선에서 마루까지).<br/>
                 규모가 큰 지진일수록, 연약한 지반일수록 Uh가 커져 위험합니다.

@@ -42,7 +42,7 @@ export default function SeismicPrelimReportPage() {
           인쇄 / PDF 저장
         </button>
         <button onClick={() => navigate('/seismic-prelim/result')}
-          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.borderDark}`, borderRadius: 2, fontFamily: F }}>
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>
           결과 페이지로
         </button>
       </div>

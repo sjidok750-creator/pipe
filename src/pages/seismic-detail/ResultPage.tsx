@@ -148,7 +148,7 @@ export default function SeismicDetailResultPage() {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button onClick={() => navigate('/seismic-detail/input')}
-            style={{ flex: 1, padding: '6px 0', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.borderDark}`, borderRadius: 2, fontFamily: T.fontSans }}>
+            style={{ flex: 1, padding: '6px 0', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontSans }}>
             ◀  입력 수정
           </button>
           <button onClick={() => navigate('/seismic-detail/report')}
@@ -215,7 +215,7 @@ export default function SeismicDetailResultPage() {
                 </div>
               )
             })}
-            <div style={{ height: 1, background: T.borderDark, margin: '4px 0' }}/>
+            <div style={{ height: 1, background: T.border, margin: '4px 0' }}/>
             <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
               허용값 = {rs.epsilon_allow?.toExponential(3)}  ({rs.strainCriterion === 'buckling' ? 'ASCE/KDS 해설, 46t/D' : '지침 부록C, σ_y/E'})
             </div>
