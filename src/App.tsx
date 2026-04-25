@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
+import PrintLayout from './components/layout/PrintLayout'
 import SessionAutoSaver from './components/SessionAutoSaver'
 import Home from './pages/Home'
 import StructuralOverviewPage  from './pages/StructuralOverviewPage'
@@ -24,6 +25,25 @@ export default function App() {
     <>
     <SessionAutoSaver />
     <Routes>
+
+      {/* ── 인쇄 전용 라우트 (Layout 없음, 네비게이션 없음) ── */}
+      <Route path="structural/report/print" element={
+        <PrintLayout backPath="/structural/report">
+          <ReportPage />
+        </PrintLayout>
+      } />
+      <Route path="seismic-prelim/report/print" element={
+        <PrintLayout backPath="/seismic-prelim/report">
+          <SeismicPrelimReportPage />
+        </PrintLayout>
+      } />
+      <Route path="seismic-detail/report/print" element={
+        <PrintLayout backPath="/seismic-detail/report">
+          <SeismicDetailReportPage />
+        </PrintLayout>
+      } />
+
+      {/* ── 일반 라우트 (Layout 포함) ── */}
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
 

@@ -144,7 +144,7 @@ export default function Layout() {
       </header>
 
       {/* ── 모듈 탭바 ── */}
-      <div style={{ background: T.bgHeaderDeep, borderBottom: `1px solid rgba(0,0,0,0.25)`, flexShrink: 0 }}>
+      <div className="no-print" style={{ background: T.bgHeaderDeep, borderBottom: `1px solid rgba(0,0,0,0.25)`, flexShrink: 0 }}>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px', display: 'flex' }}>
           {MODULE_TABS.map(tab => {
             const isActive = pathname !== '/' && pathname.startsWith(tab.matchBase)
@@ -174,7 +174,7 @@ export default function Layout() {
 
       {/* ── 하위 탭 ── */}
       {subNav && (
-        <div style={{ background: T.bgPanel, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
+        <div className="no-print" style={{ background: T.bgPanel, borderBottom: `1px solid ${T.border}`, flexShrink: 0 }}>
           <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px', display: 'flex' }}>
             {subNav.map(({ to, label }) => (
               <NavLink

@@ -14,10 +14,14 @@ const F_MONO = 'Consolas, "Courier New", monospace'
 const SEC_TITLE: React.CSSProperties = {
   fontSize: 12.5, fontWeight: 700, color: NAVY,
   borderBottom: `2px solid ${NAVY}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
+  breakAfter: 'avoid', pageBreakAfter: 'avoid',
+  breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const SUB_TITLE: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, color: NAVY,
   borderLeft: `3px solid ${NAVY}`, paddingLeft: 6, marginTop: 8, marginBottom: 3,
+  breakAfter: 'avoid', pageBreakAfter: 'avoid',
+  breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5 }
 const TH: React.CSSProperties = { background: NAVY, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
@@ -84,7 +88,7 @@ function SoilProfileFigure({ layers, pipeDepth, title }: {
 
   return (
     <div style={{ textAlign: 'center', margin: '8px 0' }}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'inline-block', border: '1px solid #ccc' }}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'inline-block' }}>
         <text x={W / 2} y={16} textAnchor="middle" fontSize="10" fontWeight="700" fill={NAVY}>{title}</text>
         <line x1={margin.l} y1={margin.t} x2={margin.l + drawW} y2={margin.t} stroke="#333" strokeWidth="1.5" />
         {[0, 8, 16, 24, 32, 40].map(i => (
@@ -149,7 +153,7 @@ export default function SeismicDetailReportPage() {
     <div className="report-wrapper" style={{ maxWidth: 820, margin: '0 auto' }}>
       {/* 인쇄 버튼 */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-        <button onClick={() => window.print()}
+        <button onClick={() => navigate('/seismic-detail/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: NAVY, color: 'white', border: 'none', borderRadius: 2 }}>
           인쇄 / PDF 저장
         </button>
@@ -162,7 +166,7 @@ export default function SeismicDetailReportPage() {
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.45, color: '#111' }}>
 
         {/* ── 표지 ── */}
-        <div className="keep-together" style={{ textAlign: 'center', borderBottom: `2px solid ${NAVY}`, paddingBottom: 16, marginBottom: 18 }}>
+        <div className="keep-together" style={{ textAlign: 'center', borderBottom: `2px solid ${NAVY}`, paddingBottom: 10, marginBottom: 12 }}>
           <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>
             기존시설물(상수도) 내진성능 평가요령 부록 C — 매설관로 내진성능 본평가
           </div>
@@ -512,7 +516,7 @@ export default function SeismicDetailReportPage() {
           return (
             <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', marginBottom: 8, pageBreakInside: 'avoid', breakInside: 'avoid' }}>
               {/* ── SVG 그래프 ── */}
-              <svg width={W} height={H} style={{ border: '1px solid #ccc', background: 'white', flexShrink: 0 }}>
+              <svg width={W} height={H} style={{ background: 'white', flexShrink: 0 }}>
                 {/* 격자선 */}
                 {yTicks.map((v, i) => (
                   <line key={`gy${i}`} x1={ml} y1={ty(v)} x2={ml+gW} y2={ty(v)} stroke="#eee" strokeWidth={1}/>

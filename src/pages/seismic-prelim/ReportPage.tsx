@@ -37,7 +37,7 @@ export default function SeismicPrelimReportPage() {
 
       {/* 인쇄 버튼 */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-        <button onClick={() => window.print()}
+        <button onClick={() => navigate('/seismic-prelim/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
@@ -51,7 +51,7 @@ export default function SeismicPrelimReportPage() {
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
         {/* ── 표지 ── */}
-        <div className="keep-together" style={{ textAlign: 'center', marginBottom: 28, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 18 }}>
+        <div className="keep-together" style={{ textAlign: 'center', marginBottom: 14, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 10 }}>
           <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 6 }}>KDS 57 17 00 : 2022 상수도 내진설계기준</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: T.bgActive, marginBottom: 4, fontFamily: F }}>
             매설관로 내진성능 예비평가 검토서
@@ -212,4 +212,6 @@ const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #
 const RH: React.CSSProperties = {
   background: '#eef2f8', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
   color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', margin: '10px 0 5px',
+  breakAfter: 'avoid', pageBreakAfter: 'avoid',
+  breakInside: 'avoid', pageBreakInside: 'avoid',
 }

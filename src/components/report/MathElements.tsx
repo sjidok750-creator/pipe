@@ -1,14 +1,5 @@
 /**
  * 보고서 수식 렌더링 유틸리티
- *
- * 사용법:
- *   <Frac top="P(D−t)" bot="2t" />          → 분수
- *   σ<Sub>θ</Sub>                            → 아래첨자
- *   σ<Sup>2</Sup>                             → 위첨자
- *   <Sqrt>σ²+τ²</Sqrt>                        → 제곱근
- *   <FormulaRow> ... </FormulaRow>           → 수식 한 줄 (flex, 세로 정렬)
- *   <FormulaBlock> ... </FormulaBlock>       → 수식 블록 박스
- *   <ResultBlock ok={true}> ... </ResultBlock> → 결과 박스
  */
 import React from 'react'
 
@@ -39,7 +30,7 @@ export function Sub({ children }: { children: React.ReactNode }) {
 }
 
 // ── 제곱근 ────────────────────────────────────────────────────
-export function Sqrt({ children }: { children: React.ReactNode }) {
+export function Sqrt({ children, inner }: { children?: React.ReactNode; inner?: React.ReactNode }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
       <span style={{ fontSize: '1.1em', lineHeight: 1, marginRight: 1 }}>√</span>
@@ -49,7 +40,7 @@ export function Sqrt({ children }: { children: React.ReactNode }) {
         paddingLeft: 1,
         paddingRight: 2,
       }}>
-        {children}
+        {inner ?? children}
       </span>
     </span>
   )
@@ -78,10 +69,10 @@ export function FormulaBlock({
         background: '#f8f9fb',
         border: '1px solid #c8d4e0',
         borderLeft: '3px solid #1a3a5c',
-        padding: '8px 14px',
-        margin: '5px 0 8px',
+        padding: '5px 12px',
+        margin: '4px 0 6px',
         fontSize: 10.5,
-        lineHeight: 2.0,
+        lineHeight: 1.55,
         ...style,
       }}
     >
@@ -110,10 +101,10 @@ export function ResultBlock({
         background: bg,
         border: `1px solid ${border}`,
         borderLeft: `3px solid ${color}`,
-        padding: '6px 14px',
-        margin: '4px 0',
+        padding: '4px 12px',
+        margin: '3px 0 5px',
         fontSize: 10.5,
-        lineHeight: 2.0,
+        lineHeight: 1.55,
       }}
     >
       {children}

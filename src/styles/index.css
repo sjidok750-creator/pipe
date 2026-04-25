@@ -69,7 +69,7 @@ body {
   align-items: center;
   flex-wrap: wrap;
   gap: 2px 0;
-  line-height: 2.2;
+  line-height: 1.7;
 }
 
 /* ── 보고서 인쇄 스타일 ────────────────────────────────────── */
@@ -87,14 +87,23 @@ body {
   /* A4 페이지 설정 */
   @page {
     size: A4 portrait;
-    margin: 14mm 12mm 18mm 12mm;
+    margin: 12mm 10mm 16mm 10mm;
   }
 
-  /* 헤더/푸터/사이드바/네비게이션 숨기기 */
+  /* 앱 UI 전체 숨기기 (태그 + 클래스 모두) */
   header, footer, nav, aside,
   .no-print, [data-noprint],
   button:not(.print-keep) {
     display: none !important;
+  }
+
+  /* Layout main 패딩 초기화 */
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  main > div {
+    max-width: 100% !important;
   }
 
   /* 보고서 래퍼 */
@@ -120,22 +129,22 @@ body {
   .page-break-after  { page-break-after:  always !important; break-after:  page !important; }
   .keep-together     { page-break-inside: avoid !important; break-inside: avoid !important; }
 
+  /* 섹션·하위 제목 → 고아 방지 (제목만 이전 페이지에 남지 않도록) */
+  .sec-title, .sub-title,
+  .report-body [class*="sec-title"],
+  .report-body [class*="sub-title"] {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
   /* 표 페이지 나누기 */
   table { page-break-inside: auto; }
   tr    { page-break-inside: avoid; break-inside: avoid; }
   thead { display: table-header-group; }
 
-  /* 섹션 제목 직후 고아 방지 */
-  h1, h2, h3, h4,
-  .sec-title, .sub-title {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  /* 링크 URL 숨기기 */
-  a[href]::after { content: none !important; }
-
-  /* 수식 박스 */
+  /* 수식 박스 — 짧은 것만 묶고 긴 것은 자연 분리 허용 */
   .formula-box {
     background: #f8f9fb !important;
     -webkit-print-color-adjust: exact;
@@ -143,6 +152,15 @@ body {
     page-break-inside: avoid;
     break-inside: avoid;
   }
+
+  /* 결과 박스 */
+  .keep-together {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* 링크 URL 숨기기 */
+  a[href]::after { content: none !important; }
 
   /* 색상 강제 출력 */
   * {

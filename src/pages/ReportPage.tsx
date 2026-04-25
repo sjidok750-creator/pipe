@@ -8,7 +8,7 @@ import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } fro
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
 const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#1a3a5c', borderBottom: '1px solid #bbb', textAlign: 'left', background: '#eef2f8' }
 const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
-const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 8, marginBottom: 3 }
+const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
 const NOTE: React.CSSProperties = { fontSize: 9.5, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
@@ -67,12 +67,14 @@ export default function ReportPage() {
     background: T.bgSection, padding: '3px 10px', fontWeight: 700, fontSize: 12,
     color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '10px 0 5px',
     fontFamily: F,
+    breakAfter: 'avoid', pageBreakAfter: 'avoid',
+    breakInside: 'avoid', pageBreakInside: 'avoid',
   }
 
   return (
     <div className="report-wrapper" style={{ maxWidth: 820, margin: '0 auto' }}>
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-        <button onClick={() => window.print()}
+        <button onClick={() => navigate('/structural/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
@@ -85,7 +87,7 @@ export default function ReportPage() {
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
         {/* ── 표지 ── */}
-        <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 16 }}>
+        <div style={{ textAlign: 'center', marginBottom: 14, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 10 }}>
           <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 4 }}>KDS 57 10 00 : 2022 상수도 시설 설계기준 — 관로</div>
           <div style={{ fontSize: 18, fontWeight: 900, color: T.bgActive, marginBottom: 4, fontFamily: F }}>매설관로 구조안전성 검토서</div>
           <div style={{ fontSize: 10.5, color: T.textMuted }}>
