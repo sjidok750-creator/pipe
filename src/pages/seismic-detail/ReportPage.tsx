@@ -5,6 +5,7 @@ import { SEISMIC_ZONE, SEISMIC_GRADE } from '../../engine/seismicConstants.js'
 import {
   Frac, Sub, Sup, Sqrt, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
 } from '../../components/report/MathElements'
+import WIcon from '../../components/WIcon'
 
 // ── 스타일 상수 ─────────────────────────────────────────────────
 const NAVY = '#1a3a5c'
@@ -165,19 +166,33 @@ export default function SeismicDetailReportPage() {
 
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.45, color: '#111' }}>
 
-        {/* ── 표지 ── */}
-        <div className="keep-together" style={{ textAlign: 'center', borderBottom: `2px solid ${NAVY}`, paddingBottom: 10, marginBottom: 12 }}>
-          <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>
-            기존시설물(상수도) 내진성능 평가요령 부록 C — 매설관로 내진성능 본평가
+        {/* ── 표지 헤더 ── */}
+        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${NAVY}`, paddingBottom: 10, marginBottom: 12 }}>
+          {/* W 아이콘 */}
+          <WIcon size={54} id="rpt-detail" radius={10} />
+
+          {/* 제목부 */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8.5, color: '#888', letterSpacing: 0.3, marginBottom: 3, fontFamily: F_MONO }}>
+              KDS 57 17 00 : 2022 · 기존시설물(상수도) 내진성능 평가요령 부록 C
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: NAVY, lineHeight: 1.2, marginBottom: 4 }}>
+              {isSegmented ? 'C.1 분절관 내진성능 본평가 검토서' : 'C.2 연속강관 내진성능 본평가 검토서'}
+            </div>
+            <div style={{ fontSize: 9.5, color: '#666' }}>
+              {isSegmented
+                ? '덕타일 주철관 (KS D 4311 수도용 원심력 덕타일주철관 2종관)'
+                : '상수도용 도복장강관 (KS D 3565)'}
+            </div>
           </div>
-          <div style={{ fontSize: 17, fontWeight: 900, color: NAVY, marginBottom: 4 }}>
-            {isSegmented ? 'C.1 분절관 내진성능 본평가 검토서' : 'C.2 연속강관 내진성능 본평가 검토서'}
-          </div>
-          <div style={{ fontSize: 10.5, color: '#555' }}>
-            {isSegmented
-              ? '덕타일 주철관 (KS D 4311 수도용 원심력 덕타일주철관 2종관)'
-              : '상수도용 도복장강관 (KS D 3565)'}
-            &nbsp;|&nbsp;작성일: {today}
+
+          {/* 우측 메타 */}
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: NAVY, letterSpacing: 1, marginBottom: 5 }}>
+              STEP-PIPE
+            </div>
+            <div style={{ fontSize: 9, color: '#999', fontFamily: F_MONO }}>작성일</div>
+            <div style={{ fontSize: 9.5, color: '#555', fontFamily: F_MONO, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 

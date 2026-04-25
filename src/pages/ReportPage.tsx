@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { T } from '../components/eng/tokens'
 import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../components/report/MathElements'
+import WIcon from '../components/WIcon'
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
@@ -86,13 +87,26 @@ export default function ReportPage() {
 
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
-        {/* ── 표지 ── */}
-        <div style={{ textAlign: 'center', marginBottom: 14, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 10 }}>
-          <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 4 }}>KDS 57 10 00 : 2022 상수도 시설 설계기준 — 관로</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: T.bgActive, marginBottom: 4, fontFamily: F }}>매설관로 구조안전성 검토서</div>
-          <div style={{ fontSize: 10.5, color: T.textMuted }}>
-            {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
-            &nbsp;|&nbsp;작성일: {today}
+        {/* ── 표지 헤더 ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
+          <WIcon size={54} id="rpt-struct" radius={10} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
+              KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
+              매설관로 구조안전성 검토서
+            </div>
+            <div style={{ fontSize: 9.5, color: T.textMuted }}>
+              {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: T.bgActive, letterSpacing: 1, marginBottom: 5 }}>
+              STEP-PIPE
+            </div>
+            <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
+            <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 

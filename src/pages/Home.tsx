@@ -5,6 +5,7 @@ import { useStore } from '../store/useStore.js'
 import { useSeismicStore } from '../store/useSeismicStore.js'
 import { getSession } from '../lib/startup.js'
 import { T } from '../components/eng/tokens'
+import WIcon from '../components/WIcon'
 import type { ProjectMeta } from '../lib/projectRepo.js'
 
 const MODULE_LABEL: Record<string, string> = {
@@ -24,24 +25,6 @@ const MODULE_PATH: Record<string, string> = {
 }
 
 // ── 앱 아이콘 — 관로 단면도 스타일 ─────────────────────────────
-function AppIcon({ size = 48 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
-      {/* 배경 */}
-      <rect width="48" height="48" rx="11" fill="#0B1E36" />
-      {/* 관 외경 — 두꺼운 링 */}
-      <circle cx="24" cy="24" r="15" fill="none" stroke="#ADC6E5" strokeWidth="6" />
-      {/* 관 내경 — 점선 */}
-      <circle cx="24" cy="24" r="7.5" fill="none" stroke="#3A6FB0" strokeWidth="1.2" strokeDasharray="2.5 2" />
-      {/* 중심 십자 */}
-      <line x1="20" y1="24" x2="28" y2="24" stroke="#5599DD" strokeWidth="1.2" />
-      <line x1="24" y1="20" x2="24" y2="28" stroke="#5599DD" strokeWidth="1.2" />
-      {/* 우상단 KDS 마크 점 */}
-      <circle cx="36" cy="12" r="3" fill="#FFE600" />
-    </svg>
-  )
-}
-
 function ModuleBadge({ id }: { id: string }) {
   const c = MODULE_COLOR[id] ?? { bg: '#F5F5F5', text: '#555', border: '#DDD' }
   return (
@@ -279,7 +262,7 @@ export default function Home() {
         display: 'flex', alignItems: 'center', gap: 18,
         border: '1px solid rgba(173,198,229,0.15)',
       }}>
-        <AppIcon size={52} />
+        <WIcon size={64} id="home" />
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 0, marginBottom: 5 }}>
             <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 14, color: '#FFE600', letterSpacing: 2 }}>STEP-</span>
