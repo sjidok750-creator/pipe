@@ -1,6 +1,7 @@
 import React from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/layout/Layout'
+import SessionAutoSaver from './components/SessionAutoSaver'
 import Home from './pages/Home'
 import StructuralOverviewPage  from './pages/StructuralOverviewPage'
 import InputPage from './pages/InputPage'
@@ -20,6 +21,8 @@ import SeismicDetailReportPage   from './pages/seismic-detail/ReportPage'
 
 export default function App() {
   return (
+    <>
+    <SessionAutoSaver />
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
@@ -63,5 +66,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </>
   )
 }

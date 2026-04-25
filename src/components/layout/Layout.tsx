@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
 import { T } from '../eng/tokens'
+import { useProjectStore } from '../../store/useProjectStore.js'
+import NewProjectModal from '../NewProjectModal'
 
 const PIXEL_FONT = "'Press Start 2P', monospace"
 
@@ -59,6 +61,13 @@ export default function Layout() {
   const activeModule = MODULE_TABS.find(t => pathname.startsWith(t.matchBase))
   const subNav = activeModule ? SUBNAV_MAP[activeModule.id] : null
 
+  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal } = useProjectStore()
+  const hasProject = projectName.length > 0
+
+  const savedTimeLabel = lastSavedAt
+    ? new Date(lastSavedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    : null
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: T.bgApp }}>
 
@@ -95,14 +104,57 @@ export default function Layout() {
             KDS 57 00 00 : 2022
           </span>
 
-          {/* 현재 모듈 표시 */}
-          {activeModule && (
-            <span style={{
-              marginLeft: 'auto', fontSize: 10,
-              color: 'rgba(255,255,255,0.5)', fontFamily: T.fontSans,
+          {/* 프로젝트명 + 저장 상태 */}
+          {pathname !== '/' && (
+            <div style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8,
             }}>
-              {activeModule.sub}
-            </span>
+              {hasProject ? (
+                <input
+                  value={projectName}
+                  onChange={e => setProjectName(e.target.value)}
+                  placeholder="프로젝트명"
+                  style={{
+                    background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: 5, color: 'white', fontSize: 11,
+                    padding: '3px 8px', fontFamily: T.fontSans,
+                    maxWidth: 160, outline: 'none',
+                    touchAction: 'manipulation',
+                  }}
+                />
+              ) : (
+                <button
+                  onClick={openNewModal}
+                  style={{
+                    background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: 5, color: 'rgba(255,255,255,0.6)', fontSize: 10,
+                    padding: '3px 10px', cursor: 'pointer', fontFamily: T.fontSans,
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  + 프로젝트
+                </button>
+              )}
+
+              {/* Save status */}
+              {isDirty ? (
+                <button
+                  onClick={() => save()}
+                  style={{
+                    background: '#e6a800', border: 'none', borderRadius: 5,
+                    color: 'white', fontSize: 10, fontWeight: 700,
+                    padding: '3px 10px', cursor: 'pointer',
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  저장
+                </button>
+              ) : savedTimeLabel ? (
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', fontFamily: T.fontSans }}>
+                  저장됨 {savedTimeLabel}
+                </span>
+              ) : null}
+            </div>
           )}
         </div>
       </header>
@@ -198,6 +250,8 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      <NewProjectModal />
     </div>
   )
 }
