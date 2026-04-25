@@ -161,7 +161,7 @@ export default function Layout() {
                   color: isActive ? T.textOnDark : T.textOnDarkMuted,
                   fontWeight: isActive ? T.fw.semibold : T.fw.regular,
                   textDecoration: 'none',
-                  borderBottom: isActive ? `2px solid #5599DD` : '2px solid transparent',
+                  borderBottom: isActive ? `2px solid ${T.bgActive}` : '2px solid transparent',
                   transition: 'color 120ms',
                   whiteSpace: 'nowrap',
                 }}

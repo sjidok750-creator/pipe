@@ -146,7 +146,7 @@ export default function SeismicPrelimReportPage() {
 
         <table style={TABLE}>
           <thead>
-            <tr style={{ background: '#1a3a5c' }}>
+            <tr style={{ background: '#2C2118' }}>
               <th style={TH}>지수 항목</th>
               <th style={TH}>산정 기준</th>
               <th style={{ ...TH, textAlign: 'right', width: 70 }}>지수값</th>
@@ -170,7 +170,7 @@ export default function SeismicPrelimReportPage() {
                 <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{val.toFixed(1)}</td>
               </tr>
             ))}
-            <tr style={{ background: '#eef2f8', fontWeight: 700 }}>
+            <tr style={{ background: '#EDEBE6', fontWeight: 700 }}>
               <td style={TD} colSpan={2}>세부지수 합계 (KIND + EARTH + SIZE + CONNECT + FACIL + MCONE)</td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{r.VI_sub.toFixed(1)}</td>
             </tr>
@@ -225,8 +225,8 @@ const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', 
 const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
 const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
 const RH: React.CSSProperties = {
-  background: '#eef2f8', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
-  color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', margin: '10px 0 5px',
+  background: '#EDEBE6', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
+  color: '#2C2118', borderLeft: '3px solid #CC6B3D', margin: '10px 0 5px',
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }

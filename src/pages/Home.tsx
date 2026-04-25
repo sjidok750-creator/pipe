@@ -71,7 +71,7 @@ function SessionCard() {
 
   return (
     <div style={{
-      background: '#EEF4FF',
+      background: '#FEF7F3',
       border: `1.5px solid ${T.borderFocus}`,
       borderRadius: 10,
       padding: '12px 14px',
@@ -257,10 +257,10 @@ export default function Home() {
 
       {/* ── 앱 헤더 카드 ── */}
       <div style={{
-        background: 'linear-gradient(135deg, #0B1E36 0%, #13294B 55%, #1B3A66 100%)',
+        background: 'linear-gradient(135deg, #1C1917 0%, #252119 50%, #2D2520 100%)',
         borderRadius: 12, padding: '18px 22px',
         display: 'flex', alignItems: 'center', gap: 18,
-        border: '1px solid rgba(173,198,229,0.15)',
+        border: '1px solid rgba(255,255,255,0.07)',
       }}>
         <WIcon size={64} id="home" />
         <div style={{ flex: 1 }}>

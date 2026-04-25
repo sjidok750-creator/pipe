@@ -66,9 +66,9 @@ export function FormulaBlock({
     <div
       className="formula-box keep-together"
       style={{
-        background: '#f8f9fb',
-        border: '1px solid #c8d4e0',
-        borderLeft: '3px solid #1a3a5c',
+        background: '#F9F7F4',
+        border: '1px solid #E0DDD7',
+        borderLeft: '3px solid #CC6B3D',
         padding: '5px 12px',
         margin: '4px 0 6px',
         fontSize: 10.5,
@@ -89,11 +89,11 @@ export function ResultBlock({
   ok?: boolean
 }) {
   const color =
-    ok === undefined ? '#1a3a5c' : ok ? '#1a6b3a' : '#c0392b'
+    ok === undefined ? '#CC6B3D' : ok ? '#1a6b3a' : '#c0392b'
   const bg =
-    ok === undefined ? '#f5f8ff' : ok ? '#f0faf4' : '#fff0f0'
+    ok === undefined ? '#FEF7F3' : ok ? '#f0faf4' : '#fff0f0'
   const border =
-    ok === undefined ? '#c0d0e8' : ok ? '#a3d9b5' : '#f5b3b3'
+    ok === undefined ? '#FDF0EB' : ok ? '#a3d9b5' : '#f5b3b3'
   return (
     <div
       className="keep-together"

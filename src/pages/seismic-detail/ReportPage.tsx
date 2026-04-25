@@ -8,25 +8,26 @@ import {
 import WIcon from '../../components/WIcon'
 
 // ── 스타일 상수 ─────────────────────────────────────────────────
-const NAVY = '#1a3a5c'
+const WARM_DARK = '#2C2118'
+const CORAL = '#CC6B3D'
 const F_BODY = '"Malgun Gothic", "나눔고딕", "Noto Sans KR", sans-serif'
 const F_MONO = 'Consolas, "Courier New", monospace'
 
 const SEC_TITLE: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 700, color: NAVY,
-  borderBottom: `2px solid ${NAVY}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
+  fontSize: 12.5, fontWeight: 700, color: WARM_DARK,
+  borderBottom: `2px solid ${CORAL}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const SUB_TITLE: React.CSSProperties = {
-  fontSize: 11, fontWeight: 700, color: NAVY,
-  borderLeft: `3px solid ${NAVY}`, paddingLeft: 6, marginTop: 8, marginBottom: 3,
+  fontSize: 11, fontWeight: 700, color: WARM_DARK,
+  borderLeft: `3px solid ${CORAL}`, paddingLeft: 6, marginTop: 8, marginBottom: 3,
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5 }
-const TH: React.CSSProperties = { background: NAVY, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
-const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #bbb', verticalAlign: 'middle', fontSize: 10 }
+const TH: React.CSSProperties = { background: WARM_DARK, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
+const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #C8C3BC', verticalAlign: 'middle', fontSize: 10 }
 const TDB: React.CSSProperties = { ...TD, fontWeight: 700 }
 const TDR: React.CSSProperties = { ...TD, textAlign: 'right', fontFamily: F_MONO }
 const TDC: React.CSSProperties = { ...TD, textAlign: 'center' }
@@ -90,7 +91,7 @@ function SoilProfileFigure({ layers, pipeDepth, title }: {
   return (
     <div style={{ textAlign: 'center', margin: '8px 0' }}>
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'inline-block' }}>
-        <text x={W / 2} y={16} textAnchor="middle" fontSize="10" fontWeight="700" fill={NAVY}>{title}</text>
+        <text x={W / 2} y={16} textAnchor="middle" fontSize="10" fontWeight="700" fill={WARM_DARK}>{title}</text>
         <line x1={margin.l} y1={margin.t} x2={margin.l + drawW} y2={margin.t} stroke="#333" strokeWidth="1.5" />
         {[0, 8, 16, 24, 32, 40].map(i => (
           <line key={i} x1={margin.l + i * 4} y1={margin.t} x2={margin.l + i * 4 - 6} y2={margin.t - 6} stroke="#555" strokeWidth="0.8" />
@@ -100,8 +101,8 @@ function SoilProfileFigure({ layers, pipeDepth, title }: {
         {layerLabels}
         <text x={margin.l + drawW / 2} y={H - 10} textAnchor="middle" fontSize="9" fill="#333">기반암 (V<tspan dy="3" fontSize="7">bs</tspan>)</text>
         <line x1={margin.l} y1={margin.t} x2={margin.l} y2={H - margin.b} stroke="#555" strokeWidth="1" />
-        <circle cx={margin.l + drawW * 0.5} cy={pipeY} r={pipeR} fill="white" stroke={NAVY} strokeWidth="1.5" />
-        <circle cx={margin.l + drawW * 0.5} cy={pipeY} r={pipeR - 3} fill="#dce8f5" stroke={NAVY} strokeWidth="0.8" />
+        <circle cx={margin.l + drawW * 0.5} cy={pipeY} r={pipeR} fill="white" stroke={WARM_DARK} strokeWidth="1.5" />
+        <circle cx={margin.l + drawW * 0.5} cy={pipeY} r={pipeR - 3} fill="#dce8f5" stroke={WARM_DARK} strokeWidth="0.8" />
         <line x1={margin.l + drawW * 0.85} y1={margin.t} x2={margin.l + drawW * 0.85} y2={pipeY - pipeR}
           stroke="#c0392b" strokeWidth="0.8" strokeDasharray="3 2" />
         <text x={margin.l + drawW * 0.87} y={(margin.t + pipeY) / 2} fontSize="8" fill="#c0392b">h</text>
@@ -122,7 +123,7 @@ export default function SeismicDetailReportPage() {
       <div style={{ padding: 24, fontFamily: F_BODY, fontSize: 13, color: '#666' }}>
         계산 결과가 없습니다.
         <button onClick={() => navigate('/seismic-detail/input')}
-          style={{ marginLeft: 12, padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: NAVY, color: 'white', border: 'none', borderRadius: 2 }}>
+          style={{ marginLeft: 12, padding: '4px 12px', fontSize: 12, cursor: 'pointer', background: CORAL, color: 'white', border: 'none', borderRadius: 2 }}>
           입력 페이지로
         </button>
       </div>
@@ -155,11 +156,11 @@ export default function SeismicDetailReportPage() {
       {/* 인쇄 버튼 */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
         <button onClick={() => navigate('/seismic-detail/report/print')}
-          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: NAVY, color: 'white', border: 'none', borderRadius: 2 }}>
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: CORAL, color: 'white', border: 'none', borderRadius: 2 }}>
           인쇄 / PDF 저장
         </button>
         <button onClick={() => navigate('/seismic-detail/result')}
-          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: NAVY, border: '1px solid #aaa', borderRadius: 2 }}>
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: CORAL, border: '1px solid #E0DDD7', borderRadius: 2 }}>
           결과 페이지로
         </button>
       </div>
@@ -167,7 +168,7 @@ export default function SeismicDetailReportPage() {
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.45, color: '#111' }}>
 
         {/* ── 표지 헤더 ── */}
-        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${NAVY}`, paddingBottom: 10, marginBottom: 12 }}>
+        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${CORAL}`, paddingBottom: 10, marginBottom: 12 }}>
           {/* W 아이콘 */}
           <WIcon size={54} id="rpt-detail" radius={10} />
 
@@ -176,7 +177,7 @@ export default function SeismicDetailReportPage() {
             <div style={{ fontSize: 8.5, color: '#888', letterSpacing: 0.3, marginBottom: 3, fontFamily: F_MONO }}>
               KDS 57 17 00 : 2022 · 기존시설물(상수도) 내진성능 평가요령 부록 C
             </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: NAVY, lineHeight: 1.2, marginBottom: 4 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: CORAL, lineHeight: 1.2, marginBottom: 4 }}>
               {isSegmented ? 'C.1 분절관 내진성능 본평가 검토서' : 'C.2 연속강관 내진성능 본평가 검토서'}
             </div>
             <div style={{ fontSize: 9.5, color: '#666' }}>
@@ -188,7 +189,7 @@ export default function SeismicDetailReportPage() {
 
           {/* 우측 메타 */}
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: NAVY, letterSpacing: 1, marginBottom: 5 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: CORAL, letterSpacing: 1, marginBottom: 5 }}>
               STEP-PIPE
             </div>
             <div style={{ fontSize: 9, color: '#999', fontFamily: F_MONO }}>작성일</div>
@@ -234,7 +235,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
               )
             })}
-            <tr style={{ background: '#eef2f8', fontWeight: 700 }}>
+            <tr style={{ background: '#EDEBE6', fontWeight: 700 }}>
               <td style={TDC} colSpan={2}>합계</td>
               <td style={TDC}>{G.Sigma}H<sub>i</sub> = {H_total.toFixed(1)} m</td>
               <td style={TDC}></td>
@@ -455,7 +456,7 @@ export default function SeismicDetailReportPage() {
         </div>
 
         {/* ① 표층지반 고유주기 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ① 표층지반의 설계고유주기 (T<sub>s</sub>) 산정
         </div>
         <FormulaBlock>
@@ -472,7 +473,7 @@ export default function SeismicDetailReportPage() {
         </FormulaBlock>
 
         {/* ② 속도응답스펙트럼 + 감쇠보정계수 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (η) 산정
         </div>
 
@@ -572,18 +573,18 @@ export default function SeismicDetailReportPage() {
                   textAnchor="middle" fontSize={9} fill="#444"
                   transform={`translate(11,${mt+gH/2}) rotate(-90)`}
                 >Sv (m/s)</text>
-                <text x={ml+gW/2} y={mt-9} textAnchor="middle" fontSize={9.5} fontWeight="bold" fill={NAVY}>
+                <text x={ml+gW/2} y={mt-9} textAnchor="middle" fontSize={9.5} fontWeight="bold" fill={WARM_DARK}>
                   암반지반 기반면에서의 설계속도응답스펙트럼
                 </text>
                 {/* 붕괴방지 곡선 (실선) */}
-                <polyline points={makePts(S_c, eta_c)} fill="none" stroke={NAVY} strokeWidth={2}/>
+                <polyline points={makePts(S_c, eta_c)} fill="none" stroke={CORAL} strokeWidth={2}/>
                 {/* 기능수행 곡선 (점선) */}
-                <polyline points={makePts(S_f, eta_f)} fill="none" stroke={NAVY} strokeWidth={1.3} strokeDasharray="5,3"/>
+                <polyline points={makePts(S_f, eta_f)} fill="none" stroke={WARM_DARK} strokeWidth={1.3} strokeDasharray="5,3"/>
                 {/* plateau 수평 참조선 */}
-                <line x1={tx(T_B)} y1={pyC} x2={tx(T_MAX)} y2={pyC} stroke={NAVY} strokeWidth={0.6} strokeDasharray="2,3" opacity={0.4}/>
-                <line x1={tx(T_B)} y1={pyF} x2={tx(T_MAX)} y2={pyF} stroke={NAVY} strokeWidth={0.6} strokeDasharray="2,3" opacity={0.4}/>
+                <line x1={tx(T_B)} y1={pyC} x2={tx(T_MAX)} y2={pyC} stroke={CORAL} strokeWidth={0.6} strokeDasharray="2,3" opacity={0.4}/>
+                <line x1={tx(T_B)} y1={pyF} x2={tx(T_MAX)} y2={pyF} stroke={WARM_DARK} strokeWidth={0.6} strokeDasharray="2,3" opacity={0.4}/>
                 {/* plateau 값 레이블 — 우측 끝에 배치 */}
-                <text x={tx(T_MAX)-2} y={pyC-4} textAnchor="end" fontSize={8} fill={NAVY} fontWeight="bold">
+                <text x={tx(T_MAX)-2} y={pyC-4} textAnchor="end" fontSize={8} fill={CORAL} fontWeight="bold">
                   {plat_c.toFixed(4)}
                 </text>
                 <text x={tx(T_MAX)-2} y={pyF+11} textAnchor="end" fontSize={8} fill="#555">
@@ -613,9 +614,9 @@ export default function SeismicDetailReportPage() {
                 {/* 범례 — 우상단 */}
                 <rect x={ml+gW-108} y={mt+4} width={106} height={36} rx={2}
                   fill="white" stroke="#ccc" strokeWidth={1} opacity={0.95}/>
-                <line x1={ml+gW-102} y1={mt+15} x2={ml+gW-86} y2={mt+15} stroke={NAVY} strokeWidth={2}/>
+                <line x1={ml+gW-102} y1={mt+15} x2={ml+gW-86} y2={mt+15} stroke={CORAL} strokeWidth={2}/>
                 <text x={ml+gW-82} y={mt+18} fontSize={8} fill="#222">붕괴방지수준</text>
-                <line x1={ml+gW-102} y1={mt+29} x2={ml+gW-86} y2={mt+29} stroke={NAVY} strokeWidth={1.3} strokeDasharray="5,3"/>
+                <line x1={ml+gW-102} y1={mt+29} x2={ml+gW-86} y2={mt+29} stroke={WARM_DARK} strokeWidth={1.3} strokeDasharray="5,3"/>
                 <text x={ml+gW-82} y={mt+32} fontSize={8} fill="#222">기능수행수준</text>
               </svg>
 
@@ -641,7 +642,7 @@ export default function SeismicDetailReportPage() {
                       <td style={TDC}>{S_c.toFixed(3)}</td>
                       <td style={TDC}>20</td>
                       <td style={TDC}>{eta_c.toFixed(4)}</td>
-                      <td style={{ ...TDR, fontWeight: 700, color: NAVY }}>{Sv_c.toFixed(4)}</td>
+                      <td style={{ ...TDR, fontWeight: 700, color: CORAL }}>{Sv_c.toFixed(4)}</td>
                     </tr>
                     <tr>
                       <td style={{ ...TDB, fontSize: 8.5 }}>기능수행</td>
@@ -687,7 +688,7 @@ export default function SeismicDetailReportPage() {
         </FormulaBlock>
 
         {/* ③ 관축위치 지반변위 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ③ 관축위치의 지반변위 (U<sub>h</sub>) 산정
         </div>
         <FormulaBlock>
@@ -711,7 +712,7 @@ export default function SeismicDetailReportPage() {
         </ResultBlock>
 
         {/* ④ 파장 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ④ 지진시 파장 (L) 산정
         </div>
         <FormulaBlock>
@@ -742,7 +743,7 @@ export default function SeismicDetailReportPage() {
         {/* ⑤ 관체 응력/변형률 */}
         {isSegmented ? (
           <>
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
               ⑤ 지진시 축응력 ({G.sigma}<sub>x</sub>) 계산
             </div>
             <FormulaBlock>
@@ -795,7 +796,7 @@ export default function SeismicDetailReportPage() {
           </>
         ) : (
           <>
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: NAVY }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
               ⑤ 지진에 의한 축변형률 ({G.epsilon}<sub>eq</sub>) 계산
             </div>
             <FormulaBlock>
@@ -824,7 +825,7 @@ export default function SeismicDetailReportPage() {
             </ResultBlock>
 
             {/* ── 상세 전개: ξ, L1, ε_L 산정 ── */}
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 12, marginBottom: 4, color: NAVY }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 12, marginBottom: 4, color: WARM_DARK }}>
               ⑤-상세 특성길이(ξ) 및 축변형률(ε<Sub>L</Sub>) 산정 과정
             </div>
             <FormulaBlock>
@@ -922,7 +923,7 @@ export default function SeismicDetailReportPage() {
                   <td style={TD}>지진 {G.sigma}<Sub>x</Sub></td>
                   <td style={TDR}>{rs.sigma_x?.toFixed(2)}</td>
                 </tr>
-                <tr style={{ background: '#eef2f8' }}>
+                <tr style={{ background: '#EDEBE6' }}>
                   <td style={TDB} colSpan={2}>축응력 합계 {G.sigma}<Sub>total</Sub></td>
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{rs.sigma_total?.toFixed(2)}</td>
                 </tr>
@@ -1050,7 +1051,7 @@ export default function SeismicDetailReportPage() {
                   <td style={TDB} colSpan={2}>지진 |u<Sub>J</Sub>|</td>
                   <td style={TDR}>{rs.u_J?.toFixed(6)}</td>
                 </tr>
-                <tr style={{ background: '#eef2f8' }}>
+                <tr style={{ background: '#EDEBE6' }}>
                   <td style={TDB} colSpan={2}>이음부 신축량 합계</td>
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>
                     {(e_i_val + e_t_val + rs.u_J)?.toFixed(6)}
@@ -1169,7 +1170,7 @@ export default function SeismicDetailReportPage() {
                   <td style={TDB} colSpan={2}>지진 {G.epsilon}<Sub>eq</Sub></td>
                   <td style={TDR}>{(Math.abs(rs.epsilon_eq) * 100)?.toFixed(4)}</td>
                 </tr>
-                <tr style={{ background: '#eef2f8' }}>
+                <tr style={{ background: '#EDEBE6' }}>
                   <td style={TDB} colSpan={2}>축변형률 합계 {G.epsilon}<Sub>total</Sub></td>
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{(rs.epsilon_total * 100)?.toFixed(4)}</td>
                 </tr>
@@ -1244,7 +1245,7 @@ export default function SeismicDetailReportPage() {
                   <td style={TDB} colSpan={2}>축방향 합성응력 {G.sigma}<Sub>x</Sub></td>
                   <td style={TDR}>{rs.sigma_x_total?.toFixed(2)}</td>
                 </tr>
-                <tr style={{ background: '#eef2f8' }}>
+                <tr style={{ background: '#EDEBE6' }}>
                   <td style={TDB} colSpan={2}>Von Mises 등가응력 {G.sigma}<Sub>vm</Sub></td>
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{rs.sigma_vm?.toFixed(2)}</td>
                 </tr>

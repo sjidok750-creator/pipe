@@ -7,9 +7,9 @@ import WIcon from '../components/WIcon'
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#1a3a5c', borderBottom: '1px solid #bbb', textAlign: 'left', background: '#eef2f8' }
-const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
-const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#2C2118', borderBottom: '1px solid #C8C3BC', textAlign: 'left', background: '#EDEBE6' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #E0DDD7', verticalAlign: 'middle', fontSize: 10.5 }
+const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#2C2118', borderLeft: '3px solid #CC6B3D', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
 const NOTE: React.CSSProperties = { fontSize: 9.5, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
@@ -21,14 +21,14 @@ function CalcRow({ label, expr, result, unit, indent = false }: {
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: indent ? 16 : 0, fontSize: 10.5 }}>
       <span style={{ width: 180, flexShrink: 0, color: '#444', fontWeight: 600 }}>{label}</span>
       <span style={{ color: '#555', flex: 1 }}>{expr}</span>
-      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1a3a5c', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
+      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#CC6B3D', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
     </div>
   )
 }
 
 // ── 구분선 ───────────────────────────────────────────────────
 function HR() {
-  return <div style={{ borderTop: '1px solid #e0e8f0', margin: '6px 0' }} />
+  return <div style={{ borderTop: '1px solid #E0DDD7', margin: '6px 0' }} />
 }
 
 export default function ReportPage() {
