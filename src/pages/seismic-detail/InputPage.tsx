@@ -11,12 +11,15 @@ import { T } from '../../components/eng/tokens'
 import { RockSpectrumSVG } from '../../components/eng/diagrams/RockSpectrumSVG'
 import { BuriedPipeResponseSVG } from '../../components/eng/diagrams/BuriedPipeResponseSVG'
 import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented.js'
-import { calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES } from '../../engine/seismicConstants.js'
+import {
+  calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES,
+  resolveHEffective, resolveLayersForTGVds, calcGroundDisp,
+} from '../../engine/seismicConstants.js'
 
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
 
 const LAYER_NAMES = ['매립층', '퇴적층', '충적층', '풍화토층', '풍화암층', '연암층', '경암층', '보통암층', '기반암층', '기타']
-const INPUT_H = 22
+const INPUT_H = 32  // 태블릿 터치 대응 (권장 최소 32px)
 
 // 지반층 입력 컴포넌트
 function LayerEditor({ layers, setLayers }: {
@@ -46,7 +49,7 @@ function LayerEditor({ layers, setLayers }: {
   return (
     <div style={{ overflowX: 'auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '22px 90px 52px 52px 52px 62px 20px', gap: 3, marginBottom: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '24px 100px 56px 56px 56px 66px 32px', gap: 3, marginBottom: 4 }}>
         <span style={cellStyle}></span>
         <span style={cellStyle}>토층명</span>
         <span style={cellStyle}>H (m)</span>
@@ -60,27 +63,27 @@ function LayerEditor({ layers, setLayers }: {
         const vsSource = l.Vs_manual ? '직접' : l.isRock || ROCK_LAYER_NAMES.includes(l.name) ? '암반' : vsAuto ? 'N치' : '—'
         const vsColor = l.Vs_manual ? T.textPrimary : T.textAccent
         return (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '22px 90px 52px 52px 52px 62px 20px', gap: 3, marginBottom: 3, alignItems: 'center' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px 100px 56px 56px 56px 66px 32px', gap: 3, marginBottom: 3, alignItems: 'center' }}>
             <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>L{i+1}</span>
             {/* 토층명 */}
             <select value={l.name} onChange={e => upd(i, { name: e.target.value })}
-              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.borderDark}`, padding: '0 2px', width: '100%' }}>
+              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.borderDark}`, padding: '0 4px', width: '100%', touchAction: 'manipulation' }}>
               {LAYER_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
             {/* H */}
             <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
               min={0.1} step={0.5}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* N치 */}
             <input type="number" value={l.N ?? ''} placeholder="—"
               onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={1} max={300} step={1}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* Vs 직접입력 */}
             <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
               onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={50} step={10}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.borderDark}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
             {/* Vs 결과 */}
             <div style={{ textAlign: 'center', fontSize: 11, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
               {l.Vs.toFixed(0)}
@@ -88,19 +91,19 @@ function LayerEditor({ layers, setLayers }: {
             </div>
             {/* 삭제 */}
             {layers.length > 1
-              ? <button onClick={() => rm(i)} style={{ fontSize: 10, padding: '1px 4px', cursor: 'pointer', border: `1px solid ${T.border}`, background: 'white', color: T.textMuted }}>×</button>
+              ? <button onClick={() => rm(i)} style={{ fontSize: 13, padding: '4px 6px', minWidth: 32, minHeight: 32, cursor: 'pointer', border: `1px solid ${T.border}`, background: 'white', color: T.textMuted, touchAction: 'manipulation' }}>×</button>
               : <span/>
             }
           </div>
         )
       })}
       {/* 합계 및 추가 버튼 */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
-        <button onClick={add} style={{ fontSize: 11, padding: '2px 10px', cursor: 'pointer', border: `1px solid ${T.borderDark}`, background: 'white', color: T.textAccent, fontFamily: T.fontSans }}>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+        <button onClick={add} style={{ fontSize: 12, padding: '6px 14px', minHeight: 34, cursor: 'pointer', border: `1px solid ${T.borderDark}`, background: 'white', color: T.textAccent, fontFamily: T.fontSans, touchAction: 'manipulation' }}>
           + 층 추가
         </button>
         <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
-          H_total = {layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m
+          Σ H = {layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m
         </span>
       </div>
       <div style={{ marginTop: 5, fontSize: 9, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.6 }}>
@@ -130,9 +133,15 @@ export default function SeismicDetailInputPage() {
     const Fa = interpAmpFactor(Fa_t, S)
     const Fv = interpAmpFactor(Fv_t, S)
     const { SDS, SD1 } = calcDesignSpectrum(S, Fa, Fv)
-    const TG = calcTG(inp.layers)
+    const { H_effective: H_eff_pre } = resolveHEffective({
+      layers: inp.layers,
+      heightMode: (inp as any).heightMode ?? 'sum',
+      H_bedrock: (inp as any).H_bedrock ?? null,
+    })
+    const layersEff = resolveLayersForTGVds({ layers: inp.layers, H_effective: H_eff_pre })
+    const TG = calcTG(layersEff)
     const Ts = calcTs(TG)
-    const { Vds } = calcVds(inp.layers, Ts)
+    const { Vds } = calcVds(layersEff, Ts)
     const { L } = calcWavelength(Ts, Vds, inp.Vbs)
     const T0_design = SDS > 0 ? 0.2 * SD1 / SDS : 0.06
     const TS_design = SDS > 0 ? SD1 / SDS : 0.3
@@ -144,13 +153,20 @@ export default function SeismicDetailInputPage() {
     const { SDS: SDS_f, SD1: SD1_f } = calcDesignSpectrum(S_func_val, Fa_f, Fv_f)
     specFunc = { SDS_func: SDS_f, SD1_func: SD1_f }
     const z_pipe = inp.hCover + inp.D_out / 1000 / 2
-    const H_total = inp.layers.reduce((s: number, l: {H: number}) => s + l.H, 0)
     const { Sv: Sv_c } = calcSv(S, Ts, 'collapse')
     const { Sv: Sv_f } = calcSv(S_func_val, Ts, 'functional')
-    const depth_factor = Math.max(0, 1 - z_pipe / H_total)
-    const Uh_c = (2 / (Math.PI ** 2)) * Sv_c * Ts * depth_factor
+    const Uh_c = calcGroundDisp(Sv_c, Ts, z_pipe, H_eff_pre)
     svCalc = { Sv_collapse: Sv_c, Sv_func: Sv_f, Uh: Uh_c, L, Vds, S_collapse: S, S_func: S_func_val, Ts }
   } catch {}
+
+  // 기반암 깊이 상태 (실시간 경고 계산용)
+  const hMode = (inp as any).heightMode ?? 'sum'
+  const hBedrock = (inp as any).H_bedrock as number | null ?? null
+  const { H_effective, H_sum, gap: hGap, warnings: hWarnings } = resolveHEffective({
+    layers: inp.layers,
+    heightMode: hMode,
+    H_bedrock: hBedrock,
+  })
 
   function handleCalc() {
     const result = calcDetail()
@@ -991,6 +1007,99 @@ export default function SeismicDetailInputPage() {
               </EngPopover>
             </div>
             <LayerEditor layers={inp.layers} setLayers={setDetailLayers}/>
+
+            {/* ── 기반암 깊이 입력 모드 ── */}
+            <div style={{ marginTop: 10, padding: '8px 10px', background: '#f5f7fa', border: `1px solid ${T.border}`, borderRadius: 3 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontSans }}>
+                  기반암까지의 깊이 (H)
+                </span>
+                <EngPopover title="기반암까지의 깊이 입력 방식">
+                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: '#2d6a2d' }}>KDS 17 10 00 / 매설관로 내진성능평가 요령 §5.3.2</strong><br/>
+                      해설식(5.3.5): Uh = (2/π²)·Sv·Ts·cos(πz/2H)<br/>
+                      H = 기반암 상단까지의 표층 두께
+                    </div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 6 }}>
+                      <thead>
+                        <tr style={{ background: '#f0f4f8' }}>
+                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>모드</th>
+                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>H 결정 방식</th>
+                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>적합한 경우</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>층 두께 합산</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = Σ layer.H</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반층이 기반암까지 완전히 입력된 경우</td>
+                        </tr>
+                        <tr style={{ background: '#fafafa' }}>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>직접 입력</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = 입력값</td>
+                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반조사 보고서의 기반암 심도를 직접 알고 있는 경우</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    <div style={{ padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                      직접 입력 시 Σ층두께 {'<'} H_bedrock이면, 공백 구간에 최하층 Vs를 자동 적용하여
+                      TG·Vds 계산에 사용합니다. 지반변위 Uh는 H_bedrock 기준으로 산정됩니다.
+                    </div>
+                  </div>
+                </EngPopover>
+              </div>
+
+              {/* 모드 토글 */}
+              <EngSegment
+                options={[
+                  { key: 'sum',      label: '층 두께 합산',  sub: `자동  Σ H = ${H_sum.toFixed(1)} m` },
+                  { key: 'explicit', label: '기반암 깊이 직접 입력', sub: 'KDS 기준 일치' },
+                ]}
+                value={hMode}
+                onChange={v => {
+                  const patch: any = { heightMode: v }
+                  // sum → explicit 전환 시 Σ H 를 초기값으로 프리필
+                  if (v === 'explicit' && hBedrock == null) patch.H_bedrock = parseFloat(H_sum.toFixed(1))
+                  set(patch)
+                }}
+              />
+
+              {/* explicit 모드: H_bedrock 입력 */}
+              {hMode === 'explicit' && (
+                <div style={{ marginTop: 8 }}>
+                  <EngRow label="기반암 깊이 H" unit="m">
+                    <EngInput
+                      value={hBedrock ?? H_sum}
+                      onChange={v => set({ H_bedrock: parseFloat(v) || null } as any)}
+                      min={0.5}
+                      step={0.5}
+                      width={90}
+                    />
+                    <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
+                      Σ층두께 {H_sum.toFixed(1)} m
+                    </span>
+                  </EngRow>
+                </div>
+              )}
+
+              {/* 상태 표시 및 경고 */}
+              <div style={{ marginTop: 6, fontSize: 10, fontFamily: T.fontMono, lineHeight: 1.7 }}>
+                <span style={{ color: T.textAccent, fontWeight: 700 }}>
+                  H (계산 적용값) = {H_effective.toFixed(1)} m
+                </span>
+                {hMode === 'explicit' && hGap > 0.1 && (
+                  <span style={{ marginLeft: 8, color: '#2e7d32' }}>
+                    ※ 공백 {hGap.toFixed(1)} m → 최하층 Vs={inp.layers[inp.layers.length - 1]?.Vs?.toFixed(0)} m/s 자동 보정
+                  </span>
+                )}
+              </div>
+              {hWarnings.map((w, i) => (
+                <div key={i} style={{ marginTop: 4, padding: '4px 8px', background: '#fff3cd', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10, color: '#7a5c00', fontFamily: T.fontSans, lineHeight: 1.6 }}>
+                  ⚠ {w}
+                </div>
+              ))}
+            </div>
           </div>
           <EngDivider />
           <EngRow label="기반암 Vs (Vbs)" unit="m/s" popover={

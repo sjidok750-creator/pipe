@@ -8,6 +8,7 @@ import {
   calcTG, calcTs, calcVds, calcWavelength,
   calcGroundDisp, calcGroundStiffness, getImpactFactor,
   calcWm, calcGroundStrain, calcLambda, calcAlpha,
+  resolveHEffective, resolveLayersForTGVds,
 } from './seismicConstants.js'
 
 // 설계지반가속도 S (= Z × I)
@@ -313,11 +314,21 @@ export function evalSegmented(params) {
   const Fv = interpAmpFactor(Fv_table, S)
   const { SDS, SD1 } = calcDesignSpectrum(S, Fa, Fv)
 
-  // ── Step 3: 표층지반 고유주기 ──
-  const TG = calcTG(layers)                   // 해설식(5.3.4)
-  const Ts = calcTs(TG)                        // 해설식(5.3.5): Ts = 1.25×TG
-  const { Vds, vsi } = calcVds(layers, Ts)
-  const H_total = layers.reduce((s, l) => s + l.H, 0)
+  // ── Step 3: 기반암 깊이 해석 및 표층지반 파라미터 ──
+  const { H_effective, H_sum, gap: hGap, warnings: hWarnings } = resolveHEffective({
+    layers,
+    heightMode: params.heightMode ?? 'sum',
+    H_bedrock: params.H_bedrock ?? null,
+  })
+  const layersEff = resolveLayersForTGVds({
+    layers,
+    H_effective,
+    fillGap: params.fillGapAsLastLayer !== false,
+  })
+  const TG = calcTG(layersEff)               // 해설식(5.3.4)
+  const Ts = calcTs(TG)                      // 해설식(5.3.5): Ts = 1.25×TG
+  const { Vds, vsi } = calcVds(layersEff, Ts)
+  const H_total = H_effective                // backward-compat alias
 
   // ── Step 4: 기반면 속도응답스펙트럼 (해설식 5.3.6, 암반기준+감쇠보정) ──
   // S = Z×I (기반암, Fa=Fv=1.0 적용 전 값 사용)
@@ -389,7 +400,7 @@ export function evalSegmented(params) {
     // 입력 정리
     S, Fa, Fv, SDS, SD1,
     // 지반
-    TG, Ts, Vds, H_total, vsi,
+    TG, Ts, Vds, H_total, H_effective, H_sum, gap: hGap, warnings: hWarnings, vsi,
     Sv, Sa, Sas, eta, xi, T_A, T_B,
     Uh, L, Lwave1, Lwave2, epsWave,
     // alias (보고서/결과 페이지 호환)

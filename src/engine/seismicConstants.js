@@ -194,6 +194,40 @@ export function calcGroundDisp(Sv, Ts, z, H_total) {
   return Uh
 }
 
+// ── 기반암 깊이 해석 ───────────────────────────────────────
+// heightMode='sum'      : H_effective = Σ layer.H  (현행 동작, 기본값)
+// heightMode='explicit' : H_effective = H_bedrock  (직접 입력)
+// 반환: { H_effective, H_sum, gap, warnings[] }
+export function resolveHEffective({ layers, heightMode = 'sum', H_bedrock = null }) {
+  const H_sum = layers.reduce((s, l) => s + l.H, 0)
+  const warnings = []
+
+  if (heightMode === 'explicit' && H_bedrock != null && H_bedrock > 0) {
+    if (H_sum > H_bedrock + 0.1) {
+      warnings.push(
+        `지반층 합계 ${H_sum.toFixed(1)} m > 기반암 깊이 ${H_bedrock.toFixed(1)} m — ` +
+        `기반암층이 지반층에 포함된 것으로 보입니다. 지반층에서 제외하세요.`
+      )
+    }
+    return { H_effective: H_bedrock, H_sum, gap: H_bedrock - H_sum, warnings }
+  }
+
+  return { H_effective: H_sum, H_sum, gap: 0, warnings }
+}
+
+// explicit 모드에서 층 합계 < H_bedrock 일 때, 최하층 Vs로 공백층을 보정하여
+// TG / Vds 계산에 사용할 레이어 배열 반환 (원본 layers는 불변)
+export function resolveLayersForTGVds({ layers, H_effective, fillGap = true }) {
+  if (!fillGap || layers.length === 0) return layers
+  const H_sum = layers.reduce((s, l) => s + l.H, 0)
+  const gap = H_effective - H_sum
+  if (gap > 0.1) {
+    const last = layers[layers.length - 1]
+    return [...layers, { ...last, H: gap }]
+  }
+  return layers
+}
+
 // 지반 강성계수
 // 해설식(5.3.19): K1 = 1.5 × γ/g × Vds²  (축방향)
 // 해설식(5.3.20): K2 = 3.0 × γ/g × Vds²  (축직교방향)

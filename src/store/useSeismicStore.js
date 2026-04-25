@@ -62,6 +62,10 @@ const DEFAULT_DETAIL = {
     { name: '풍화토층', H: 5,  N: null, Vs_manual: null, isRock: false, Vs: 350 },
   ],
   Vbs: 500,
+  // 기반암 깊이 입력 모드
+  heightMode: 'sum',        // 'sum': 층 두께 합산(기본) | 'explicit': 직접 입력
+  H_bedrock: null,          // m, explicit 모드에서 사용자가 직접 입력하는 기반암 깊이
+  fillGapAsLastLayer: true, // explicit 모드에서 층 합계 < H_bedrock 시 최하층 Vs로 공백 보정
 }
 
 // ── 예비평가 계산 ────────────────────────────────────────────
@@ -102,6 +106,7 @@ function calcDetail(inp) {
     deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
     Pm, Kv,
+    heightMode, H_bedrock, fillGapAsLastLayer,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
   const gradeInfo = SEISMIC_GRADE[seismicGrade]
@@ -129,6 +134,9 @@ function calcDetail(inp) {
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv ?? 0,
+      heightMode: heightMode ?? 'sum',
+      H_bedrock: H_bedrock ?? null,
+      fillGapAsLastLayer: fillGapAsLastLayer !== false,
     })
   } else {
     result = evalContinuous({
@@ -140,6 +148,9 @@ function calcDetail(inp) {
       h_cover: hCover, z_pipe,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv ?? 0,
+      heightMode: heightMode ?? 'sum',
+      H_bedrock: H_bedrock ?? null,
+      fillGapAsLastLayer: fillGapAsLastLayer !== false,
     })
   }
   // E_use, I_func를 결과에 포함 — ReportPage에서 기능수행 Sv 별도 계산에 사용
