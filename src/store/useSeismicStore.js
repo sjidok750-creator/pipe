@@ -45,8 +45,8 @@ const DEFAULT_DETAIL = {
   // 차량하중 및 지반반력계수
   gammaSoil: 18,            // kN/m³ (흙 단위중량)
   Pm: 0,                   // kN/輪 (후륜 1륜 하중, 0=차량없음)
-  Kv: 0,                   // kN/m³ (연직방향 지반반력계수, kvMode='manual'일 때 사용)
-  kvMode: 'auto',           // 'auto': N치→E₀→Kv₀→Kv 자동산정 | 'manual': 직접입력
+  Kv: 0,                   // kN/m³ (연직방향 지반반력계수)
+  kvMethod: 'N_E0',        // Kv 산정 방법: 'N_E0' | 'Vs' | 'table' | 'manual'
   // 분절관
   Lj: 6,
   isSeismicJoint: false,
@@ -106,7 +106,7 @@ function calcDetail(inp) {
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
     deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
-    Pm, Kv, kvMode,
+    Pm, Kv,
     heightMode, H_bedrock, fillGapAsLastLayer,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
@@ -148,7 +148,7 @@ function calcDetail(inp) {
       deltaT, D_settle, L_settle, strainCriterion,
       h_cover: hCover, z_pipe,
       E: E_use,
-      Pm: Pm ?? 0, Kv: Kv ?? 0, kvMode: kvMode ?? 'auto',
+      Pm: Pm ?? 0, Kv: Kv ?? 0,
       heightMode: heightMode ?? 'sum',
       H_bedrock: H_bedrock ?? null,
       fillGapAsLastLayer: fillGapAsLastLayer !== false,

@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSeismicStore } from '../../store/useSeismicStore.js'
-import { SEISMIC_ZONE, SEISMIC_GRADE } from '../../engine/seismicConstants.js'
+import { SEISMIC_ZONE, SEISMIC_GRADE, calcKvFromN, getLayerAtDepth } from '../../engine/seismicConstants.js'
 import {
   Frac, Sub, Sup, Sqrt, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
 } from '../../components/report/MathElements'
@@ -416,40 +416,72 @@ export default function SeismicDetailReportPage() {
         ) : (
           // 연속관 + 차량하중 있음 → 실제 산정
           (() => {
-            const kva = rs.kvAutoResult
+            const kvMethod = (inp as any).kvMethod ?? 'manual'
             const Kv_r = rs.Kv_used ?? 0
             const Wm_r = rs.Wm_traffic ?? 0
             const i_r  = rs.i_traffic  ?? 0
             const eps_o = rs.epsilon_o ?? 0
             const sig_o = rs.sigma_o_kN ?? 0
             const E_kN  = (E_MPa) * 1000
+            // N_E0 방법: 보고서용 계산 세부
+            const layerAtPipe = getLayerAtDepth(inp.layers, inp.hCover)
+            const kvN = (kvMethod === 'N_E0' && layerAtPipe?.N > 0)
+              ? calcKvFromN(layerAtPipe.N, D_m)
+              : null
+            const layerVs = (() => {
+              if (!layerAtPipe) return null
+              if (layerAtPipe.Vs_manual > 0) return layerAtPipe.Vs_manual
+              if (layerAtPipe.isRock) return 760
+              return layerAtPipe.Vs ?? null
+            })()
+            const KV_TABLE_ROWS: [number, number][] = [[4,750],[8,1200],[15,2050],[30,3200],[Infinity,7700]]
+            const tableRow = kvMethod === 'table' && layerAtPipe?.N > 0
+              ? KV_TABLE_ROWS.find(r => layerAtPipe.N < r[0])
+              : null
             return (
               <>
-                {/* Kv 산정 */}
-                {kva && (
-                  <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
-                    <strong>Kv 산정 (N치 → E₀ → Kv₀ → Kv, 관경 보정)</strong>
-                  </div>
-                )}
+                <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
+                  <strong>Kv 산정 ({
+                    kvMethod === 'N_E0'  ? 'N치 E₀법: N → E₀ = 2800N → Kv₀ = E₀/30 → Kv 관경 보정' :
+                    kvMethod === 'Vs'    ? 'Vs법: Kv = 0.09 × Vs²' :
+                    kvMethod === 'table' ? 'N값 범위별 표 조회' :
+                    '직접입력'
+                  })</strong>
+                </div>
                 <FormulaBlock>
-                  {kva && (
+                  {kvMethod === 'N_E0' && kvN && (
                     <>
                       <FormulaRow>
-                        E<Sub>0</Sub> = 2800{G.times}&radic;N = 2800{G.times}&radic;{kva._N ?? '?'}&nbsp;
-                        = <strong>{kva.E0.toFixed(0)} kN/m²</strong>
+                        E<Sub>0</Sub> = 2800{G.times}N = 2800{G.times}{layerAtPipe?.N ?? '?'}&nbsp;
+                        = <strong>{kvN.E0.toFixed(0)} kN/m²</strong>
                       </FormulaRow>
                       <FormulaRow>
-                        K<Sub>v0</Sub> = E<Sub>0</Sub> / (B<Sub>0</Sub>{G.times}5) = {kva.E0.toFixed(0)} / (0.3{G.times}5)&nbsp;
-                        = <strong>{kva.Kv0.toFixed(0)} kN/m³</strong>
+                        K<Sub>v0</Sub> = E<Sub>0</Sub>/30 = {kvN.E0.toFixed(0)}/30&nbsp;
+                        = <strong>{kvN.Kv0.toFixed(0)} kN/m³</strong>
                       </FormulaRow>
                       <FormulaRow>
-                        K<Sub>v</Sub> = K<Sub>v0</Sub>{G.times}(B<Sub>0</Sub>/D)<Sup>0.75</Sup>&nbsp;
-                        = {kva.Kv0.toFixed(0)}{G.times}(0.3/{D_m.toFixed(3)})<Sup>0.75</Sup>&nbsp;
-                        = <strong>{kva.Kv.toFixed(0)} kN/m³</strong>
+                        B<Sub>v</Sub> = {D_m.toFixed(3)}{G.times}100 = {kvN.Bv.toFixed(1)} cm
+                      </FormulaRow>
+                      <FormulaRow>
+                        K<Sub>v</Sub> = K<Sub>v0</Sub>{G.times}(30/B<Sub>v</Sub>)<Sup>0.75</Sup>&nbsp;
+                        = {kvN.Kv0.toFixed(0)}{G.times}(30/{kvN.Bv.toFixed(1)})<Sup>0.75</Sup>&nbsp;
+                        = <strong>{Math.round(kvN.Kv).toLocaleString()} kN/m³</strong>
                       </FormulaRow>
                     </>
                   )}
-                  {!kva && (
+                  {kvMethod === 'Vs' && layerVs && (
+                    <FormulaRow>
+                      K<Sub>v</Sub> = 0.09{G.times}Vs² = 0.09{G.times}{layerVs}²&nbsp;
+                      = <strong>{Math.round(0.09 * layerVs * layerVs).toLocaleString()} kN/m³</strong>
+                    </FormulaRow>
+                  )}
+                  {kvMethod === 'table' && tableRow && (
+                    <FormulaRow>
+                      K<Sub>v</Sub> = {tableRow[1].toLocaleString()} kN/m³&nbsp;
+                      (N={layerAtPipe?.N} → 표 조회)
+                    </FormulaRow>
+                  )}
+                  {(kvMethod === 'manual' || (!kvN && !layerVs && !tableRow)) && (
                     <FormulaRow>K<Sub>v</Sub> = {Kv_r.toFixed(0)} kN/m³ (직접입력)</FormulaRow>
                   )}
                   {/* Wm */}
@@ -466,7 +498,7 @@ export default function SeismicDetailReportPage() {
                   <FormulaRow>
                     {G.epsilon}<Sub>o</Sub> = {G.sigma}<Sub>o</Sub> / E&nbsp;
                     = {sig_o.toFixed(2)} / {E_kN.toFixed(0)}&nbsp;
-                    = <strong>{eps_o.toFixed(4)}e-0</strong>
+                    = <strong>{eps_o.toFixed(6)}</strong>
                   </FormulaRow>
                 </FormulaBlock>
                 <ResultBlock ok>
