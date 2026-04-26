@@ -13,7 +13,7 @@ import { BuriedPipeResponseSVG } from '../../components/eng/diagrams/BuriedPipeR
 import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented.js'
 import {
   calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES,
-  resolveHEffective, resolveLayersForTGVds, calcGroundDisp,
+  resolveHEffective, resolveLayersForTGVds, calcGroundDisp, calcKv,
 } from '../../engine/seismicConstants.js'
 
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
@@ -172,6 +172,11 @@ export default function SeismicDetailInputPage() {
     const result = calcDetail()
     if (result) navigate('/seismic-detail/result')
   }
+
+  // Kv 자동산정: 관 매설층 Vs → 0.09×Vs²
+  const kvAutoResult = (() => {
+    try { return calcKv(inp.layers, inp.hCover, inp.soilType) } catch { return null }
+  })()
 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -641,45 +646,92 @@ export default function SeismicDetailInputPage() {
             <EngInput value={inp.gammaSoil ?? 18} onChange={v => set({ gammaSoil: parseFloat(v)||18 })} min={10} max={25} step={0.5} width={90}/>
           </EngRow>
           <EngRow label="차량하중 Pm" unit="kN/輪" popover={
-            <EngPopover title="차량하중 Pm (후륜 1輪당 하중)">
+            <EngPopover title="차량하중 Pm — 내진 해석에서의 역할과 사용처" width={400}>
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
-                  지침 필수 하중 조합 항목 — σ_total = σ_i + σ_o + σ_x (분절관)
+
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 8 }}>
+                  <strong style={{ color: T.textOK }}>적용 기준: 매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                  <span style={{ fontSize: 10 }}>KDS 57 17 00 : 2022 §5.3 — 하중 조합 필수 항목</span>
                 </div>
-                <div style={{ fontSize: 11 }}>
-                  차량이 관 위를 통과할 때 발생하는 차량하중 Wm을 산정하기 위한 입력값.<br/>
-                  도로 매설 구간 적용. 차량 없는 구간(비도로, 전용 부지)은 0 입력.
+
+                {/* 1. 하중 조합에서의 위치 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>① 내진 해석 하중 조합에서의 위치</div>
+                <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 10.5, marginBottom: 6 }}>
+                  <div>분절관: σ_total = <strong>σ_i</strong> (내압) + <strong style={{color:T.textAccent}}>σ_o</strong> (차량) + <strong>σ_x</strong> (지진)</div>
+                  <div style={{marginTop:2}}>연속관: ε_total = |ε_i| + <strong style={{color:T.textAccent}}>|ε_o|</strong> (차량) + |ε_t| + |ε_d| + |ε_x|</div>
+                  <div style={{marginTop:2}}>이음부: e_total = e_i + <strong style={{color:T.textAccent}}>e_o</strong> (차량) + e_t + e_d + u_J</div>
                 </div>
-                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
-                  Wm = Pm × (1+i) × b × a / (b+2h)(a+2h)  [kN/m]<br/>
-                  σ_o = 0.322 × Wm × (EI/KvD)^0.25 / Z  [kN/m²]
+                <div style={{ fontSize: 10.5, marginBottom: 6 }}>
+                  차량하중은 <b>상시하중 성분</b>으로 분류되어 지진응력과 단순합산됩니다.<br/>
+                  도로 하 매설 구간에서 차량이 통과할 때 관체와 이음부 모두에 영향을 줍니다.
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+
+                {/* 2. 계산 흐름 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>② 계산 흐름 (Pm → Wm → σ_o)</div>
+                <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontSize: 10.5, fontFamily: T.fontMono, lineHeight: 1.9, marginBottom: 6 }}>
+                  <div><b>Step 1.</b> 단위길이 환산하중 Wm (해설식 5.3.3)</div>
+                  <div style={{paddingLeft:8}}>Wm = (2·Pm·a) / ((a+2h·tan35°)(b+2h·tan35°)) × (1+i)</div>
+                  <div style={{paddingLeft:8, fontSize:9.5, color:T.textMuted}}>Pm: 1륜 하중(kN), a: 접지폭(0.2m), b: 점유폭(2.75m), h: 토피(m), i: 충격계수</div>
+                  <div style={{marginTop:4}}><b>Step 2.</b> 차량하중 축응력 σ_o (Winkler Beam, 해설식 5.3.2)</div>
+                  <div style={{paddingLeft:8}}>σ_o = 0.322 × Wm/Z × (E·I / Kv·D)^0.25  [MPa]</div>
+                  <div style={{paddingLeft:8, fontSize:9.5, color:T.textMuted}}>Z: 단면계수(m³), E·I: 관 휨강성, Kv·D: 지반 연직 지지강성</div>
+                </div>
+
+                {/* 3. 충격계수 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>③ 충격계수 i (지침 표 5.3.4)</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>설계차량</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Pm (kN/輪)</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>토피 h (m)</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>충격계수 i</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>의미</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-24 (후륜 1輪)</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>96</td>
-                    </tr>
-                    <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>DB-13.5 (후륜 1輪)</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>54</td>
-                    </tr>
-                    <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>차량 없음</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0</td>
-                    </tr>
+                    {[
+                      ['h < 1.5',      '0.50', '얕은 매설 — 충격 최대'],
+                      ['1.5 ≤ h ≤ 6.5','0.65−0.1h', '선형 감소'],
+                      ['h > 6.5',      '0.00', '깊은 매설 — 충격 무시'],
+                    ].map(([h, i, m], idx) => (
+                      <tr key={idx} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>{h}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{i}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{m}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fee2e2', border: '1px solid #ef4444', borderRadius: 2, fontSize: 10 }}>
-                  <strong>주의:</strong> 이전 버전에서 σ_o가 0으로 처리되던 원인이 바로 Pm=0 미입력.<br/>
-                  도로 매설 구간에서 Pm=0 입력 시 σ_o가 누락되어 <b>과소 평가(불안전 측)</b> 됨.
+
+                {/* 4. 설계차량 기준 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>④ 설계차량 기준값</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
+                  <thead>
+                    <tr style={{ background: T.bgInfo }}>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>설계차량</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>총중량</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Pm (kN/輪)</th>
+                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>적용</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      ['DB-24', '432 kN (44 tf)', '96', '일반 도로 설계 기준'],
+                      ['DB-13.5', '243 kN (24.8 tf)', '54', '2등급 도로'],
+                      ['없음', '—', '0', '비도로·전용 부지'],
+                    ].map(([v, w, pm, note], idx) => (
+                      <tr key={idx} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>{v}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>{w}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono, fontWeight: 700 }}>{pm}</td>
+                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>{note}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div style={{ padding: '5px 8px', background: '#fee2e2', border: '1px solid #ef4444', borderRadius: 2, fontSize: 10 }}>
+                  <strong>⚠ 주의:</strong> 도로 하 매설 구간에서 Pm = 0 입력 시 σ_o = 0으로 처리되어<br/>
+                  응력 합산이 <b>과소 평가(불안전 측)</b>됩니다. Kv와 함께 반드시 입력하십시오.
                 </div>
               </div>
             </EngPopover>
@@ -690,54 +742,108 @@ export default function SeismicDetailInputPage() {
             </span>
           </EngRow>
           <EngRow label="지반반력계수 Kv" unit="kN/m³" popover={
-            <EngPopover title="연직방향 지반반력계수 Kv">
+            <EngPopover title="연직방향 지반반력계수 Kv — 물리적 의미와 자동산정" width={420}>
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
-                  Winkler 탄성지반 위 보 모델의 지반 스프링 상수
+
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 8 }}>
+                  <strong style={{ color: T.textOK }}>적용 기준: 매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
+                  <span style={{ fontSize: 10 }}>Winkler 탄성지반 위 보(Beam on Elastic Foundation) 모델의 연직방향 지반 스프링 상수</span>
                 </div>
-                <div style={{ fontSize: 11 }}>
-                  차량하중 Pm &gt; 0인 경우 반드시 입력.<br/>
-                  σ_o 산정에서 <b>관의 처짐량을 결정하는 핵심 파라미터</b>.<br/>
-                  Kv가 클수록 지반이 단단하고 처짐이 작아 σ_o가 감소.
+
+                {/* 1. 물리적 의미 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>① 물리적 의미 (Winkler Foundation)</div>
+                <div style={{ fontSize: 10.5, marginBottom: 4 }}>
+                  Kv는 지반이 단위 면적당 단위 처짐에 저항하는 강성입니다.
+                  지표 차량하중이 지반을 통해 매설관에 전달될 때, 지반의 "스프링 강성"으로 하중 분산 정도를 결정합니다.
                 </div>
-                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
-                  σ_o ∝ (EI / Kv·D)^0.25<br/>
-                  Kv ↑ → σ_o ↓  (지반이 단단할수록 유리)
+                <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 10.5, lineHeight: 1.9, marginBottom: 6 }}>
+                  <div>Kv = ΔP / Δy  [kN/m³]</div>
+                  <div style={{fontSize:9.5, color:T.textMuted}}>ΔP: 지반 단위면적당 증가 압력 (kN/m²), Δy: 침하량 (m)</div>
+                  <div style={{marginTop:4}}>σ_o = 0.322 × Wm/Z × <strong>(E·I / Kv·D)^0.25</strong>  [MPa]</div>
+                  <div style={{fontSize:9.5, color:T.textMuted}}>Kv↑(단단) → (E·I/Kv·D)↓ → σ_o↓(유리)  /  Kv↓(연약) → σ_o↑(불리)</div>
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
+                <div style={{ fontSize: 10.5, marginBottom: 6 }}>
+                  지수가 <b>0.25 (4제곱근)</b>이므로 Kv 영향이 완만합니다.<br/>
+                  예: Kv가 4배 증가하면 σ_o는 약 <b>절반</b>으로 감소.
+                </div>
+
+                {/* 2. 자동산정 근거 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>② 자동산정 근거 (위 "자동" 버튼)</div>
+                <div style={{ fontSize: 10.5, marginBottom: 4 }}>
+                  ③ 표층지반조건에 입력한 층 데이터에서 <b>관 매설 깊이(토피 h)에 해당하는 층</b>의 전단파속도 Vs를 가져와 산정합니다.
+                </div>
+                <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 10.5, lineHeight: 1.9, marginBottom: 4 }}>
+                  <div>G_dyn = ρ × Vs²  (ρ ≈ 1.8 t/m³)</div>
+                  <div>E_s ≈ G_dyn / 10  (동/정 비 보정)</div>
+                  <div><strong>Kv ≈ 0.09 × Vs²  [kN/m³]</strong></div>
+                </div>
+                <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 6 }}>
+                  Vs 우선순위: 직접입력 Vs → 암반층(760 m/s) → N치 공식(65.64·N^0.407) → 기존 Vs<br/>
+                  Vs 없는 경우: 지반종류(S1~S5) 대표값 적용
+                </div>
+
+                {/* 3. 지반종류별 참고표 */}
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>③ 지반종류·N값별 Kv 참고표</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Kv 범위 (kN/m³)</th>
+                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>지반</th>
+                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>N값</th>
+                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>Vs (m/s)</th>
+                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>Kv (kN/m³)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {[
-                      ['연약 점토 (N < 4)',       '500 ~ 1,000'],
-                      ['보통 점토 (N = 4~8)',     '1,000 ~ 2,000'],
-                      ['굳은 점토 (N > 8)',       '1,500 ~ 3,000'],
-                      ['느슨한 모래 (N < 10)',    '1,000 ~ 2,500'],
-                      ['중간 모래 (N = 10~30)',   '2,500 ~ 8,000'],
-                      ['조밀한 모래·자갈 (N>30)', '8,000 ~ 25,000'],
-                    ].map(([g, k], i) => (
+                      ['연약 점토',     '< 4',   '80~100',  '600~900'],
+                      ['보통 점토',     '4~8',   '100~130', '900~1,500'],
+                      ['굳은 점토',     '8~15',  '130~170', '1,500~2,600'],
+                      ['느슨한 모래',   '< 10',  '100~150', '900~2,000'],
+                      ['중간 모래',     '10~30', '150~220', '2,000~4,400'],
+                      ['조밀 모래·자갈','> 30',  '220~350', '4,400~11,000'],
+                      ['연암·풍화암',   '—',     '360~760', '11,700~52,000'],
+                      ['보통암 이상',   '—',     '> 760',   '> 52,000'],
+                    ].map(([g, n, vs, kv], i) => (
                       <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{g}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{k}</td>
+                        <td style={{ padding: '3px 5px', border: '1px solid #eee' }}>{g}</td>
+                        <td style={{ padding: '3px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{n}</td>
+                        <td style={{ padding: '3px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{vs}</td>
+                        <td style={{ padding: '3px 5px', border: '1px solid #eee', textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{kv}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
-                  지침 예제 역산값: Kv ≈ 1,848 kN/m³ (굳은 점토)<br/>
-                  지반조사 자료 없는 경우 지반종류에 따른 하한값 적용 권장 (보수적).
+
+                <div style={{ padding: '5px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                  <strong>지침 예제 역산값:</strong> Kv ≈ 1,848 kN/m³ (굳은 점토, N≈12 추정)<br/>
+                  자동산정값은 참고용이며, 지반조사 결과가 있는 경우 실측값 우선 적용 권장.<br/>
+                  불확실한 경우 표 하한값(보수적) 적용.
                 </div>
               </div>
             </EngPopover>
           }>
             <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={90}/>
+            <button
+              onClick={() => { if (kvAutoResult?.Kv) set({ Kv: kvAutoResult.Kv }) }}
+              disabled={!kvAutoResult?.Kv}
+              style={{
+                height: 28, padding: '0 8px', fontSize: 10, cursor: kvAutoResult?.Kv ? 'pointer' : 'default',
+                border: `1px solid ${T.border}`, borderRadius: 3,
+                background: kvAutoResult?.Kv ? T.bgPanelAlt : T.bgInputDisabled,
+                color: kvAutoResult?.Kv ? T.textAccent : T.textDisabled,
+                fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
+              }}
+              title={kvAutoResult?.Kv ? `자동산정: ${kvAutoResult.Kv.toLocaleString()} kN/m³ (${kvAutoResult.layerName ?? '지반종류'} Vs=${kvAutoResult.Vs ?? '–'} m/s)` : '자동산정 불가 (층 데이터 없음)'}
+            >
+              자동
+            </button>
+            {kvAutoResult?.Kv && (inp.Kv ?? 0) === 0 && (
+              <span style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono }}>
+                → {kvAutoResult.Kv.toLocaleString()}
+              </span>
+            )}
             {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
-              <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans, marginLeft: 4 }}>
+              <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans }}>
                 ※ Kv 입력 필요
               </span>
             )}
