@@ -201,7 +201,7 @@ export function EngRow({
 }
 
 // ══════════════════════════════════════════════════════════════
-// EngInput — 숫자 입력칸 (useNumberField 사용 권장)
+// EngInput — 숫자 입력칸 (로컬 draft 상태 — 지우기·재입력 자유)
 // ══════════════════════════════════════════════════════════════
 export function EngInput({
   value, onChange, min, max, step, width = 96, disabled, compact,
@@ -213,40 +213,83 @@ export function EngInput({
   disabled?: boolean
   compact?: boolean
 }) {
+  const [draft, setDraft] = useState<string>(String(value ?? ''))
+  const [hasError, setHasError] = useState(false)
+  const [focused, setFocused] = useState(false)
+
+  // 외부 값(store) 변경 시 포커스 없을 때만 draft 동기화
+  useEffect(() => {
+    if (!focused) {
+      setDraft(String(value ?? ''))
+      setHasError(false)
+    }
+  }, [value, focused])
+
   const h = compact ? T.inputHCompact : T.inputH
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = e.target.value
+    setDraft(v)
+    if (v.trim() === '' || isNaN(parseFloat(v))) {
+      setHasError(true)
+    } else {
+      setHasError(false)
+      onChange?.(v)
+    }
+  }
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    setFocused(false)
+    if (hasError || draft.trim() === '' || isNaN(parseFloat(draft))) {
+      setDraft(String(value ?? ''))
+      setHasError(false)
+      e.target.style.borderColor = disabled ? T.borderLight : T.border
+    } else {
+      e.target.style.borderColor = disabled ? T.borderLight : T.border
+    }
+    e.target.style.boxShadow = T.shadow0
+  }
+
+  const borderCol = hasError ? '#ef4444' : T.border
+
   return (
-    <input
-      type="text"
-      inputMode="decimal"
-      value={value}
-      onChange={onChange ? e => onChange(e.target.value) : undefined}
-      disabled={disabled}
-      style={{
-        width,
-        height: h,
-        border: `1px solid ${disabled ? T.borderLight : T.border}`,
-        borderRadius: T.radiusSm,
-        padding: '0 8px',
-        fontSize: T.fs.base,
-        fontFamily: T.fontMono,
-        background: disabled ? T.bgInputDisabled : T.bgInput,
-        color: disabled ? T.textDisabled : T.textPrimary,
-        outline: 'none',
-        textAlign: 'right',
-        boxSizing: 'border-box',
-        touchAction: 'manipulation',
-        transition: `border-color 120ms, box-shadow 120ms`,
-      }}
-      onFocus={e => {
-        e.target.style.borderColor = T.borderFocus
-        e.target.style.boxShadow = T.shadowFocus
-        e.target.select()
-      }}
-      onBlur={e => {
-        e.target.style.borderColor = disabled ? T.borderLight : T.border
-        e.target.style.boxShadow = T.shadow0
-      }}
-    />
+    <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 2, verticalAlign: 'top' }}>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={draft}
+        onChange={handleChange}
+        disabled={disabled}
+        style={{
+          width,
+          height: h,
+          border: `1px solid ${disabled ? T.borderLight : borderCol}`,
+          borderRadius: T.radiusSm,
+          padding: '0 8px',
+          fontSize: T.fs.base,
+          fontFamily: T.fontMono,
+          background: disabled ? T.bgInputDisabled : T.bgInput,
+          color: disabled ? T.textDisabled : hasError ? '#ef4444' : T.textPrimary,
+          outline: 'none',
+          textAlign: 'right',
+          boxSizing: 'border-box',
+          touchAction: 'manipulation',
+          transition: `border-color 120ms, box-shadow 120ms`,
+        }}
+        onFocus={e => {
+          setFocused(true)
+          e.target.style.borderColor = hasError ? '#ef4444' : T.borderFocus
+          e.target.style.boxShadow = hasError ? '0 0 0 2px rgba(239,68,68,0.15)' : T.shadowFocus
+          e.target.select()
+        }}
+        onBlur={handleBlur}
+      />
+      {hasError && (
+        <span style={{ fontSize: 9, color: '#ef4444', fontFamily: T.fontSans, whiteSpace: 'nowrap', lineHeight: 1 }}>
+          숫자를 입력하세요
+        </span>
+      )}
+    </div>
   )
 }
 

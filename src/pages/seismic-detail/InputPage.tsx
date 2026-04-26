@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSeismicStore } from '../../store/useSeismicStore.js'
 import { SEISMIC_ZONE, SEISMIC_GRADE, SOIL_TYPE, AMP_FACTOR } from '../../engine/seismicConstants.js'
@@ -114,9 +114,12 @@ function LayerEditor({ layers, setLayers }: {
   )
 }
 
+type KvMode = 'N' | 'Vs' | 'manual'
+
 export default function SeismicDetailInputPage() {
   const navigate = useNavigate()
   const { detailInputs: inp, setDetailInputs: set, setDetailLayers, calcDetail } = useSeismicStore()
+  const [kvMode, setKvMode] = useState<KvMode>('N')
 
   const Z = SEISMIC_ZONE[inp.zone as 'I'|'II'].Z
   const I_seismic = inp.seismicGrade === 'I' ? 1.40 : 1.00
@@ -173,10 +176,9 @@ export default function SeismicDetailInputPage() {
     if (result) navigate('/seismic-detail/result')
   }
 
-  // Kv 자동산정: 관 매설층 Vs → 0.09×Vs²
-  const kvAutoResult = (() => {
-    try { return calcKv(inp.layers, inp.hCover, inp.soilType) } catch { return null }
-  })()
+  // Kv 모드별 산정 결과 (N·Vs 모두 미리 계산)
+  const kvByN  = (() => { try { return calcKv(inp.layers, inp.hCover, inp.soilType, 'N')  } catch { return null } })()
+  const kvByVs = (() => { try { return calcKv(inp.layers, inp.hCover, inp.soilType, 'Vs') } catch { return null } })()
 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -316,8 +318,8 @@ export default function SeismicDetailInputPage() {
           }>
             <EngSegment
               options={[
-                { key: 'I',  label: '내진 Ⅰ 등급', sub: '붕괴방지 1000년 / 기능수행 100년' },
-                { key: 'II', label: '내진 Ⅱ 등급', sub: '붕괴방지 500년 / 기능수행 50년' },
+                { key: 'I',  label: '내진 Ⅰ 등급', sub: '붕괴 1000년 / 기능 100년' },
+                { key: 'II', label: '내진 Ⅱ 등급', sub: '붕괴 500년 / 기능 50년' },
               ]}
               value={inp.seismicGrade}
               onChange={v => set({ seismicGrade: v })}
@@ -741,16 +743,13 @@ export default function SeismicDetailInputPage() {
               {(inp.Pm ?? 0) === 0 ? '차량 없음' : `DB 하중 적용`}
             </span>
           </EngRow>
-          <EngRow label="지반반력계수 Kv" unit="kN/m³" popover={
+          <EngRow label="지반반력계수 Kv" popover={
             <EngPopover title="연직방향 지반반력계수 Kv — 물리적 의미와 자동산정" width={420}>
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-
                 <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 8 }}>
                   <strong style={{ color: T.textOK }}>적용 기준: 매설관로 내진성능평가 요령 해설식 5.3.2 / 5.3.37</strong><br/>
                   <span style={{ fontSize: 10 }}>Winkler 탄성지반 위 보(Beam on Elastic Foundation) 모델의 연직방향 지반 스프링 상수</span>
                 </div>
-
-                {/* 1. 물리적 의미 */}
                 <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>① 물리적 의미 (Winkler Foundation)</div>
                 <div style={{ fontSize: 10.5, marginBottom: 4 }}>
                   Kv는 지반이 단위 면적당 단위 처짐에 저항하는 강성입니다.
@@ -760,29 +759,18 @@ export default function SeismicDetailInputPage() {
                   <div>Kv = ΔP / Δy  [kN/m³]</div>
                   <div style={{fontSize:9.5, color:T.textMuted}}>ΔP: 지반 단위면적당 증가 압력 (kN/m²), Δy: 침하량 (m)</div>
                   <div style={{marginTop:4}}>σ_o = 0.322 × Wm/Z × <strong>(E·I / Kv·D)^0.25</strong>  [MPa]</div>
-                  <div style={{fontSize:9.5, color:T.textMuted}}>Kv↑(단단) → (E·I/Kv·D)↓ → σ_o↓(유리)  /  Kv↓(연약) → σ_o↑(불리)</div>
+                  <div style={{fontSize:9.5, color:T.textMuted}}>Kv↑(단단) → σ_o↓(유리) / Kv↓(연약) → σ_o↑(불리) / Kv 4배 → σ_o 절반</div>
                 </div>
-                <div style={{ fontSize: 10.5, marginBottom: 6 }}>
-                  지수가 <b>0.25 (4제곱근)</b>이므로 Kv 영향이 완만합니다.<br/>
-                  예: Kv가 4배 증가하면 σ_o는 약 <b>절반</b>으로 감소.
-                </div>
-
-                {/* 2. 자동산정 근거 */}
-                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>② 자동산정 근거 (위 "자동" 버튼)</div>
-                <div style={{ fontSize: 10.5, marginBottom: 4 }}>
-                  ③ 표층지반조건에 입력한 층 데이터에서 <b>관 매설 깊이(토피 h)에 해당하는 층</b>의 전단파속도 Vs를 가져와 산정합니다.
-                </div>
+                <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>② 자동산정 근거 (Kv ≈ 0.09 × Vs²)</div>
                 <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 10.5, lineHeight: 1.9, marginBottom: 4 }}>
                   <div>G_dyn = ρ × Vs²  (ρ ≈ 1.8 t/m³)</div>
                   <div>E_s ≈ G_dyn / 10  (동/정 비 보정)</div>
                   <div><strong>Kv ≈ 0.09 × Vs²  [kN/m³]</strong></div>
                 </div>
                 <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 6 }}>
-                  Vs 우선순위: 직접입력 Vs → 암반층(760 m/s) → N치 공식(65.64·N^0.407) → 기존 Vs<br/>
-                  Vs 없는 경우: 지반종류(S1~S5) 대표값 적용
+                  · N값 모드: N치 → Vs = 65.64×N^0.407 → Kv<br/>
+                  · Vs 모드: 층의 실제 Vs (직접입력/암반/계산값) → Kv
                 </div>
-
-                {/* 3. 지반종류별 참고표 */}
                 <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>③ 지반종류·N값별 Kv 참고표</div>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
                   <thead>
@@ -802,7 +790,6 @@ export default function SeismicDetailInputPage() {
                       ['중간 모래',     '10~30', '150~220', '2,000~4,400'],
                       ['조밀 모래·자갈','> 30',  '220~350', '4,400~11,000'],
                       ['연암·풍화암',   '—',     '360~760', '11,700~52,000'],
-                      ['보통암 이상',   '—',     '> 760',   '> 52,000'],
                     ].map(([g, n, vs, kv], i) => (
                       <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
                         <td style={{ padding: '3px 5px', border: '1px solid #eee' }}>{g}</td>
@@ -813,40 +800,86 @@ export default function SeismicDetailInputPage() {
                     ))}
                   </tbody>
                 </table>
-
                 <div style={{ padding: '5px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
-                  <strong>지침 예제 역산값:</strong> Kv ≈ 1,848 kN/m³ (굳은 점토, N≈12 추정)<br/>
-                  자동산정값은 참고용이며, 지반조사 결과가 있는 경우 실측값 우선 적용 권장.<br/>
-                  불확실한 경우 표 하한값(보수적) 적용.
+                  <strong>지침 예제 역산값:</strong> Kv ≈ 1,848 kN/m³ (굳은 점토, N≈12)<br/>
+                  자동산정값은 참고용이며, 지반조사 결과가 있는 경우 실측값 우선 적용.
                 </div>
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={90}/>
-            <button
-              onClick={() => { if (kvAutoResult?.Kv) set({ Kv: kvAutoResult.Kv }) }}
-              disabled={!kvAutoResult?.Kv}
-              style={{
-                height: 28, padding: '0 8px', fontSize: 10, cursor: kvAutoResult?.Kv ? 'pointer' : 'default',
-                border: `1px solid ${T.border}`, borderRadius: 3,
-                background: kvAutoResult?.Kv ? T.bgPanelAlt : T.bgInputDisabled,
-                color: kvAutoResult?.Kv ? T.textAccent : T.textDisabled,
-                fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
-              }}
-              title={kvAutoResult?.Kv ? `자동산정: ${kvAutoResult.Kv.toLocaleString()} kN/m³ (${kvAutoResult.layerName ?? '지반종류'} Vs=${kvAutoResult.Vs ?? '–'} m/s)` : '자동산정 불가 (층 데이터 없음)'}
-            >
-              자동
-            </button>
-            {kvAutoResult?.Kv && (inp.Kv ?? 0) === 0 && (
-              <span style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono }}>
-                → {kvAutoResult.Kv.toLocaleString()}
-              </span>
-            )}
-            {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
-              <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans }}>
-                ※ Kv 입력 필요
-              </span>
-            )}
+            {/* ── Kv 산정 모드 선택 + 입력 영역 ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
+              {/* 모드 선택 버튼 3개 */}
+              <div style={{ display: 'flex', gap: 4 }}>
+                {([['N', 'N값 자동'], ['Vs', 'Vs 자동'], ['manual', '직접입력']] as [KvMode, string][]).map(([m, lbl]) => (
+                  <button key={m} onClick={() => setKvMode(m)}
+                    style={{
+                      padding: '3px 10px', fontSize: 10.5, cursor: 'pointer', borderRadius: 3,
+                      border: `1px solid ${kvMode === m ? T.bgActive : T.border}`,
+                      background: kvMode === m ? T.bgActive : T.bgPanelAlt,
+                      color: kvMode === m ? 'white' : T.textMuted,
+                      fontFamily: T.fontSans, fontWeight: kvMode === m ? 700 : 400,
+                      transition: 'background 120ms, color 120ms',
+                    }}>
+                    {lbl}
+                  </button>
+                ))}
+              </div>
+
+              {/* 모드별 결과 영역 */}
+              {kvMode === 'manual' ? (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={100}/>
+                  <span style={{ fontSize: 10.5, color: T.textMuted, lineHeight: '28px' }}>kN/m³</span>
+                </div>
+              ) : (() => {
+                const res = kvMode === 'N' ? kvByN : kvByVs
+                const label = kvMode === 'N'
+                  ? (res?.N != null ? `N=${res.N}` : '—')
+                  : (res?.Vs != null ? `Vs=${res.Vs} m/s` : '—')
+                return (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {res?.Kv ? (
+                      <>
+                        <span style={{ fontSize: 12, fontFamily: T.fontMono, color: T.textAccent, fontWeight: 700 }}>
+                          {res.Kv.toLocaleString()} kN/m³
+                        </span>
+                        <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
+                          ({res.layerName ?? '—'}, {label})
+                        </span>
+                        <button
+                          onClick={() => set({ Kv: res.Kv! })}
+                          style={{
+                            padding: '2px 10px', fontSize: 10.5, cursor: 'pointer', borderRadius: 3,
+                            border: `1px solid ${T.bgActive}`, background: T.bgActive,
+                            color: 'white', fontFamily: T.fontSans,
+                          }}>
+                          적용
+                        </button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: 10.5, color: '#ef4444', fontFamily: T.fontSans }}>
+                        {res?.error ?? (kvMode === 'N' ? '해당 층에 N값 없음' : 'Vs 없음')} — Vs 모드로 전환하거나 직접 입력하세요
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
+
+              {/* 현재 적용값 표시 (자동 모드) + Pm 경고 */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {kvMode !== 'manual' && (
+                  <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
+                    현재 적용: <strong>{(inp.Kv ?? 0) > 0 ? `${(inp.Kv ?? 0).toLocaleString()} kN/m³` : '미적용'}</strong>
+                  </span>
+                )}
+                {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
+                  <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans }}>
+                    ※ Pm &gt; 0이면 Kv 적용 필요
+                  </span>
+                )}
+              </div>
+            </div>
           </EngRow>
 
           {/* 분절관 추가 입력 */}

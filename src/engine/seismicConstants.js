@@ -303,7 +303,8 @@ export function calcAlpha(lambda1, lambda2, L, pipeType = 'segmented') {
 // @param {number} hCover   - 토피 (관 상단~지표, m)
 // @param {string} soilType - 지반종류 (S1~S6), fallback용
 // @returns {{ Kv: number|null, Vs: number|null, method: string, layerName: string|null }}
-export function calcKv(layers, hCover, soilType) {
+// forceMethod: 'auto' (N우선→Vs→표) | 'N' (N치→Vs 변환만) | 'Vs' (직접 Vs만)
+export function calcKv(layers, hCover, soilType, forceMethod = 'auto') {
   // 관 상단이 포함되는 층 탐색
   let depth = 0
   let target = null
@@ -313,31 +314,30 @@ export function calcKv(layers, hCover, soilType) {
   }
   if (!target && layers.length > 0) target = layers[layers.length - 1]
 
-  // 층 Vs 결정 (deriveVs와 동일 우선순위)
-  let Vs = null
-  if (target) {
-    if (target.Vs_manual > 0) {
-      Vs = target.Vs_manual
-    } else if (target.isRock || ROCK_LAYER_NAMES.includes(target.name)) {
-      Vs = 760
-    } else {
-      const fromN = calcVsFromN(target.N)
-      Vs = fromN ?? (target.Vs > 0 ? target.Vs : null)
+  const isRockLayer = t => t && (t.isRock || ROCK_LAYER_NAMES.includes(t.name))
+  const toKv = vs => Math.max(100, Math.round(0.09 * vs * vs / 100) * 100)
+
+  // ── N치 기반 (N→Vs 공식 경유) ──────────────────────────────
+  if (forceMethod === 'N' || forceMethod === 'auto') {
+    const N = target?.N
+    if (N && N > 0) {
+      const Vs = calcVsFromN(N)
+      if (Vs) return { Kv: toKv(Vs), Vs, N, method: 'N', layerName: target.name }
     }
+    if (forceMethod === 'N') return { Kv: null, Vs: null, N: null, method: 'N', layerName: target?.name ?? null, error: 'N값 없음' }
   }
 
-  if (Vs && Vs > 0) {
-    // Kv ≈ 0.09 × Vs²,  100 kN/m³ 단위 반올림
-    const Kv = Math.max(100, Math.round(0.09 * Vs * Vs / 100) * 100)
-    const method = !target ? 'fallback'
-      : target.Vs_manual > 0 ? 'Vs_manual'
-      : (target.isRock || ROCK_LAYER_NAMES.includes(target.name)) ? 'rock'
-      : target.N > 0 ? 'N' : 'Vs'
-    return { Kv, Vs, method, layerName: target?.name ?? null }
+  // ── Vs 직접 기반 ───────────────────────────────────────────
+  if (forceMethod === 'Vs' || forceMethod === 'auto') {
+    let Vs = null
+    if (target?.Vs_manual > 0) Vs = target.Vs_manual
+    else if (isRockLayer(target)) Vs = 760
+    else Vs = (target?.Vs > 0 ? target.Vs : null)
+    if (Vs) return { Kv: toKv(Vs), Vs, N: target?.N ?? null, method: 'Vs', layerName: target?.name ?? null }
+    if (forceMethod === 'Vs') return { Kv: null, Vs: null, N: null, method: 'Vs', layerName: target?.name ?? null, error: 'Vs 없음' }
   }
 
-  // fallback: 지반종류별 대표값
+  // ── fallback: 지반종류 표 ────────────────────────────────
   const KV_SOIL = { S1: 200000, S2: 100000, S3: 20000, S4: 6000, S5: 1500, S6: null }
-  const Kv = KV_SOIL[soilType] ?? null
-  return { Kv, Vs: null, method: 'soilClass', layerName: null }
+  return { Kv: KV_SOIL[soilType] ?? null, Vs: null, N: null, method: 'soilClass', layerName: null }
 }
