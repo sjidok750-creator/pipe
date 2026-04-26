@@ -8,6 +8,7 @@ import {
 } from '../../engine/seismicConstants.js'
 import { T } from '../../components/eng/tokens'
 import { Frac, Sub, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../../components/report/MathElements'
+import WIcon from '../../components/WIcon'
 
 export default function SeismicPrelimReportPage() {
   const navigate = useNavigate()
@@ -37,26 +38,40 @@ export default function SeismicPrelimReportPage() {
 
       {/* 인쇄 버튼 */}
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-        <button onClick={() => window.print()}
+        <button onClick={() => navigate('/seismic-prelim/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
         <button onClick={() => navigate('/seismic-prelim/result')}
-          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.borderDark}`, borderRadius: 2, fontFamily: F }}>
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>
           결과 페이지로
         </button>
       </div>
 
       {/* 보고서 본문 */}
-      <div className="report-body" style={{ background: 'white', border: `1px solid ${T.border}`, padding: '28px 36px', fontFamily: F, fontSize: 11 }}>
+      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
-        {/* ── 표지 ── */}
-        <div className="keep-together" style={{ textAlign: 'center', marginBottom: 28, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 18 }}>
-          <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 6 }}>KDS 57 17 00 : 2022 상수도 내진설계기준</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: T.bgActive, marginBottom: 4, fontFamily: F }}>
-            매설관로 내진성능 예비평가 검토서
+        {/* ── 표지 헤더 ── */}
+        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
+          <WIcon size={54} id="rpt-prelim" radius={10} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
+              KDS 57 17 00 : 2022 · 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 A
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
+              매설관로 내진성능 예비평가 검토서
+            </div>
+            <div style={{ fontSize: 9.5, color: T.textMuted }}>
+              내진성능 우선순위 평가 (취약도지수 VI 산정 방법)
+            </div>
           </div>
-          <div style={{ fontSize: 10.5, color: T.textMuted }}>작성일 : {today}</div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: T.bgActive, letterSpacing: 1, marginBottom: 5 }}>
+              STEP-PIPE
+            </div>
+            <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
+            <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
+          </div>
         </div>
 
         {/* ── 1. 평가 개요 ── */}
@@ -131,7 +146,7 @@ export default function SeismicPrelimReportPage() {
 
         <table style={TABLE}>
           <thead>
-            <tr style={{ background: '#1a3a5c' }}>
+            <tr style={{ background: '#2C2118' }}>
               <th style={TH}>지수 항목</th>
               <th style={TH}>산정 기준</th>
               <th style={{ ...TH, textAlign: 'right', width: 70 }}>지수값</th>
@@ -155,7 +170,7 @@ export default function SeismicPrelimReportPage() {
                 <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{val.toFixed(1)}</td>
               </tr>
             ))}
-            <tr style={{ background: '#eef2f8', fontWeight: 700 }}>
+            <tr style={{ background: '#EDEBE6', fontWeight: 700 }}>
               <td style={TD} colSpan={2}>세부지수 합계 (KIND + EARTH + SIZE + CONNECT + FACIL + MCONE)</td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{r.VI_sub.toFixed(1)}</td>
             </tr>
@@ -206,10 +221,12 @@ export default function SeismicPrelimReportPage() {
   )
 }
 
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }
-const TH: React.CSSProperties = { padding: '4px 8px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
-const TD: React.CSSProperties = { padding: '4px 8px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 5 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
 const RH: React.CSSProperties = {
-  background: '#eef2f8', padding: '4px 10px', fontWeight: 700, fontSize: 11.5,
-  color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', margin: '14px 0 6px',
+  background: '#EDEBE6', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
+  color: '#2C2118', borderLeft: '3px solid #CC6B3D', margin: '10px 0 5px',
+  breakAfter: 'avoid', pageBreakAfter: 'avoid',
+  breakInside: 'avoid', pageBreakInside: 'avoid',
 }

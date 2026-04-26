@@ -310,3 +310,57 @@ export function calcAlpha(lambda1, lambda2, L, pipeType = 'segmented') {
   const alpha2 = 1 / (1 + Math.pow(2 * Math.PI / (lambda2 * L), 4))
   return { alpha1, alpha2, Lprime }
 }
+
+// ── 연직방향 지반반력계수 Kv 자동산정 ────────────────────────
+// 관 매설 깊이(토피 hCover)에 해당하는 지층의 전단파속도 Vs로부터 산정.
+// 산정식: Kv ≈ 0.09 × Vs²  [kN/m³]
+//   - 동적 전단탄성계수 G_dyn = ρ×Vs² (ρ≈1.8 t/m³)
+//   - 정적 변형계수 E_s ≈ G_dyn/10 (동/정 비 보정 ~10)
+//   - Winkler 지반반력계수 Kv ≈ E_s / (D×0.5) → 단순화 → 0.09×Vs²
+// 이 식을 지반종류별 표준 Vs 대입 시 기존 참고표 (500~25,000 kN/m³)와 일치.
+//
+// 우선순위: ① 관 매설층 Vs_manual → ② 암반층(760m/s) → ③ N치→Vs 변환
+//          → ④ 기존 Vs → ⑤ 지반종류 표 fallback
+//
+// @param {Array}  layers   - 지반층 배열 [{name,H,N,Vs_manual,isRock,Vs}]
+// @param {number} hCover   - 토피 (관 상단~지표, m)
+// @param {string} soilType - 지반종류 (S1~S6), fallback용
+// @returns {{ Kv: number|null, Vs: number|null, method: string, layerName: string|null }}
+// forceMethod: 'auto' (N우선→Vs→표) | 'N' (N치→Vs 변환만) | 'Vs' (직접 Vs만)
+export function calcKv(layers, hCover, soilType, forceMethod = 'auto') {
+  // 관 상단이 포함되는 층 탐색
+  let depth = 0
+  let target = null
+  for (const l of layers) {
+    depth += l.H
+    if (depth >= hCover) { target = l; break }
+  }
+  if (!target && layers.length > 0) target = layers[layers.length - 1]
+
+  const isRockLayer = t => t && (t.isRock || ROCK_LAYER_NAMES.includes(t.name))
+  const toKv = vs => Math.max(100, Math.round(0.09 * vs * vs / 100) * 100)
+
+  // ── N치 기반 (N→Vs 공식 경유) ──────────────────────────────
+  if (forceMethod === 'N' || forceMethod === 'auto') {
+    const N = target?.N
+    if (N && N > 0) {
+      const Vs = calcVsFromN(N)
+      if (Vs) return { Kv: toKv(Vs), Vs, N, method: 'N', layerName: target.name }
+    }
+    if (forceMethod === 'N') return { Kv: null, Vs: null, N: null, method: 'N', layerName: target?.name ?? null, error: 'N값 없음' }
+  }
+
+  // ── Vs 직접 기반 ───────────────────────────────────────────
+  if (forceMethod === 'Vs' || forceMethod === 'auto') {
+    let Vs = null
+    if (target?.Vs_manual > 0) Vs = target.Vs_manual
+    else if (isRockLayer(target)) Vs = 760
+    else Vs = (target?.Vs > 0 ? target.Vs : null)
+    if (Vs) return { Kv: toKv(Vs), Vs, N: target?.N ?? null, method: 'Vs', layerName: target?.name ?? null }
+    if (forceMethod === 'Vs') return { Kv: null, Vs: null, N: null, method: 'Vs', layerName: target?.name ?? null, error: 'Vs 없음' }
+  }
+
+  // ── fallback: 지반종류 표 ────────────────────────────────
+  const KV_SOIL = { S1: 200000, S2: 100000, S3: 20000, S4: 6000, S5: 1500, S6: null }
+  return { Kv: KV_SOIL[soilType] ?? null, Vs: null, N: null, method: 'soilClass', layerName: null }
+}

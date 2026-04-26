@@ -127,23 +127,21 @@ export function RockSpectrumSVG({
             fontSize={7.5} fill="#c0392b" fontFamily={T.fontMono}>
             Ts={Ts.toFixed(2)}s
           </text>
-          {/* Ts에서의 Sv 값 점 */}
+          {/* Ts에서의 Sv 값 점 + 레이블 */}
           <circle cx={tx(Ts)} cy={ty(svAtTs_c)} r={3}
             fill={NAVY} opacity={0.85} />
+          <text x={tx(Ts) + 5} y={ty(svAtTs_c) - 3}
+            fontSize={7.5} fontWeight="bold" fill={NAVY} fontFamily={T.fontMono}>
+            {svAtTs_c.toFixed(4)} m/s
+          </text>
           <circle cx={tx(Ts)} cy={ty(svAtTs_f)} r={2.5}
             fill="#2e7d32" opacity={0.85} />
+          <text x={tx(Ts) + 5} y={ty(svAtTs_f) + 10}
+            fontSize={7.5} fill="#2e7d32" fontFamily={T.fontMono}>
+            {svAtTs_f.toFixed(4)} m/s
+          </text>
         </g>
       )}
-
-      {/* plateau 값 레이블 */}
-      <text x={tx(T_MAX) - 2} y={pyC - 4} textAnchor="end"
-        fontSize={8} fontWeight="bold" fill={NAVY} fontFamily={T.fontMono}>
-        {plat_c.toFixed(4)} m/s
-      </text>
-      <text x={tx(T_MAX) - 2} y={pyF + 11} textAnchor="end"
-        fontSize={8} fill="#2e7d32" fontFamily={T.fontMono}>
-        {plat_f.toFixed(4)} m/s
-      </text>
 
       {/* 범례 */}
       <g transform={`translate(${ml + gW - 118}, ${mt + 4})`}>

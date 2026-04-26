@@ -174,7 +174,7 @@ export default function ResultPage() {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
           <button onClick={() => navigate('/structural/input')}
-            style={{ flex: 1, padding: '6px 0', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.borderDark}`, borderRadius: 2, fontFamily: T.fontSans }}>
+            style={{ flex: 1, padding: '6px 0', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontSans }}>
             ◀  입력 수정
           </button>
           <button onClick={() => navigate('/structural/report')}

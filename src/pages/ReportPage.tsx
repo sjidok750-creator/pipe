@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { T } from '../components/eng/tokens'
 import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../components/report/MathElements'
+import WIcon from '../components/WIcon'
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '4px 8px', fontSize: 10.5, fontWeight: 700, color: '#1a3a5c', borderBottom: '1px solid #bbb', textAlign: 'left', background: '#eef2f8' }
-const TD: React.CSSProperties = { padding: '4px 8px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
-const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#1a3a5c', borderLeft: '3px solid #1a3a5c', paddingLeft: 6, marginTop: 14, marginBottom: 4 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#2C2118', borderBottom: '1px solid #C8C3BC', textAlign: 'left', background: '#EDEBE6' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #E0DDD7', verticalAlign: 'middle', fontSize: 10.5 }
+const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#2C2118', borderLeft: '3px solid #CC6B3D', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
 const NOTE: React.CSSProperties = { fontSize: 9.5, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
@@ -20,14 +21,14 @@ function CalcRow({ label, expr, result, unit, indent = false }: {
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: indent ? 16 : 0, fontSize: 10.5 }}>
       <span style={{ width: 180, flexShrink: 0, color: '#444', fontWeight: 600 }}>{label}</span>
       <span style={{ color: '#555', flex: 1 }}>{expr}</span>
-      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1a3a5c', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
+      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#CC6B3D', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
     </div>
   )
 }
 
 // ── 구분선 ───────────────────────────────────────────────────
 function HR() {
-  return <div style={{ borderTop: '1px solid #e0e8f0', margin: '6px 0' }} />
+  return <div style={{ borderTop: '1px solid #E0DDD7', margin: '6px 0' }} />
 }
 
 export default function ReportPage() {
@@ -64,33 +65,48 @@ export default function ReportPage() {
   const verdictItems = Object.entries(verdict).filter(([k]) => k !== 'overallOK') as [string, any][]
 
   const rh: React.CSSProperties = {
-    background: T.bgSection, padding: '4px 10px', fontWeight: 700, fontSize: 12,
-    color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '14px 0 6px',
+    background: T.bgSection, padding: '3px 10px', fontWeight: 700, fontSize: 12,
+    color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '10px 0 5px',
     fontFamily: F,
+    breakAfter: 'avoid', pageBreakAfter: 'avoid',
+    breakInside: 'avoid', pageBreakInside: 'avoid',
   }
 
   return (
     <div className="report-wrapper" style={{ maxWidth: 820, margin: '0 auto' }}>
       <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 8 }}>
-        <button onClick={() => window.print()}
+        <button onClick={() => navigate('/structural/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
         <button onClick={() => navigate('/structural/result')}
-          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.borderDark}`, borderRadius: 2, fontFamily: F }}>
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>
           결과 페이지로
         </button>
       </div>
 
-      <div className="report-body" style={{ background: 'white', border: `1px solid ${T.border}`, padding: '28px 36px', fontFamily: F, fontSize: 11 }}>
+      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
-        {/* ── 표지 ── */}
-        <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: `2px solid ${T.bgActive}`, paddingBottom: 16 }}>
-          <div style={{ fontSize: 10, color: T.textMuted, marginBottom: 4 }}>KDS 57 10 00 : 2022 상수도 시설 설계기준 — 관로</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: T.bgActive, marginBottom: 4, fontFamily: F }}>매설관로 구조안전성 검토서</div>
-          <div style={{ fontSize: 10.5, color: T.textMuted }}>
-            {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
-            &nbsp;|&nbsp;작성일: {today}
+        {/* ── 표지 헤더 ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
+          <WIcon size={54} id="rpt-struct" radius={10} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
+              KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
+            </div>
+            <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
+              매설관로 구조안전성 검토서
+            </div>
+            <div style={{ fontSize: 9.5, color: T.textMuted }}>
+              {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
+            </div>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: T.bgActive, letterSpacing: 1, marginBottom: 5 }}>
+              STEP-PIPE
+            </div>
+            <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
+            <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 
