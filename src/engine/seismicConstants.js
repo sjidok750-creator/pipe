@@ -228,16 +228,17 @@ export function resolveLayersForTGVds({ layers, H_effective, fillGap = true }) {
   return layers
 }
 
-// 연직방향 지반반력계수 Kv 자동산정 (N치 → E₀ → Kv₀ → Kv)
-// E₀  = 2800√N      (kN/m²)  — Dunham 공식 (혼합 지반, 상수도 내진설계 관행)
-// Kv₀ = E₀/(B₀×I_v) (kN/m³)  — B₀=0.3m 기준판, I_v=5 (경험 영향계수)
-// Kv  = Kv₀×(B₀/D)^0.75      — 재하폭(관경) 보정
-export function calcKvFromN(N, D_m, B0 = 0.3) {
+// 연직방향 지반반력계수 Kv 산정 — 방법1: N치→E₀법
+// E₀  = 2800×N       (kN/m²)  — 일반 지반 (도로교 설계기준 등)
+// Kv₀ = (α/30)×E₀   (kN/m³)  — 표준재하판 30cm 기준, α=1 (재하시험 없을 때)
+// Kv  = Kv₀×(30/Bv)^(3/4)    — 재하폭(관경 Bv[cm]) 보정
+export function calcKvFromN(N, D_m, alpha = 1) {
   if (!N || N <= 0 || !D_m || D_m <= 0) return null
-  const E0  = 2800 * Math.sqrt(N)
-  const Kv0 = E0 / (B0 * 5)
-  const Kv  = Kv0 * Math.pow(B0 / D_m, 0.75)
-  return { E0, Kv0, Kv }
+  const E0  = 2800 * N
+  const Kv0 = (alpha / 30) * E0
+  const Bv  = D_m * 100                        // m → cm
+  const Kv  = Kv0 * Math.pow(30 / Bv, 0.75)
+  return { E0, Kv0, Kv, Bv, alpha }
 }
 
 // 층배열에서 특정 깊이의 층 반환 (깊이 초과 시 최하층 반환)
@@ -311,24 +312,18 @@ export function calcAlpha(lambda1, lambda2, L, pipeType = 'segmented') {
   return { alpha1, alpha2, Lprime }
 }
 
-// ── 연직방향 지반반력계수 Kv 자동산정 ────────────────────────
-// 관 매설 깊이(토피 hCover)에 해당하는 지층의 전단파속도 Vs로부터 산정.
-// 산정식: Kv ≈ 0.09 × Vs²  [kN/m³]
-//   - 동적 전단탄성계수 G_dyn = ρ×Vs² (ρ≈1.8 t/m³)
-//   - 정적 변형계수 E_s ≈ G_dyn/10 (동/정 비 보정 ~10)
-//   - Winkler 지반반력계수 Kv ≈ E_s / (D×0.5) → 단순화 → 0.09×Vs²
-// 이 식을 지반종류별 표준 Vs 대입 시 기존 참고표 (500~25,000 kN/m³)와 일치.
-//
-// 우선순위: ① 관 매설층 Vs_manual → ② 암반층(760m/s) → ③ N치→Vs 변환
-//          → ④ 기존 Vs → ⑤ 지반종류 표 fallback
-//
+// ── 연직방향 지반반력계수 Kv 산정 ─────────────────────────────
+// method: 'N_E0'  — N치→E₀=2800N→Kv₀=(1/30)E₀→Kv=Kv₀×(30/Bv)^0.75  (D_m 필요)
+//         'Vs'    — Vs→0.09×Vs²
+//         'table' — N값 범위별 표 조회 (도로기초편람 기준)
+//         'auto'  — N_E0 → Vs → soilClass 순서로 fallback
 // @param {Array}  layers   - 지반층 배열 [{name,H,N,Vs_manual,isRock,Vs}]
 // @param {number} hCover   - 토피 (관 상단~지표, m)
-// @param {string} soilType - 지반종류 (S1~S6), fallback용
-// @returns {{ Kv: number|null, Vs: number|null, method: string, layerName: string|null }}
-// forceMethod: 'auto' (N우선→Vs→표) | 'N' (N치→Vs 변환만) | 'Vs' (직접 Vs만)
-export function calcKv(layers, hCover, soilType, forceMethod = 'auto') {
-  // 관 상단이 포함되는 층 탐색
+// @param {string} soilType - 지반종류 (S1~S6), auto fallback용
+// @param {string} method   - 산정 방법
+// @param {number|null} D_m - 관 외경 (m), N_E0 방법에 필요
+export function calcKv(layers, hCover, soilType, method = 'N_E0', D_m = null) {
+  // 토피에 해당하는 지층 탐색
   let depth = 0
   let target = null
   for (const l of layers) {
@@ -338,29 +333,53 @@ export function calcKv(layers, hCover, soilType, forceMethod = 'auto') {
   if (!target && layers.length > 0) target = layers[layers.length - 1]
 
   const isRockLayer = t => t && (t.isRock || ROCK_LAYER_NAMES.includes(t.name))
-  const toKv = vs => Math.max(100, Math.round(0.09 * vs * vs / 100) * 100)
+  const toKvVs = vs => Math.max(100, Math.round(0.09 * vs * vs / 100) * 100)
 
-  // ── N치 기반 (N→Vs 공식 경유) ──────────────────────────────
-  if (forceMethod === 'N' || forceMethod === 'auto') {
+  // ── 방법 1: N치 → E₀법 ─────────────────────────────────────
+  if (method === 'N_E0') {
     const N = target?.N
-    if (N && N > 0) {
-      const Vs = calcVsFromN(N)
-      if (Vs) return { Kv: toKv(Vs), Vs, N, method: 'N', layerName: target.name }
-    }
-    if (forceMethod === 'N') return { Kv: null, Vs: null, N: null, method: 'N', layerName: target?.name ?? null, error: 'N값 없음' }
+    if (!N || N <= 0) return { Kv: null, N: null, method: 'N_E0', layerName: target?.name ?? null, error: 'N값 없음' }
+    if (!D_m || D_m <= 0) return { Kv: null, N, method: 'N_E0', layerName: target?.name ?? null, error: 'D_m 미입력' }
+    const res = calcKvFromN(N, D_m)
+    if (!res) return { Kv: null, N, method: 'N_E0', layerName: target?.name ?? null, error: '계산 실패' }
+    return { Kv: Math.round(res.Kv), N, E0: res.E0, Kv0: res.Kv0, Bv: res.Bv, method: 'N_E0', layerName: target?.name ?? null }
   }
 
-  // ── Vs 직접 기반 ───────────────────────────────────────────
-  if (forceMethod === 'Vs' || forceMethod === 'auto') {
+  // ── 방법 2: Vs → 0.09×Vs² ──────────────────────────────────
+  if (method === 'Vs') {
     let Vs = null
     if (target?.Vs_manual > 0) Vs = target.Vs_manual
     else if (isRockLayer(target)) Vs = 760
     else Vs = (target?.Vs > 0 ? target.Vs : null)
-    if (Vs) return { Kv: toKv(Vs), Vs, N: target?.N ?? null, method: 'Vs', layerName: target?.name ?? null }
-    if (forceMethod === 'Vs') return { Kv: null, Vs: null, N: null, method: 'Vs', layerName: target?.name ?? null, error: 'Vs 없음' }
+    if (!Vs) return { Kv: null, Vs: null, method: 'Vs', layerName: target?.name ?? null, error: 'Vs 없음' }
+    return { Kv: toKvVs(Vs), Vs, N: target?.N ?? null, method: 'Vs', layerName: target?.name ?? null }
   }
 
-  // ── fallback: 지반종류 표 ────────────────────────────────
+  // ── 방법 3: N값 범위 표 조회 ────────────────────────────────
+  if (method === 'table') {
+    const N = target?.N
+    if (!N || N <= 0) return { Kv: null, N: null, method: 'table', layerName: target?.name ?? null, error: 'N값 없음' }
+    const KV_TABLE = [
+      { maxN:  4, Kv:  750 },
+      { maxN:  8, Kv: 1200 },
+      { maxN: 15, Kv: 2050 },
+      { maxN: 30, Kv: 3200 },
+      { maxN: Infinity, Kv: 7700 },
+    ]
+    const row = KV_TABLE.find(r => N < r.maxN) ?? KV_TABLE[KV_TABLE.length - 1]
+    return { Kv: row.Kv, N, method: 'table', layerName: target?.name ?? null }
+  }
+
+  // ── auto fallback: N_E0 → Vs → soilClass ───────────────────
+  if (target?.N > 0 && D_m > 0) {
+    const res = calcKvFromN(target.N, D_m)
+    if (res?.Kv) return { Kv: Math.round(res.Kv), N: target.N, E0: res.E0, Kv0: res.Kv0, Bv: res.Bv, method: 'N_E0', layerName: target?.name ?? null }
+  }
+  let Vs = null
+  if (target?.Vs_manual > 0) Vs = target.Vs_manual
+  else if (isRockLayer(target)) Vs = 760
+  else Vs = (target?.Vs > 0 ? target.Vs : null)
+  if (Vs) return { Kv: toKvVs(Vs), Vs, N: target?.N ?? null, method: 'Vs', layerName: target?.name ?? null }
   const KV_SOIL = { S1: 200000, S2: 100000, S3: 20000, S4: 6000, S5: 1500, S6: null }
   return { Kv: KV_SOIL[soilType] ?? null, Vs: null, N: null, method: 'soilClass', layerName: null }
 }
