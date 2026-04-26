@@ -142,9 +142,11 @@ export default function SeismicDetailReportPage() {
   const D_m = inp.D_out / 1000
   const t_m = inp.thickness / 1000
 
-  const H_total = inp.layers.reduce((s, l) => s + l.H, 0)
+  const H_sum_layers = inp.layers.reduce((s, l) => s + l.H, 0)
+  const H_total = rs.H_effective ?? H_sum_layers   // explicit 모드 시 H_bedrock 기준
   const sumHV = inp.layers.reduce((s, l) => s + l.H / l.Vs, 0)
-  const Vs_avg = H_total / sumHV
+  const sumHV_eff = rs.TG ? rs.TG / 4 : sumHV     // 갭층 포함 실제 ΣHi/Vsi
+  const Vs_avg = H_total / sumHV_eff
 
   const e_i_val = rs.sigma_i * inp.Lj / E_MPa
   const e_t_val = 1.2e-5 * (inp.deltaT ?? 20) * inp.Lj
@@ -237,7 +239,14 @@ export default function SeismicDetailReportPage() {
             })}
             <tr style={{ background: '#EDEBE6', fontWeight: 700 }}>
               <td style={TDC} colSpan={2}>합계</td>
-              <td style={TDC}>{G.Sigma}H<sub>i</sub> = {H_total.toFixed(1)} m</td>
+              <td style={TDC}>
+                {G.Sigma}H<sub>i</sub> = {H_sum_layers.toFixed(1)} m
+                {(inp as any).heightMode === 'explicit' && (inp as any).H_bedrock
+                  ? <><br/><span style={{ fontSize: 9, fontWeight: 400, color: '#555' }}>
+                      H<sub>eff</sub> = {H_total.toFixed(1)} m (직접입력)
+                    </span></>
+                  : null}
+              </td>
               <td style={TDC}></td>
               <td style={TDC}></td>
               <td style={TDC}></td>
@@ -386,16 +395,89 @@ export default function SeismicDetailReportPage() {
         <div style={SUB_TITLE}>
           나. 차량하중에 의한 {isSegmented ? <>{G.sigma}<Sub>o</Sub></> : <>{G.epsilon}<Sub>o</Sub></>}
         </div>
-        <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
-          {isSegmented
-            ? '분절관은 이음부 회전변형에 의해 차량하중이 흡수되므로 관체 축응력 산정에서 제외한다.'
-            : '도로 매설의 경우 축방향 차량하중 성분은 무시한다.'}
-        </div>
-        <ResultBlock>
-          {isSegmented
-            ? <FormulaRow>{G.sigma}<Sub>o</Sub> = 0 (분절관 — 이음부 흡수)</FormulaRow>
-            : <FormulaRow>{G.epsilon}<Sub>o</Sub> = 0</FormulaRow>}
-        </ResultBlock>
+        {isSegmented ? (
+          <>
+            <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
+              분절관은 이음부 회전변형에 의해 차량하중이 흡수되므로 관체 축응력 산정에서 제외한다.
+            </div>
+            <ResultBlock>
+              <FormulaRow>{G.sigma}<Sub>o</Sub> = 0 (분절관 — 이음부 흡수)</FormulaRow>
+            </ResultBlock>
+          </>
+        ) : (inp.Pm ?? 0) <= 0 ? (
+          <>
+            <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
+              차량하중 없음 (Pm = 0) — 비도로 매설 구간.
+            </div>
+            <ResultBlock>
+              <FormulaRow>{G.epsilon}<Sub>o</Sub> = 0</FormulaRow>
+            </ResultBlock>
+          </>
+        ) : (
+          // 연속관 + 차량하중 있음 → 실제 산정
+          (() => {
+            const kva = rs.kvAutoResult
+            const Kv_r = rs.Kv_used ?? 0
+            const Wm_r = rs.Wm_traffic ?? 0
+            const i_r  = rs.i_traffic  ?? 0
+            const eps_o = rs.epsilon_o ?? 0
+            const sig_o = rs.sigma_o_kN ?? 0
+            const E_kN  = (E_MPa) * 1000
+            return (
+              <>
+                {/* Kv 산정 */}
+                {kva && (
+                  <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
+                    <strong>Kv 산정 (N치 → E₀ → Kv₀ → Kv, 관경 보정)</strong>
+                  </div>
+                )}
+                <FormulaBlock>
+                  {kva && (
+                    <>
+                      <FormulaRow>
+                        E<Sub>0</Sub> = 2800{G.times}&radic;N = 2800{G.times}&radic;{kva._N ?? '?'}&nbsp;
+                        = <strong>{kva.E0.toFixed(0)} kN/m²</strong>
+                      </FormulaRow>
+                      <FormulaRow>
+                        K<Sub>v0</Sub> = E<Sub>0</Sub> / (B<Sub>0</Sub>{G.times}5) = {kva.E0.toFixed(0)} / (0.3{G.times}5)&nbsp;
+                        = <strong>{kva.Kv0.toFixed(0)} kN/m³</strong>
+                      </FormulaRow>
+                      <FormulaRow>
+                        K<Sub>v</Sub> = K<Sub>v0</Sub>{G.times}(B<Sub>0</Sub>/D)<Sup>0.75</Sup>&nbsp;
+                        = {kva.Kv0.toFixed(0)}{G.times}(0.3/{D_m.toFixed(3)})<Sup>0.75</Sup>&nbsp;
+                        = <strong>{kva.Kv.toFixed(0)} kN/m³</strong>
+                      </FormulaRow>
+                    </>
+                  )}
+                  {!kva && (
+                    <FormulaRow>K<Sub>v</Sub> = {Kv_r.toFixed(0)} kN/m³ (직접입력)</FormulaRow>
+                  )}
+                  {/* Wm */}
+                  <FormulaRow>
+                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}a / [(a+2h{G.times}tan35°)(b+2h{G.times}tan35°)] {G.times}(1+i)&nbsp;
+                    = {Wm_r.toFixed(3)} kN/m&nbsp;&nbsp;(충격계수 i={i_r.toFixed(2)})
+                  </FormulaRow>
+                  {/* σ_o */}
+                  <FormulaRow>
+                    {G.sigma}<Sub>o</Sub> = 0.322{G.times}W<Sub>m</Sub>{G.times}(EI/K<Sub>v</Sub>D)^0.25 / Z&nbsp;
+                    = <strong>{sig_o.toFixed(2)} kN/m²</strong>
+                  </FormulaRow>
+                  {/* ε_o */}
+                  <FormulaRow>
+                    {G.epsilon}<Sub>o</Sub> = {G.sigma}<Sub>o</Sub> / E&nbsp;
+                    = {sig_o.toFixed(2)} / {E_kN.toFixed(0)}&nbsp;
+                    = <strong>{eps_o.toFixed(4)}e-0</strong>
+                  </FormulaRow>
+                </FormulaBlock>
+                <ResultBlock ok>
+                  <FormulaRow>
+                    {G.epsilon}<Sub>o</Sub> =&nbsp;<strong>{eps_o.toExponential(4)}</strong>
+                  </FormulaRow>
+                </ResultBlock>
+              </>
+            )
+          })()
+        )}
 
         {/* 다. 온도 (연속관만) */}
         {!isSegmented && (
@@ -464,7 +546,7 @@ export default function SeismicDetailReportPage() {
             T<Sub>G</Sub> = 4 {G.times}&nbsp;
             {G.Sigma}<Sub>i</Sub>&nbsp;
             <Frac top={<>H<Sub>i</Sub></>} bot={<>V<Sub>si</Sub></>} />
-            &nbsp;= 4 {G.times} {sumHV.toFixed(4)} = {rs.TG?.toFixed(3)} s
+            &nbsp;= 4 {G.times} {sumHV_eff.toFixed(4)} = {rs.TG?.toFixed(3)} s
           </FormulaRow>
           <FormulaRow>
             T<Sub>s</Sub> = 1.25 {G.times} T<Sub>G</Sub> = 1.25 {G.times} {rs.TG?.toFixed(3)} =&nbsp;

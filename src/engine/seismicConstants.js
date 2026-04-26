@@ -228,6 +228,29 @@ export function resolveLayersForTGVds({ layers, H_effective, fillGap = true }) {
   return layers
 }
 
+// 연직방향 지반반력계수 Kv 자동산정 (N치 → E₀ → Kv₀ → Kv)
+// E₀  = 2800√N      (kN/m²)  — Dunham 공식 (혼합 지반, 상수도 내진설계 관행)
+// Kv₀ = E₀/(B₀×I_v) (kN/m³)  — B₀=0.3m 기준판, I_v=5 (경험 영향계수)
+// Kv  = Kv₀×(B₀/D)^0.75      — 재하폭(관경) 보정
+export function calcKvFromN(N, D_m, B0 = 0.3) {
+  if (!N || N <= 0 || !D_m || D_m <= 0) return null
+  const E0  = 2800 * Math.sqrt(N)
+  const Kv0 = E0 / (B0 * 5)
+  const Kv  = Kv0 * Math.pow(B0 / D_m, 0.75)
+  return { E0, Kv0, Kv }
+}
+
+// 층배열에서 특정 깊이의 층 반환 (깊이 초과 시 최하층 반환)
+export function getLayerAtDepth(layers, depth) {
+  if (!layers || layers.length === 0) return null
+  let cumH = 0
+  for (const layer of layers) {
+    cumH += layer.H
+    if (depth <= cumH) return layer
+  }
+  return layers[layers.length - 1]
+}
+
 // 지반 강성계수
 // 해설식(5.3.19): K1 = 1.5 × γ/g × Vds²  (축방향)
 // 해설식(5.3.20): K2 = 3.0 × γ/g × Vds²  (축직교방향)

@@ -13,7 +13,8 @@ import { BuriedPipeResponseSVG } from '../../components/eng/diagrams/BuriedPipeR
 import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented.js'
 import {
   calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES,
-  resolveHEffective, resolveLayersForTGVds, calcGroundDisp, calcKv,
+  resolveHEffective, resolveLayersForTGVds, calcGroundDisp,
+  calcKvFromN, getLayerAtDepth, calcKv,
 } from '../../engine/seismicConstants.js'
 
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
