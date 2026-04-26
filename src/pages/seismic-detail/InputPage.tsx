@@ -14,6 +14,7 @@ import { calcS, calcDesignSpectrum, calcSv } from '../../engine/seismicSegmented
 import {
   calcTG, calcTs, calcVds, calcWavelength, calcVsFromN, deriveVs, ROCK_LAYER_NAMES,
   resolveHEffective, resolveLayersForTGVds, calcGroundDisp,
+  calcKvFromN, getLayerAtDepth,
 } from '../../engine/seismicConstants.js'
 
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
@@ -737,12 +738,45 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={90}/>
-            {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
-              <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans, marginLeft: 4 }}>
-                ※ Kv 입력 필요
-              </span>
-            )}
+            {/* kvMode 토글 */}
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+              {(['auto', 'manual'] as const).map(m => (
+                <button key={m} onClick={() => set({ kvMode: m } as any)}
+                  style={{
+                    padding: '3px 10px', fontSize: 10, cursor: 'pointer', borderRadius: 2,
+                    fontFamily: T.fontSans,
+                    border: `1px solid ${(inp as any).kvMode === m ? T.bgActive : T.border}`,
+                    background: (inp as any).kvMode === m ? T.bgActive : 'white',
+                    color: (inp as any).kvMode === m ? 'white' : T.textMuted,
+                  }}>
+                  {m === 'auto' ? 'N치 자동산정' : '직접입력'}
+                </button>
+              ))}
+            </div>
+            {(inp as any).kvMode === 'manual'
+              ? <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0 })} min={0} step={100} width={90}/>
+              : (() => {
+                  const D_m = inp.D_out / 1000
+                  const layer = getLayerAtDepth(inp.layers, inp.hCover)
+                  const N_pipe = layer?.N ?? null
+                  const kv = N_pipe ? calcKvFromN(N_pipe, D_m) : null
+                  return (
+                    <div style={{ fontSize: 10, fontFamily: T.fontMono, lineHeight: 1.8, color: T.textPrimary }}>
+                      {N_pipe
+                        ? <>
+                            토피 {inp.hCover}m 층 N={N_pipe}<br/>
+                            E₀ = 2800√{N_pipe} = {kv?.E0.toFixed(0)} kN/m²<br/>
+                            Kv₀ = E₀/(B₀×5) = {kv?.Kv0.toFixed(0)} kN/m³<br/>
+                            <strong style={{ color: T.textAccent }}>
+                              Kv = Kv₀×(0.3/D)^0.75 = {kv?.Kv.toFixed(0)} kN/m³
+                            </strong>
+                          </>
+                        : <span style={{ color: '#ef4444' }}>해당 층에 N치 없음 — 직접입력 사용</span>
+                      }
+                    </div>
+                  )
+                })()
+            }
           </EngRow>
 
           {/* 분절관 추가 입력 */}

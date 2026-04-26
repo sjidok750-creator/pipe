@@ -9,6 +9,7 @@ import {
   calcGroundDisp, calcGroundStiffness, getImpactFactor,
   calcWm, calcGroundStrain, calcLambda, calcAlpha,
   resolveHEffective, resolveLayersForTGVds,
+  calcKvFromN, getLayerAtDepth,
 } from './seismicConstants.js'
 
 import { calcS, interpAmpFactor, calcDesignSpectrum, calcSv } from './seismicSegmented.js'
@@ -181,7 +182,8 @@ export function evalContinuous(params) {
     Pm = 0,              // kN/輪 (차량 후륜 1륜 하중)
     b_width = 2.75,      // m
     a_contact = 0.2,     // m
-    Kv = 0,              // kN/m³ (연직방향 지반반력계수)
+    Kv = 0,              // kN/m³ (연직방향 지반반력계수, kvMode='manual'일 때 사용)
+    kvMode = 'manual',   // 'auto': N치→E₀→Kv₀→Kv 자동산정 | 'manual': 직접입력
     tau = 10,            // kN/m² (강관-지반 마찰력)
     strainCriterion = 'yield',  // 'yield' (σ_y/E) | 'buckling' (46t/D)
   } = params
@@ -243,10 +245,22 @@ export function evalContinuous(params) {
   const { epsilon_i, sigma_theta } = calcStrainInternal(nu, P_kN, D_m, t_m, E_kN)
 
   // ── Step 10: 차량하중에 의한 축변형률 (해설식 5.3.37) ──
-  let epsilon_o = 0, sigma_o_kN = 0
-  if (Pm > 0 && Kv > 0) {
-    const { Wm } = calcWm(Pm, b_width, a_contact, h_cover)
-    ;({ epsilon_o, sigma_o_kN } = calcStrainTrafficContinuous(Wm, Z_m, E_kN, I_m, Kv, D_m))
+  // Kv 자동산정: 관 상단 깊이(h_cover)에 해당하는 층의 N치 사용
+  let Kv_used = Kv
+  let kvAutoResult = null
+  if (kvMode === 'auto' && layers && layers.length > 0) {
+    const layer = getLayerAtDepth(layers, h_cover)
+    if (layer?.N > 0) {
+      kvAutoResult = { ...calcKvFromN(layer.N, D_m), _N: layer.N }
+      if (kvAutoResult) Kv_used = kvAutoResult.Kv
+    }
+  }
+  let epsilon_o = 0, sigma_o_kN = 0, Wm_traffic = 0, i_traffic = 0
+  if (Pm > 0 && Kv_used > 0) {
+    const wmResult = calcWm(Pm, b_width, a_contact, h_cover)
+    Wm_traffic = wmResult.Wm
+    i_traffic  = wmResult.i
+    ;({ epsilon_o, sigma_o_kN } = calcStrainTrafficContinuous(Wm_traffic, Z_m, E_kN, I_m, Kv_used, D_m))
   }
 
   // ── Step 11: 온도변화에 의한 축변형률 (해설식 5.3.38) ──
@@ -308,5 +322,8 @@ export function evalContinuous(params) {
     // 응력 (MPa)
     sigma_theta: sigma_theta_MPa, sigma_o_kN,
     sigma_x_total, sigma_vm, sigma_allow, stressOK,
+    // 차량하중 산정 세부 (보고서용)
+    Kv_used, Wm_traffic, i_traffic,
+    kvAutoResult,   // { E0, Kv0, Kv } — kvMode='auto'일 때만 non-null
   }
 }
