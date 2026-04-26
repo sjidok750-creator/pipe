@@ -136,9 +136,11 @@ export default function SeismicDetailReportPage() {
   const D_m = inp.D_out / 1000
   const t_m = inp.thickness / 1000
 
-  const H_total = inp.layers.reduce((s, l) => s + l.H, 0)
+  const H_sum_layers = inp.layers.reduce((s, l) => s + l.H, 0)
+  const H_total = rs.H_effective ?? H_sum_layers   // explicit 모드 시 H_bedrock 기준
   const sumHV = inp.layers.reduce((s, l) => s + l.H / l.Vs, 0)
-  const Vs_avg = H_total / sumHV
+  const sumHV_eff = rs.TG ? rs.TG / 4 : sumHV     // 갭층 포함 실제 ΣHi/Vsi
+  const Vs_avg = H_total / sumHV_eff
 
   const e_i_val = rs.sigma_i * inp.Lj / E_MPa
   const e_t_val = 1.2e-5 * (inp.deltaT ?? 20) * inp.Lj
@@ -217,11 +219,18 @@ export default function SeismicDetailReportPage() {
             })}
             <tr style={{ background: '#eef2f8', fontWeight: 700 }}>
               <td style={TDC} colSpan={2}>합계</td>
-              <td style={TDC}>{G.Sigma}H<sub>i</sub> = {H_total.toFixed(1)} m</td>
+              <td style={TDC}>
+                {G.Sigma}H<sub>i</sub> = {H_sum_layers.toFixed(1)} m
+                {(inp as any).heightMode === 'explicit' && (inp as any).H_bedrock
+                  ? <><br/><span style={{ fontSize: 9, fontWeight: 400, color: '#555' }}>
+                      H<sub>eff</sub> = {H_total.toFixed(1)} m (직접입력)
+                    </span></>
+                  : null}
+              </td>
               <td style={TDC}></td>
               <td style={TDC}></td>
               <td style={TDC}></td>
-              <td style={TDC}>{G.Sigma}H<sub>i</sub>/V<sub>si</sub> = {sumHV.toFixed(4)} s</td>
+              <td style={TDC}>{G.Sigma}H<sub>i</sub>/V<sub>si</sub> = {sumHV_eff.toFixed(4)} s</td>
             </tr>
           </tbody>
         </table>
@@ -444,7 +453,7 @@ export default function SeismicDetailReportPage() {
             T<Sub>G</Sub> = 4 {G.times}&nbsp;
             {G.Sigma}<Sub>i</Sub>&nbsp;
             <Frac top={<>H<Sub>i</Sub></>} bot={<>V<Sub>si</Sub></>} />
-            &nbsp;= 4 {G.times} {sumHV.toFixed(4)} = {rs.TG?.toFixed(3)} s
+            &nbsp;= 4 {G.times} {sumHV_eff.toFixed(4)} = {rs.TG?.toFixed(3)} s
           </FormulaRow>
           <FormulaRow>
             T<Sub>s</Sub> = 1.25 {G.times} T<Sub>G</Sub> = 1.25 {G.times} {rs.TG?.toFixed(3)} =&nbsp;
