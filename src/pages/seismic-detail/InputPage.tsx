@@ -369,12 +369,10 @@ export default function SeismicDetailInputPage() {
             {ampEntry ? '' : '  ※ 부지 고유특성 평가 필요'}
           </div>
           <EngDivider label="설계지반가속도" />
-          <EngRow label="">
-            <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textAccent }}>
-              S = Z × I = {Z} × {I_seismic} = <strong>{S.toFixed(3)} g</strong>
-              {'  '}(위험도계수 I = {I_seismic})
-            </span>
-          </EngRow>
+          <div style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textAccent, padding: '2px 0 6px', whiteSpace: 'nowrap' }}>
+            S = Z × I = {Z} × {I_seismic} = <strong>{S.toFixed(3)} g</strong>
+            {'  '}(위험도계수 I = {I_seismic})
+          </div>
         </EngPanel>
 
         {/* 관로 제원 */}

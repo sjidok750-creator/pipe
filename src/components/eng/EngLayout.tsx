@@ -348,6 +348,8 @@ export function EngSegment({
   return (
     <div style={{
       display: 'flex',
+      flex: 1,
+      minWidth: 0,
       border: `1px solid ${T.border}`,
       borderRadius: T.radiusSm,
       overflow: 'hidden',
