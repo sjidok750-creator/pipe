@@ -406,7 +406,6 @@ export function EngSegment({
             style={{
               flex: 1,
               padding: '5px 10px',
-              minHeight: T.buttonH,
               borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
               borderRight: i < options.length - 1 ? `1px solid ${T.border}` : 'none',
               background: active ? T.bgActive : T.bgPanel,
@@ -417,14 +416,19 @@ export function EngSegment({
               cursor: 'pointer',
               transition: 'background 120ms, color 120ms',
               touchAction: 'manipulation',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 1,
             }}
           >
             {opt.sub && (
-              <div style={{ fontSize: T.fs.xs, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: T.fs.xs, opacity: 0.75, lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {opt.sub}
               </div>
             )}
-            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.label}</div>
+            <div style={{ lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</div>
           </button>
         )
       })}

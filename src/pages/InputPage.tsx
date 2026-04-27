@@ -67,8 +67,8 @@ export default function InputPage() {
           <EngRow label="관종">
             <EngSegment
               options={[
-                { key: 'steel',   label: '도복장강관 (강관)',  sub: 'KS D 3565 · 내압·링휨·처짐·좌굴' },
-                { key: 'ductile', label: '덕타일 주철관',       sub: 'KS D 4311 · 내압·링휨·처짐' },
+                { key: 'steel',   label: '도복장강관 (강관)',  sub: 'KS D 3565' },
+                { key: 'ductile', label: '덕타일 주철관',       sub: 'KS D 4311' },
               ]}
               value={inputs.pipeType}
               onChange={v => {
