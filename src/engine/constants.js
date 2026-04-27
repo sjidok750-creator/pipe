@@ -9,7 +9,6 @@ export const STEEL_GRADES = [
   { key: 'STPG38', label: 'STPG38 (KS D 3562)', fy: 215, fu: 380, note: '압력배관용' },
   { key: 'SPS400', label: 'SPS400 (KS D 3565)', fy: 235, fu: 400, note: '상수도용 강관 표준' },
   { key: 'SPS490', label: 'SPS490 (KS D 3565)', fy: 315, fu: 490, note: '고강도 상수도용' },
-  { key: 'MANUAL', label: '직접입력', fy: 235, fu: 400, note: '강도시험 또는 제조사 데이터' },
 ]
 
 // 관종별 재료 상수

@@ -29,6 +29,7 @@ export default function InputPage() {
   const { inputs, setInputs, setEprimeManual, setPipeDimManual, calcResult, saveToHistory } = useStore()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [diagTab, setDiagTab] = useState<'section' | 'bedding' | 'eprime'>('section')
+  const [showManualFy, setShowManualFy] = useState(false)
 
   const handleChange = (field: string, value: unknown) => {
     setInputs({ [field]: value } as any)
@@ -106,17 +107,10 @@ export default function InputPage() {
                         fontFamily: T.fontSans, whiteSpace: 'nowrap', lineHeight: 1.35,
                       }}>
                       <span style={{ fontWeight: 700 }}>{g.label.split(' ')[0]}</span>
-                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>
-                        fy={g.key === 'MANUAL' ? '직접' : g.fy}
-                      </span>
+                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>fy={g.fy}</span>
                     </button>
                   )
                 })}
-                {inputs.steelGrade === 'MANUAL' && (
-                  <EngInput value={inputs.fyManual ?? 235}
-                    onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
-                    min={200} max={600} step={5} width={72} compact/>
-                )}
                 <EngPopover>
                   <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
                   <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
@@ -139,11 +133,48 @@ export default function InputPage() {
                   </div>
                 </EngPopover>
               </div>
-              {inputs.steelGrade && inputs.steelGrade !== 'MANUAL' && (
-                <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 2, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {(() => { const g = (STEEL_GRADES as any[]).find((x:any) => x.key === inputs.steelGrade); return g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : '' })()}
-                </div>
-              )}
+              {/* 설명 줄 + 직접입력 토글 */}
+              {(() => {
+                const g = (STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
+                const fyVal = showManualFy ? (inputs.fyManual ?? 235) : (g?.fy ?? 235)
+                const fuVal = g ? Math.round(fyVal / g.fy * g.fu) : 400
+                return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, width: '100%' }}>
+                      <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {showManualFy
+                          ? `직접입력 — fy = ${fyVal} MPa, fu = ${fuVal} MPa`
+                          : g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : ''}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const next = !showManualFy
+                          setShowManualFy(next)
+                          if (next) handleChange('steelGrade', 'MANUAL')
+                          else handleChange('steelGrade', 'SPS400')
+                        }}
+                        style={{
+                          padding: '1px 7px', fontSize: '10px', cursor: 'pointer', borderRadius: 2,
+                          border: `1px solid ${showManualFy ? T.bgActive : T.border}`,
+                          background: showManualFy ? T.bgActive : T.bgPanel,
+                          color: showManualFy ? T.textOnDark : T.textMuted,
+                          fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>
+                        직접입력
+                      </button>
+                    </div>
+                    {showManualFy && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>fy =</span>
+                        <EngInput value={inputs.fyManual ?? 235}
+                          onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
+                          min={200} max={600} step={5} width={72} compact/>
+                        <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>MPa</span>
+                      </div>
+                    )}
+                  </>
+                )
+              })()}
             </EngRow>
           )}
 
