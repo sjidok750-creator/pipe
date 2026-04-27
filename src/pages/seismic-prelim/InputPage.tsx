@@ -120,8 +120,8 @@ export default function SeismicPrelimInputPage() {
           }>
             <EngSegment
               options={[
-                { key: 'I',  label: '내진 Ⅰ 등급', sub: `붕괴방지 ${gradeInfo.returnPeriod_collapse}년 / 기능수행 ${gradeInfo.returnPeriod_func}년` },
-                { key: 'II', label: '내진 Ⅱ 등급', sub: `붕괴방지 ${SEISMIC_GRADE['II'].returnPeriod_collapse}년 / 기능수행 ${SEISMIC_GRADE['II'].returnPeriod_func}년` },
+                { key: 'I',  label: '내진 Ⅰ 등급', sub: `붕괴 ${gradeInfo.returnPeriod_collapse}년 / 기능 ${gradeInfo.returnPeriod_func}년` },
+                { key: 'II', label: '내진 Ⅱ 등급', sub: `붕괴 ${SEISMIC_GRADE['II'].returnPeriod_collapse}년 / 기능 ${SEISMIC_GRADE['II'].returnPeriod_func}년` },
               ]}
               value={inp.seismicGrade}
               onChange={v => set({ seismicGrade: v })}
