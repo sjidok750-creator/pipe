@@ -56,11 +56,13 @@ export default function ReportPage() {
 
   // ── step 참조 ──
   const s1 = rs.step1   // 내압
-  const s2 = rs.step2   // 토압
+  const s2 = rs.step2   // 토압(강관) / 토압+차량하중(주철관)
   const s3 = rs.step3   // 차량하중(강관) / 링휨(주철관)
   const s4 = pipeType === 'steel' ? rs.step4 : rs.step3  // 링휨
   const s5 = pipeType === 'steel' ? rs.step5 : rs.step4  // 처짐
   const s6 = pipeType === 'steel' ? rs.step6 : null       // 좌굴(강관만)
+  // 차량하중 데이터: 강관=step3, 주철관=step2
+  const sTraffic = pipeType === 'steel' ? s3 : s2
 
   const verdictItems = Object.entries(verdict).filter(([k]) => k !== 'overallOK') as [string, any][]
 
@@ -193,13 +195,13 @@ export default function ReportPage() {
             </FormulaBlock>
             <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
               <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
-              <CalcRow label="Boussinesq 분산압 PLraw" expr="DB-24 테이블 보간" result={(s3 ?? s2)?.PLraw ?? 0} unit="kPa"/>
-              <CalcRow label="충격계수 IF" expr="H에 따른 테이블값" result={(s3 ?? s2)?.IF ?? 1} unit=""/>
-              <CalcRow label="설계 차량하중 PL" expr={`PLraw × IF = ${((s3 ?? s2)?.PLraw ?? 0).toFixed(3)} × ${((s3 ?? s2)?.IF ?? 1).toFixed(2)}`} result={(s3 ?? s2)?.PL ?? 0} unit="kPa"/>
+              <CalcRow label="Boussinesq 분산압 PLraw" expr="DB-24 테이블 보간" result={sTraffic?.PLraw ?? 0} unit="kPa"/>
+              <CalcRow label="충격계수 IF" expr="H에 따른 테이블값" result={sTraffic?.IF ?? 1} unit=""/>
+              <CalcRow label="설계 차량하중 PL" expr={`PLraw × IF = ${(sTraffic?.PLraw ?? 0).toFixed(3)} × ${(sTraffic?.IF ?? 1).toFixed(2)}`} result={sTraffic?.PL ?? 0} unit="kPa"/>
               <HR/>
               <CalcRow label="차량하중 WL"
-                expr={`PL × Do/1000 = ${((s3 ?? s2)?.PL ?? 0).toFixed(3)} × ${Do}/1000`}
-                result={(s3 ?? s2)?.WL ?? 0} unit="kN/m"/>
+                expr={`PL × Do/1000 = ${(sTraffic?.PL ?? 0).toFixed(3)} × ${Do}/1000`}
+                result={sTraffic?.WL ?? 0} unit="kN/m"/>
             </div>
           </>
         )}
@@ -207,11 +209,11 @@ export default function ReportPage() {
         {/* 합계 */}
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
           <CalcRow label="합계 하중 Wtotal"
-            expr={`We + WL = ${(s2?.We ?? 0).toFixed(3)} + ${((s3 ?? s2)?.WL ?? 0).toFixed(3)}`}
-            result={(s3 ?? s2)?.Wtotal ?? (s2?.We ?? 0)} unit="kN/m"/>
+            expr={`We + WL = ${(s2?.We ?? 0).toFixed(3)} + ${(sTraffic?.WL ?? 0).toFixed(3)}`}
+            result={sTraffic?.Wtotal ?? (s2?.We ?? 0)} unit="kN/m"/>
           <CalcRow label="단위압력 Ptotal"
             expr={`Wtotal / (Do/1000)`}
-            result={(s3 ?? s2)?.Ptotal ?? ((s2?.We ?? 0) / (Do/1000))} unit="kPa"/>
+            result={sTraffic?.Ptotal ?? ((s2?.We ?? 0) / (Do/1000))} unit="kPa"/>
         </div>
 
         {/* ── 3.2 내압 검토 ── */}
