@@ -140,7 +140,7 @@ export default function InputPage() {
                 </EngPopover>
               </div>
               {inputs.steelGrade && inputs.steelGrade !== 'MANUAL' && (
-                <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 2, width: '100%' }}>
+                <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 2, width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {(() => { const g = (STEEL_GRADES as any[]).find((x:any) => x.key === inputs.steelGrade); return g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : '' })()}
                 </div>
               )}
@@ -372,30 +372,24 @@ export default function InputPage() {
           </EngRow>
 
           <EngDivider label="부가 하중 조건" />
-          <EngRow label="">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0 4px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', paddingLeft: 4 }}>
               <input type="checkbox" checked={inputs.hasTraffic}
                 onChange={e => handleChange('hasTraffic', e.target.checked)}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
-                DB-24 차량하중 적용
-              </span>
+              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>DB-24 차량하중 적용</span>
               <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설)</span>
             </label>
-          </EngRow>
-          {inputs.pipeType === 'steel' && (
-            <EngRow label="">
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            {inputs.pipeType === 'steel' && (
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', paddingLeft: 4 }}>
                 <input type="checkbox" checked={inputs.hasLining}
                   onChange={e => handleChange('hasLining', e.target.checked)}
                   style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
-                  시멘트 모르타르 라이닝
-                </span>
+                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>시멘트 모르타르 라이닝</span>
                 <span style={{ fontSize: '10px', color: T.textMuted }}>(허용처짐 3%, 무라이닝 5%)</span>
               </label>
-            </EngRow>
-          )}
+            )}
+          </div>
         </EngPanel>
 
         {/* ② 지반·시공 조건 */}
