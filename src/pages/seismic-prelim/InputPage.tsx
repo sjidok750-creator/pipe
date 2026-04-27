@@ -481,8 +481,8 @@ export default function SeismicPrelimInputPage() {
           }>
             <EngRadio
               options={[
-                { key: 'rigid',  label: '강결 Rigid Joint (1.0)' },
-                { key: 'bolted', label: '볼팅 Bolted Joint (0.7)' },
+                { key: 'rigid',  label: '강결 Rigid (1.0)' },
+                { key: 'bolted', label: '볼팅 Bolted (0.7)' },
               ]}
               value={inp.mcone}
               onChange={v => set({ mcone: v })}
