@@ -150,8 +150,8 @@ export default function InputPage() {
 
           {inputs.pipeType === 'ductile' && (
             <EngRow label="재료 강도">
-              <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textNumber }}>
-                fu = 420 MPa &nbsp;<span style={{ color: T.textMuted, fontSize: 10 }}>(KS D 4311 §4 — 규격 고정값, fy 선택 불필요)</span>
+              <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textNumber, whiteSpace: 'nowrap' }}>
+                fu = 420 MPa &nbsp;<span style={{ color: T.textMuted, fontSize: 10, fontFamily: T.fontSans }}>(KS D 4311 §4 고정값)</span>
               </span>
               <EngPopover>
                 <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>

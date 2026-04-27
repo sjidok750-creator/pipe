@@ -419,12 +419,12 @@ export function EngSegment({
               touchAction: 'manipulation',
             }}
           >
-            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.label}</div>
             {opt.sub && (
               <div style={{ fontSize: T.fs.xs, opacity: 0.7, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {opt.sub}
               </div>
             )}
+            <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opt.label}</div>
           </button>
         )
       })}
