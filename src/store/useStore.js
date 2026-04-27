@@ -27,6 +27,8 @@ const DEFAULT_INPUTS = {
   gwLevel: 'below',
   gammaSoil: 18.0,
   eprimeManual: false,
+  E_pipeManual: false,
+  E_pipe: null,          // null이면 관종 기본값 사용
   pipeDimManual: false,
   DoManual: 610,
   tManual: 8,

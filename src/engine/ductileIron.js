@@ -20,9 +20,11 @@ export function calcDuctileIron(inputs) {
     hasTraffic, beddingType,
     diKGrade = 'K9',
     pipeDimManual = false, DoManual, tManual,
+    E_pipeManual = false, E_pipe = null,
   } = inputs
 
   const mat = PIPE_MATERIAL.ductile
+  const Edi = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Edi
 
   let Do, tAdopt
   if (pipeDimManual) {
@@ -87,7 +89,7 @@ export function calcDuctileIron(inputs) {
   const Do_m = Do / 1000
   const r    = (Do_m - t_m) / 2
   const I    = (t_m ** 3) / 12
-  const EI   = mat.Edi * 1e3 * I  // kN·m²/m
+  const EI   = Edi * 1e3 * I  // kN·m²/m
   const EI_r3  = EI / (r ** 3)
   const denominator = EI_r3 + 0.061 * Eprime
   const deflectionRatio = (Kd * Ptotal / denominator) * 100  // %

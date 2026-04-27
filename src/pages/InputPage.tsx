@@ -30,6 +30,8 @@ export default function InputPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [diagTab, setDiagTab] = useState<'section' | 'bedding' | 'eprime'>('section')
   const [showManualFy, setShowManualFy] = useState(false)
+  const [kgfPipeInput, setKgfPipeInput] = useState('')
+  const [kgfEprimeInput, setKgfEprimeInput] = useState('')
 
   const handleChange = (field: string, value: unknown) => {
     setInputs({ [field]: value } as any)
@@ -333,6 +335,84 @@ export default function InputPage() {
             </>
           )}
 
+          <EngDivider label="관 탄성계수" />
+          <EngRow label="탄성계수 E" unit="MPa" popover={
+            <EngPopover title="관 탄성계수 E — KDS 57 10 00 / AWWA M11">
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>탄성계수 E가 사용되는 계산 항목</strong><br/>
+                처짐 검토: EI = E × t³/12 (휨강성) → Iowa 공식 분모<br/>
+                좌굴 검토: EI가 허용외압 Pcr에 직접 영향<br/>
+                링휨응력: σ = Kb × Ptotal × Do / (2 × I × E) 에서 I 통해 간접 영향
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>관종별 기본값 (KDS 57 / KS 규격)</strong><br/>
+                강관 (KS D 3565): E = 206,000 MPa = 2.06×10⁶ kgf/cm²<br/>
+                덕타일 주철관 (KS D 4311): E = 170,000 MPa = 1.70×10⁶ kgf/cm²
+              </div>
+              <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                <strong>kgf/cm² 단위 입력 시 환산</strong><br/>
+                1 kgf/cm² = 0.09807 MPa<br/>
+                예: 2,100,000 kgf/cm² → 205,947 MPa ≈ 206,000 MPa<br/>
+                아래 kgf/cm² 입력란에 값을 넣으면 자동 환산됩니다.
+              </div>
+            </EngPopover>
+          }>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <EngInput
+                  value={inputs.E_pipeManual ? (inputs.E_pipe ?? (inputs.pipeType === 'steel' ? 206000 : 170000)) : (inputs.pipeType === 'steel' ? 206000 : 170000)}
+                  onChange={v => inputs.E_pipeManual && handleChange('E_pipe', parseFloat(v) || (inputs.pipeType === 'steel' ? 206000 : 170000))}
+                  disabled={!inputs.E_pipeManual}
+                  min={50000} max={300000} step={1000} width={110}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={!!inputs.E_pipeManual}
+                    onChange={e => {
+                      const manual = e.target.checked
+                      handleChange('E_pipeManual', manual)
+                      if (!manual) { handleChange('E_pipe', null); setKgfPipeInput('') }
+                      else handleChange('E_pipe', inputs.pipeType === 'steel' ? 206000 : 170000)
+                    }}
+                    style={{ width: 12, height: 12, accentColor: T.bgActive }}/>
+                  <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>직접입력</span>
+                </label>
+              </div>
+              {inputs.E_pipeManual && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="number"
+                    placeholder="kgf/cm² 입력 → MPa 자동환산"
+                    value={kgfPipeInput}
+                    onChange={e => {
+                      const raw = e.target.value
+                      setKgfPipeInput(raw)
+                      const kgf = parseFloat(raw)
+                      if (!isNaN(kgf) && kgf > 0) {
+                        handleChange('E_pipe', Math.round(kgf * 0.09807))
+                      }
+                    }}
+                    style={{
+                      width: 170, height: T.inputH, border: `1px solid ${T.border}`,
+                      borderRadius: T.radiusSm, fontSize: '11px', fontFamily: T.fontMono,
+                      padding: '0 6px', background: '#fffef0', color: T.textPrimary,
+                    }}
+                  />
+                  <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>kgf/cm²</span>
+                  {kgfPipeInput && !isNaN(parseFloat(kgfPipeInput)) && (
+                    <span style={{ fontSize: '10px', color: T.textOK, fontFamily: T.fontMono }}>
+                      → {Math.round(parseFloat(kgfPipeInput) * 0.09807).toLocaleString()} MPa
+                    </span>
+                  )}
+                </div>
+              )}
+              <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>
+                {inputs.E_pipeManual
+                  ? `직접입력 모드 — 현재값: ${(inputs.E_pipe ?? (inputs.pipeType === 'steel' ? 206000 : 170000)).toLocaleString()} MPa`
+                  : `자동 (관종 기본값: ${inputs.pipeType === 'steel' ? '206,000' : '170,000'} MPa)`}
+              </div>
+            </div>
+          </EngRow>
+
           <EngDivider label="설계 하중 조건" />
           <EngRow label="설계 운전압력 Pd" unit="MPa">
             <EngInput value={inputs.Pd} onChange={v => handleChange('Pd', parseFloat(v) || 0)} min={0} max={3} step={0.05} width={90}/>
@@ -406,24 +486,65 @@ export default function InputPage() {
           </EngRow>
 
           <EngDivider label="부가 하중 조건" />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '2px 0 4px' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', paddingLeft: 4 }}>
+          <EngRow label="DB-24 차량하중" popover={
+            <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
+                도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
+                Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
+                H ≥ 3.0m이면 차량하중 영향 무시 가능.
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>하중 분산 방식 (KDS 24 12 20)</strong><br/>
+                Wt = Cs × P / (L × Do) [kN/m]<br/>
+                Cs: 충격계수 포함 하중분산계수<br/>
+                매설깊이 H가 클수록 분산면적 증가 → Wt 감소
+              </div>
+              <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                <strong>적용 여부 판단 기준</strong><br/>
+                도로 하부: 적용 (H &lt; 3.0m 구간은 반드시)<br/>
+                농지·공원: 미적용 가능<br/>
+                H &lt; 0.6m: 차량하중 집중 → 위험. 매설심도 재검토 권장
+              </div>
+            </EngPopover>
+          }>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               <input type="checkbox" checked={inputs.hasTraffic}
                 onChange={e => handleChange('hasTraffic', e.target.checked)}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>DB-24 차량하중 적용</span>
-              <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설)</span>
+              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
+              <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
             </label>
-            {inputs.pipeType === 'steel' && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', paddingLeft: 4 }}>
+          </EngRow>
+          {inputs.pipeType === 'steel' && (
+            <EngRow label="시멘트 모르타르 라이닝" popover={
+              <EngPopover title="시멘트 모르타르 라이닝 — KDS 57 10 00 §3.5 / AWWA M11">
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>AWWA M11 — 라이닝에 따른 허용처짐 기준</strong><br/>
+                  라이닝 있음: 허용처짐 Δy/D ≤ 3.0%<br/>
+                  라이닝 없음: 허용처짐 Δy/D ≤ 5.0%<br/>
+                  라이닝은 처짐 과다 시 박리·균열 위험이 있어 더 엄격한 기준 적용.
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>KDS 57 10 00 — 내면 라이닝 요건</strong><br/>
+                  상수도 강관 내면: 시멘트 모르타르 라이닝 원칙 적용.<br/>
+                  두께: DN 300 이하 6mm / DN 350~600 9mm / DN 700 이상 12mm (KS D 3565).
+                </div>
+                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                  라이닝 강성(EI)은 이 계산에 미반영. 허용처짐 기준만 변경됩니다.<br/>
+                  실제 라이닝 강성 기여는 보수적 무시 처리 (AWWA M11 기본 방침).
+                </div>
+              </EngPopover>
+            }>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
                 <input type="checkbox" checked={inputs.hasLining}
                   onChange={e => handleChange('hasLining', e.target.checked)}
                   style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>시멘트 모르타르 라이닝</span>
-                <span style={{ fontSize: '10px', color: T.textMuted }}>(허용처짐 3%, 무라이닝 5%)</span>
+                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
+                <span style={{ fontSize: '10px', color: T.textMuted }}>(허용처짐 3% 적용)</span>
               </label>
-            )}
-          </div>
+            </EngRow>
+          )}
         </EngPanel>
 
         {/* ② 지반·시공 조건 */}
@@ -495,15 +616,47 @@ export default function InputPage() {
           )}
 
           <EngRow label="탄성지반반력 E'" unit="kPa">
-            <EngInput value={inputs.Eprime}
-              onChange={v => inputs.eprimeManual && handleChange('Eprime', Number(v))}
-              disabled={!inputs.eprimeManual} min={100} max={20000} width={100}/>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', marginLeft: 6 }}>
-              <input type="checkbox" checked={inputs.eprimeManual}
-                onChange={e => setEprimeManual(e.target.checked)}
-                style={{ width: 12, height: 12, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>수동입력</span>
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <EngInput value={inputs.Eprime}
+                  onChange={v => inputs.eprimeManual && handleChange('Eprime', Number(v))}
+                  disabled={!inputs.eprimeManual} min={100} max={20000} width={100}/>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={inputs.eprimeManual}
+                    onChange={e => { setEprimeManual(e.target.checked); if (!e.target.checked) setKgfEprimeInput('') }}
+                    style={{ width: 12, height: 12, accentColor: T.bgActive }}/>
+                  <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>수동입력</span>
+                </label>
+              </div>
+              {inputs.eprimeManual && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="number"
+                    placeholder="kgf/cm² 입력 → kPa 자동환산"
+                    value={kgfEprimeInput}
+                    onChange={e => {
+                      const raw = e.target.value
+                      setKgfEprimeInput(raw)
+                      const kgf = parseFloat(raw)
+                      if (!isNaN(kgf) && kgf > 0) {
+                        handleChange('Eprime', Math.round(kgf * 98.07))
+                      }
+                    }}
+                    style={{
+                      width: 170, height: T.inputH, border: `1px solid ${T.border}`,
+                      borderRadius: T.radiusSm, fontSize: '11px', fontFamily: T.fontMono,
+                      padding: '0 6px', background: '#fffef0', color: T.textPrimary,
+                    }}
+                  />
+                  <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>kgf/cm²</span>
+                  {kgfEprimeInput && !isNaN(parseFloat(kgfEprimeInput)) && (
+                    <span style={{ fontSize: '10px', color: T.textOK, fontFamily: T.fontMono }}>
+                      → {Math.round(parseFloat(kgfEprimeInput) * 98.07).toLocaleString()} kPa
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>탄성지반반력 E' — KDS 57 10 00 §3.5 / AWWA M11</div>
               <p style={{ marginTop: 0 }}>E'(Modulus of Soil Reaction)는 관 주변 지반의 탄성 저항 특성을 나타내는 설계 정수입니다. 처짐·좌굴 계산에서 지반 지지력을 표현합니다.</p>

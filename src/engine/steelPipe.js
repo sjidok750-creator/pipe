@@ -22,9 +22,11 @@ export function calcSteelPipe(inputs) {
     pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
     steelGrade = 'SPS400', fyManual = 235,
+    E_pipeManual = false, E_pipe = null,
   } = inputs
 
   const mat = PIPE_MATERIAL.steel
+  const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es
 
   // fy: 강종 선택 또는 직접입력
   const gradeRow = STEEL_GRADES.find(g => g.key === steelGrade)
@@ -107,7 +109,7 @@ export function calcSteelPipe(inputs) {
   const I    = (t_m ** 3) / 12
 
   // EI: kN·m²/m (Es: MPa = MN/m² → × 1e3 → kN/m²)
-  const EI     = mat.Es * 1e3 * I
+  const EI     = Es * 1e3 * I
   const EI_r3  = EI / (r ** 3)
   const denominator = EI_r3 + 0.061 * Eprime
 
