@@ -52,7 +52,7 @@ export default function Layout() {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: T.bgApp, fontFamily: T.fontSans }}>
 
       {/* ── 최상단 헤더 ── */}
-      <header style={{ background: T.bgHeader, flexShrink: 0 }}>
+      <header className="no-print" style={{ background: T.bgHeader, flexShrink: 0 }}>
         <div style={{
           maxWidth: 960, margin: '0 auto', padding: '0 16px',
           height: 40, display: 'flex', alignItems: 'center', gap: 12,
