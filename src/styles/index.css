@@ -87,7 +87,7 @@ body {
   /* A4 페이지 설정 */
   @page {
     size: A4 portrait;
-    margin: 12mm 10mm 16mm 10mm;
+    margin: 10mm 10mm 12mm 10mm;
   }
 
   /* 앱 UI 전체 숨기기 (태그 + 클래스 모두) */

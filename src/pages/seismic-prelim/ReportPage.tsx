@@ -49,11 +49,11 @@ export default function SeismicPrelimReportPage() {
       </div>
 
       {/* 보고서 본문 */}
-      <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
+      <div className="report-body" style={{ background: 'white', padding: '12px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.4 }}>
 
         {/* ── 표지 헤더 ── */}
-        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
-          <WIcon size={54} id="rpt-prelim" radius={10} />
+        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 8, marginBottom: 8 }}>
+          <WIcon size={46} id="rpt-prelim" radius={10} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
               KDS 57 17 00 : 2022 · 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 A
@@ -186,7 +186,7 @@ export default function SeismicPrelimReportPage() {
         </table>
 
         {/* ── 5. 내진성능 그룹 판정 ── */}
-        <div style={RH} className="page-break-before">5. 내진성능 그룹 판정</div>
+        <div style={RH}>5. 내진성능 그룹 판정</div>
         <table style={TABLE}>
           <tbody>
             {([
@@ -204,14 +204,14 @@ export default function SeismicPrelimReportPage() {
 
         {/* ── 6. 검토 의견 ── */}
         <div style={RH}>6. 검토 의견</div>
-        <div style={{ fontSize: 11, color: T.textPrimary, lineHeight: 2.1, fontFamily: F, padding: '6px 0' }}>
+        <div style={{ fontSize: 11, color: T.textPrimary, lineHeight: 1.8, fontFamily: F, padding: '4px 0' }}>
           {r.isCritical
             ? `본 관로는 지진도 ${r.seismicityGroup}그룹에 위치하며 취약도지수 VI = ${r.VI.toFixed(1)} ≥ 40으로 내진성능 중요상수도에 해당한다. KDS 57 17 00에 의거하여 응답변위법에 의한 내진성능 상세평가를 실시하여야 한다.`
             : `본 관로는 지진도 ${r.seismicityGroup}그룹에 위치하며 취약도지수 VI = ${r.VI.toFixed(1)}으로 내진성능 유보상수도에 해당한다. 현 단계에서는 상세평가 없이 관찰 대상으로 분류하며, 향후 정밀 안전점검 시 재검토할 수 있다.`}
         </div>
 
         {/* 각주 */}
-        <div style={{ marginTop: 28, borderTop: `1px solid ${T.borderLight}`, paddingTop: 8, fontSize: 9.5, color: T.textMuted, fontFamily: F, lineHeight: 1.9 }}>
+        <div style={{ marginTop: 12, borderTop: `1px solid ${T.borderLight}`, paddingTop: 6, fontSize: 9.5, color: T.textMuted, fontFamily: F, lineHeight: 1.7 }}>
           ※ 적용기준: 기존시설물(상수도) 내진성능 평가요령 부록 A — 내진성능 우선순위 평가<br/>
           ※ 취약도지수 산정: 해설표 3.4.2 (FLEX {G.times} 세부지수 합)<br/>
           ※ 그룹 판정: 해설표 3.4.1 (지진도 그룹) {G.times} VI 기준
@@ -221,12 +221,12 @@ export default function SeismicPrelimReportPage() {
   )
 }
 
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 5 }
-const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
-const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10.5 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 4 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10 }
 const RH: React.CSSProperties = {
-  background: '#EDEBE6', padding: '3px 10px', fontWeight: 700, fontSize: 11.5,
-  color: '#2C2118', borderLeft: '3px solid #CC6B3D', margin: '10px 0 5px',
+  background: '#EDEBE6', padding: '2px 10px', fontWeight: 700, fontSize: 11,
+  color: '#2C2118', borderLeft: '3px solid #CC6B3D', margin: '7px 0 4px',
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
