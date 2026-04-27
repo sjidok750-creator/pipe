@@ -93,45 +93,47 @@ export default function InputPage() {
             </EngPopover>
           </EngRow>
           {inputs.pipeType === 'steel' && (
-            <EngRow label="강종 (fy)">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+            <EngRow label="강종 (fy)" popover={
+              <EngPopover>
+                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
+                <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
+                  상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
+                  fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>주요 강종 (KS D 3565)</strong><br/>
+                  SGP (KS D 3507): fy = 245 MPa — 일반 배관용<br/>
+                  SPS400 (KS D 3565): fy = 235 MPa — 상수도용 표준<br/>
+                  SPS490 (KS D 3565): fy = 315 MPa — 고강도 대구경용<br/>
+                  STPG38 (KS D 3562): fy = 215 MPa — 압력배관용
+                </div>
+                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                  <strong>직접입력</strong><br/>
+                  제조사 밀시트(Mill Sheet) 또는 강도시험 결과값이 있는 경우 사용.<br/>
+                  KDS에서는 공인 시험값 사용 가능.
+                </div>
+              </EngPopover>
+            }>
+              {/* 강종 버튼 그룹 */}
+              <div style={{ display: 'flex', gap: 4, flex: 1 }}>
                 {STEEL_GRADES.map((g: any) => {
                   const active = inputs.steelGrade === g.key
                   return (
                     <button key={g.key} onClick={() => handleChange('steelGrade', g.key)}
                       style={{
-                        padding: '3px 8px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
+                        flex: 1, padding: '3px 4px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
                         border: `1px solid ${active ? T.bgActive : T.border}`,
                         background: active ? T.bgActive : T.bgPanel,
                         color: active ? T.textOnDark : T.textPrimary,
-                        fontFamily: T.fontSans, whiteSpace: 'nowrap', lineHeight: 1.35,
+                        fontFamily: T.fontSans, lineHeight: 1.35, textAlign: 'center',
                       }}>
                       <span style={{ fontWeight: 700 }}>{g.label.split(' ')[0]}</span>
                       <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>fy={g.fy}</span>
                     </button>
                   )
                 })}
-                <EngPopover>
-                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
-                  <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
-                    상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
-                    fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>주요 강종 (KS D 3565)</strong><br/>
-                    SGP (KS D 3507): fy = 245 MPa — 일반 배관용<br/>
-                    SPS400 (KS D 3565): fy = 235 MPa — 상수도용 표준<br/>
-                    SPS490 (KS D 3565): fy = 315 MPa — 고강도 대구경용<br/>
-                    STPG38 (KS D 3562): fy = 215 MPa — 압력배관용
-                  </div>
-                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    <strong>직접입력</strong><br/>
-                    제조사 밀시트(Mill Sheet) 또는 강도시험 결과값이 있는 경우 사용.<br/>
-                    KDS에서는 공인 시험값 사용 가능.
-                  </div>
-                </EngPopover>
               </div>
               {/* 설명 줄 + 직접입력 토글 */}
               {(() => {
@@ -273,29 +275,7 @@ export default function InputPage() {
               </EngRow>
 
               {/* PN/K 등급 */}
-              <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'}>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {grades.map(g => {
-                    const t = thicknessRow?.[g]
-                    const active = (inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade) === g
-                    return (
-                      <button key={g} onClick={() => handleChange(inputs.pipeType === 'steel' ? 'pnGrade' : 'diKGrade', g)}
-                        style={{
-                          padding: '2px 10px', fontSize: '11px', cursor: 'pointer',
-                          border: `1px solid ${active ? T.bgActive : T.border}`,
-                          background: active ? T.bgActive : T.bgPanel,
-                          color: active ? T.textOnDark : T.textPrimary,
-                          fontFamily: T.fontSans, borderRadius: 2,
-                        }}>
-                        <div style={{ fontWeight: 700 }}>{g}</div>
-                        <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>{t ?? '-'} mm</div>
-                      </button>
-                    )
-                  })}
-                </div>
-                {(errors.pnGrade || errors.diKGrade) && (
-                  <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
-                )}
+              <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
                 <EngPopover>
                   {inputs.pipeType === 'steel' ? (<>
                     <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>PN 등급 (압력 등급) — KS D 3565</div>
@@ -326,6 +306,29 @@ export default function InputPage() {
                     </div>
                   </>)}
                 </EngPopover>
+              }>
+                <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+                  {grades.map(g => {
+                    const t = thicknessRow?.[g]
+                    const active = (inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade) === g
+                    return (
+                      <button key={g} onClick={() => handleChange(inputs.pipeType === 'steel' ? 'pnGrade' : 'diKGrade', g)}
+                        style={{
+                          flex: 1, padding: '2px 4px', fontSize: '11px', cursor: 'pointer',
+                          border: `1px solid ${active ? T.bgActive : T.border}`,
+                          background: active ? T.bgActive : T.bgPanel,
+                          color: active ? T.textOnDark : T.textPrimary,
+                          fontFamily: T.fontSans, borderRadius: 2, textAlign: 'center',
+                        }}>
+                        <div style={{ fontWeight: 700 }}>{g}</div>
+                        <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>{t ?? '-'} mm</div>
+                      </button>
+                    )
+                  })}
+                </div>
+                {(errors.pnGrade || errors.diKGrade) && (
+                  <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
+                )}
               </EngRow>
             </>
           )}
