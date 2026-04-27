@@ -227,7 +227,7 @@ export default function SeismicPrelimInputPage() {
             background: T.bgSection, border: `1px solid ${T.borderLight}`,
             padding: '6px 10px', fontSize: 11, fontFamily: T.fontMono,
           }}>
-            <div style={{ display: 'flex', gap: 24 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               <div>
                 <span style={{ color: T.textMuted }}>붕괴방지 ({gradeInfo.returnPeriod_collapse}년) : </span>
                 <strong style={{ color: T.textAccent }}>S = {Z} × {gradeInfo.I_collapse} = {(Z * gradeInfo.I_collapse).toFixed(3)} g</strong>
@@ -281,10 +281,8 @@ export default function SeismicPrelimInputPage() {
           }>
             <EngRadio
               options={[
-                { key: 'ductile',  label: '덕타일 주철관' },
-                { key: 'steel',    label: '강관' },
-                { key: 'concrete', label: '콘크리트관' },
-                { key: 'pvc',      label: 'PVC관' },
+                { key: 'ductile', label: '덕타일 주철관' },
+                { key: 'steel',   label: '강관' },
               ]}
               value={inp.pipeKind}
               onChange={v => set({ pipeKind: v })}
@@ -436,9 +434,10 @@ export default function SeismicPrelimInputPage() {
             </EngPopover>
           }>
             <EngRadio
-              options={Object.entries(FACIL_INDEX).map(([k, v]) => ({
-                key: k, label: `${v.label}  (${v.score})`,
-              }))}
+              options={[
+                { key: 'yes', label: '있음 (1.0)' },
+                { key: 'no',  label: '없음 (0.8)' },
+              ]}
               value={inp.facilExists}
               onChange={v => set({ facilExists: v })}
             />
@@ -481,9 +480,10 @@ export default function SeismicPrelimInputPage() {
             </EngPopover>
           }>
             <EngRadio
-              options={Object.entries(MCONE_INDEX).map(([k, v]) => ({
-                key: k, label: `${v.label}  (${v.score})`,
-              }))}
+              options={[
+                { key: 'rigid',  label: '강결 Rigid Joint (1.0)' },
+                { key: 'bolted', label: '볼팅 Bolted Joint (0.7)' },
+              ]}
               value={inp.mcone}
               onChange={v => set({ mcone: v })}
             />
