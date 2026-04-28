@@ -42,6 +42,7 @@ export default function InputPage() {
   const [kgfPipeInput, setKgfPipeInput] = useState('')
   const [kgfEprimeInput, setKgfEprimeInput] = useState('')
   const [kgfTrafficInput, setKgfTrafficInput] = useState('')
+  const [legacy2004DimManual, setLegacy2004DimManual] = useState(false)
 
   const handleChange = (field: string, value: unknown) => {
     setInputs({ [field]: value } as any)
@@ -279,22 +280,57 @@ export default function InputPage() {
 
           <EngDivider />
           <EngRow label="">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: is2004 && inputs.pipeType === 'steel' ? 'default' : 'pointer' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
               <input type="checkbox"
-                checked={is2004 && inputs.pipeType === 'steel' ? false : !!inputs.pipeDimManual}
-                onChange={e => { if (!(is2004 && inputs.pipeType === 'steel')) setPipeDimManual(e.target.checked) }}
-                disabled={is2004 && inputs.pipeType === 'steel'}
+                checked={is2004 && inputs.pipeType === 'steel' ? legacy2004DimManual : !!inputs.pipeDimManual}
+                onChange={e => {
+                  if (is2004 && inputs.pipeType === 'steel') {
+                    setLegacy2004DimManual(e.target.checked)
+                  } else {
+                    setPipeDimManual(e.target.checked)
+                  }
+                }}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: is2004 && inputs.pipeType === 'steel' ? T.textDisabled : T.textLabel, fontFamily: T.fontSans }}>
+              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
                 관경·두께 직접 입력
               </span>
-              <span style={{ fontSize: '10px', color: is2004 && inputs.pipeType === 'steel' ? T.textDisabled : T.textMuted }}>
-                {is2004 && inputs.pipeType === 'steel' ? '(구 기준: 관경 선택 후 두께 직접 입력)' : '(비규격 또는 실측치)'}
-              </span>
+              <span style={{ fontSize: '10px', color: T.textMuted }}>(비규격 또는 실측치)</span>
             </label>
           </EngRow>
 
-          {inputs.pipeDimManual && !(is2004 && inputs.pipeType === 'steel') ? (
+          {/* 2004+강관: 별도 직접입력 상태 사용 */}
+          {is2004 && inputs.pipeType === 'steel' ? (
+            legacy2004DimManual ? (
+              <>
+                <EngRow label="외경 Do" unit="mm">
+                  <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
+                  {errors.DoManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.DoManual}</span>}
+                </EngRow>
+                <EngRow label="두께 t" unit="mm">
+                  <EngInput value={inputs.tManual ?? 8} onChange={v => handleChange('tManual', parseFloat(v) || 0)} min={1} max={100} step={0.5} width={100}/>
+                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
+                </EngRow>
+              </>
+            ) : (
+              // 호칭지름 드롭다운 + 두께 직접입력
+              <>
+                <EngRow label="호칭지름" unit="mm">
+                  <select value={inputs.DN} onChange={e => handleChange('DN', Number(e.target.value))}
+                    style={{ height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, fontSize: T.fontSzInput, fontFamily: T.fontMono, padding: '0 4px', background: T.bgInput, color: T.textPrimary, width: 100 }}>
+                    {dnList.map(dn => <option key={dn} value={dn}>{dn}A</option>)}
+                  </select>
+                  <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
+                    Do = {thicknessRow?.Do ?? '-'} mm (참고)
+                  </span>
+                </EngRow>
+                <EngRow label="관 두께 t" unit="mm">
+                  <EngInput value={inputs.tManual ?? 8} onChange={v => handleChange('tManual', parseFloat(v) || 0)} min={1} max={100} step={0.5} width={100}/>
+                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
+                  <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 4 }}>설계 산출값 또는 채택 두께 입력</span>
+                </EngRow>
+              </>
+            )
+          ) : inputs.pipeDimManual ? (
             <>
               <EngRow label="외경 Do" unit="mm">
                 <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
@@ -307,7 +343,7 @@ export default function InputPage() {
             </>
           ) : (
             <>
-              <EngRow label={is2004 && inputs.pipeType === 'steel' ? '호칭지름' : '공칭관경 DN'} unit="mm">
+              <EngRow label="공칭관경 DN" unit="mm">
                 <select
                   value={inputs.DN}
                   onChange={e => handleChange('DN', Number(e.target.value))}
@@ -317,12 +353,10 @@ export default function InputPage() {
                     background: T.bgInput, color: T.textPrimary, width: 100,
                   }}
                 >
-                  {dnList.map(dn => <option key={dn} value={dn}>{is2004 && inputs.pipeType === 'steel' ? `${dn}A` : `DN ${dn}`}</option>)}
+                  {dnList.map(dn => <option key={dn} value={dn}>DN {dn}</option>)}
                 </select>
                 <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
-                  {is2004 && inputs.pipeType === 'steel'
-                    ? `Do = ${thicknessRow?.Do ?? '-'} mm (참고)`
-                    : `Do = ${thicknessRow?.Do ?? '-'} mm`}
+                  Do = {thicknessRow?.Do ?? '-'} mm
                 </span>
                 <EngPopover>
                   <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>공칭관경 (DN) — KS D 3565 / KS D 4311</div>
