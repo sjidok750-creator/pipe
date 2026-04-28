@@ -164,9 +164,9 @@ export default function InputPage() {
                         color: active ? T.textOnDark : T.textPrimary,
                         fontFamily: T.fontSans, lineHeight: 1.35, textAlign: 'center',
                       }}>
-                      <span style={{ fontWeight: 700 }}>{g.key}</span>
+                      <span style={{ fontWeight: 700 }}>{is2004 ? g.label : g.key}</span>
                       <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>
-                        {is2004 ? '137 MPa' : `fy=${g.fy}`}
+                        {is2004 ? `${g.sigmaA} MPa` : `fy=${g.fy}`}
                       </span>
                     </button>
                   )
@@ -174,12 +174,12 @@ export default function InputPage() {
               </div>
               {/* 설명 줄 + 직접입력 토글 */}
               {is2004 ? (
-                /* 2004: 허용응력 고정 안내, 강종은 참고용 */
+                /* 2004: 강종별 허용응력 표시 (참고표-4.2.5) */
                 (() => {
                   const g = (LEGACY_STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
                   return (
                     <div style={{ fontSize: 10, color: '#8A5A00', fontFamily: T.fontSans, marginTop: 2 }}>
-                      {g ? `${g.key} — fy = ${g.fy} MPa (참고) / 허용응력: 137 MPa 고정 (2004 기준)` : ''}
+                      {g ? `${g.label} — 허용응력 ${g.sigmaA} MPa (참고표-4.2.5) / 수격 시 ${(g.sigmaA * 1.33).toFixed(0)} MPa` : ''}
                     </div>
                   )
                 })()
@@ -268,9 +268,11 @@ export default function InputPage() {
 
           <EngDivider />
           <EngRow label="">
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox" checked={!!inputs.pipeDimManual}
-                onChange={e => setPipeDimManual(e.target.checked)}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: is2004 && inputs.pipeType === 'steel' ? 'default' : 'pointer' }}>
+              <input type="checkbox"
+                checked={is2004 && inputs.pipeType === 'steel' ? true : !!inputs.pipeDimManual}
+                onChange={e => { if (!(is2004 && inputs.pipeType === 'steel')) setPipeDimManual(e.target.checked) }}
+                disabled={is2004 && inputs.pipeType === 'steel'}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
               <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
                 관경·두께 직접 입력
@@ -324,8 +326,8 @@ export default function InputPage() {
                 </EngPopover>
               </EngRow>
 
-              {/* PN/K 등급 */}
-              <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
+              {/* PN/K 등급 — 2004+강관이면 숨김 (두께 직접입력 방식) */}
+              {!(is2004 && inputs.pipeType === 'steel') && <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
                 <EngPopover>
                   {inputs.pipeType === 'steel' ? (<>
                     <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>PN 등급 (압력 등급) — KS D 3565</div>
@@ -379,7 +381,7 @@ export default function InputPage() {
                 {(errors.pnGrade || errors.diKGrade) && (
                   <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
                 )}
-              </EngRow>
+              </EngRow>}
             </>
           )}
 
@@ -884,17 +886,31 @@ export default function InputPage() {
             <>
               <EngDivider label="구 기준(2004) 추가 입력" />
 
-              {/* 허용응력 고정값 안내 */}
-              <div style={{
-                margin: '4px 0 6px', padding: '6px 10px',
-                background: '#FFF8E1', border: '1px solid #FFE082',
-                borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
-              }}>
-                <strong>2004 기준 허용응력 (고정)</strong>
-                {inputs.pipeType === 'steel'
-                  ? ' — 강관: 137 MPa (전 강종), 수격 시 1.33배 완화 (182 MPa)'
-                  : ' — 주철관: 내압 105 MPa (fu/4), 링휨 98 MPa (1,000 kgf/cm²)'}
-              </div>
+              {/* 허용응력 안내 */}
+              {inputs.pipeType === 'steel' ? (() => {
+                const g = (LEGACY_STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade) ?? (LEGACY_STEEL_GRADES as any[])[2]
+                return (
+                  <div style={{
+                    margin: '4px 0 6px', padding: '6px 10px',
+                    background: '#FFF8E1', border: '1px solid #FFE082',
+                    borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
+                  }}>
+                    <strong>2004 기준 허용응력 (참고표-4.2.5)</strong>{' '}
+                    — {g.label}: <strong>{g.sigmaA} MPa</strong> / 수격 시 {(g.sigmaA * 1.33).toFixed(0)} MPa (1.33배 완화)
+                  </div>
+                )
+              })() : (
+                <div style={{
+                  margin: '4px 0 6px', padding: '6px 10px',
+                  background: '#FFF8E1', border: '1px solid #FFE082',
+                  borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
+                }}>
+                  <strong>2004 기준 허용응력</strong>{' '}
+                  — 내압: 105 MPa (fu/4) / 링휨: 98 MPa (1,000 kgf/cm²)
+                  <br/>
+                  <span style={{ fontSize: 10, color: '#A07030' }}>※ 링휨 허용응력 98 MPa는 분석 파일 기준 — 원문 확인 시 수정 필요</span>
+                </div>
+              )}
 
               {/* 굴착폭 B */}
               <EngRow label="굴착폭 B" unit="m" popover={

@@ -13,18 +13,16 @@
 import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
 import { calcTrafficLoad } from './trafficLoad.js'
 
-// ── 2004 기준 강종 허용응력 (MPa) ──────────────────────────
-// SS41 → 1,400 kgf/cm² ≒ 137 MPa (구 KS 주력 강종)
-// 모든 강종 137 MPa 고정 (2004 기준 단일 허용응력 체계)
+// ── 2004 기준 강종 및 허용응력 (참고표-4.2.5) ─────────────
+// 출처: 구 상수도 시설기준(2004) 참고표-4.2.5 허용응력
+// 단위: kN/mm² = MPa
 export const LEGACY_STEEL_GRADES = [
-  { key: 'SS41',   label: 'SS41',   fy: 245, note: '구 KS 일반구조용 (현 SS400)' },
-  { key: 'SPW400', label: 'SPW400', fy: 235, note: '상수도용 강관 (구 KS)' },
-  { key: 'SGP',    label: 'SGP',    fy: 245, note: '일반 배관용 강관' },
-  { key: 'STPG38', label: 'STPG38', fy: 215, note: '압력배관용 강관' },
-  { key: 'SPS400', label: 'SPS400', fy: 235, note: '상수도용 강관 (현행)' },
-  { key: 'SPS490', label: 'SPS490', fy: 315, note: '고강도 상수도용 (현행)' },
+  { key: 'STWW290', label: 'STWW 290', sigmaA: 100, note: '상수도용 도복장강관' },
+  { key: 'STWW370', label: 'STWW 370', sigmaA: 125, note: '상수도용 도복장강관' },
+  { key: 'STWW400', label: 'STWW 400', sigmaA: 140, note: '상수도용 도복장강관' },
+  { key: 'SS400',   label: 'SS 400',   sigmaA: 140, note: '일반구조용 강관' },
+  { key: 'SM400',   label: 'SM 400',   sigmaA: 140, note: '용접구조용 압연강재' },
 ]
-const LEGACY_SIGMA_A = 137  // MPa — 전 강종 고정 (1,400 kgf/cm²)
 
 // ── Marston 토압 Cd 계수 계산 ─────────────────────────────
 // Marston-Spangler: 트렌치(굴착)식
@@ -112,9 +110,8 @@ export function calcSteelPipeLegacy(inputs) {
     gammaSoil, Eprime,
     hasTraffic, gwLevel,
     steelBeddingType = 'deg90',
-    pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
-    steelGrade = 'SPW400',
+    steelGrade = 'STWW400',
     E_pipeManual = false, E_pipe = null,
     excavationWidth = null,
     shapeFactor = 1.5,    // 형상계수 f (Spangler 링휨식, 원형=1.5)
@@ -124,12 +121,10 @@ export function calcSteelPipeLegacy(inputs) {
   const mat = PIPE_MATERIAL.steel
   const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
 
-  // ── 허용응력: 2004 기준 전 강종 137 MPa 고정 ──
-  const sigmaA_normal = LEGACY_SIGMA_A          // 137 MPa
-  const sigmaA_surge  = LEGACY_SIGMA_A * 1.33  // 182.2 MPa (수격 1.33배 완화)
-
-  const gradeRow = LEGACY_STEEL_GRADES.find(g => g.key === steelGrade)
-  const fy = gradeRow?.fy ?? 235
+  // ── 허용응력: 강종별 참고표-4.2.5 값 적용 ──
+  const gradeRow    = LEGACY_STEEL_GRADES.find(g => g.key === steelGrade) ?? LEGACY_STEEL_GRADES[2]
+  const sigmaA_normal = gradeRow.sigmaA          // MPa (강종별)
+  const sigmaA_surge  = gradeRow.sigmaA * 1.33  // 수격 1.33배 완화
 
   // ── 관 제원 ────────────────────────────────────────────
   let Do, tAdopt
@@ -252,7 +247,7 @@ export function calcSteelPipeLegacy(inputs) {
         sigma_normal, sigma_surge,
         ok_normal, ok_surge,
         ok: ok_normal && ok_surge,
-        note: '2004 기준: 허용응력 137 MPa 고정 (SS41 기준), 수격 1.33배 완화',
+        note: `2004 기준: ${gradeRow.label} 허용응력 ${sigmaA_normal} MPa (참고표-4.2.5), 수격 1.33배 완화`,
       },
       step2: {
         title: '토압 산정 (Marston 트렌치식)',
