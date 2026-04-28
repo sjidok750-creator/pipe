@@ -1,4 +1,5 @@
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 import { T } from '../components/eng/tokens'
 import { EngPanel, EngSection, EngSegment } from '../components/eng/EngLayout'
 import FlowChartSVG from '../components/overview/FlowChartSVG'
@@ -84,9 +85,18 @@ const ductileOutputs = [
   { item: '종합판정', desc: 'O.K. / N.G.' },
 ]
 
+// ── 기준 선택 카드 스타일 ────────────────────────────────────
+const stdCardBase: React.CSSProperties = {
+  flex: 1, border: `2px solid`, borderRadius: 8,
+  padding: '14px 18px', cursor: 'pointer',
+  transition: 'all 0.15s',
+}
+
 export default function StructuralOverviewPage() {
+  const navigate = useNavigate()
   const { inputs, setInputs } = useStore()
   const isSteel = inputs.pipeType !== 'ductile'
+  const is2004  = inputs.designStandard === '2004'
   const flow     = isSteel ? steelFlow   : ductileFlow
   const criteria = isSteel ? steelCriteria : ductileCriteria
   const inputRows  = isSteel ? steelInputs  : ductileInputs
@@ -94,6 +104,96 @@ export default function StructuralOverviewPage() {
 
   return (
     <div style={{ fontFamily: T.fontSans }}>
+
+      {/* ── ⓪ 설계기준 선택 ── */}
+      <EngPanel title="⓪ 적용 설계기준 선택">
+        <div style={{ fontSize: 11.5, color: T.textMuted, marginBottom: 10 }}>
+          검토에 적용할 설계기준을 선택하세요. 선택한 기준에 따라 입력 항목, 계산 공식, 허용값이 달라집니다.
+        </div>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+
+          {/* 현행 KDS 2025 카드 */}
+          <div
+            style={{
+              ...stdCardBase,
+              borderColor: !is2004 ? T.bgActive : T.border,
+              background:  !is2004 ? T.bgActiveTint : T.bgPanel,
+            }}
+            onClick={() => setInputs({ designStandard: '2025' } as Parameters<typeof setInputs>[0])}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%',
+                border: `2px solid ${!is2004 ? T.bgActive : T.border}`,
+                background: !is2004 ? T.bgActive : 'transparent',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: !is2004 ? T.textAccent : T.textLabel }}>
+                현행 기준 (KDS 57, 2025)
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.7, paddingLeft: 24 }}>
+              <div>• 토압: <b>Prism Load</b> (γ × H × Do)</div>
+              <div>• 내압 허용: <b>0.50×fy</b> (강관) / <b>fu/3</b> (주철관)</div>
+              <div>• 링휨: 단순식 (Kb×W×Do/t²)</div>
+              <div>• 좌굴 안전율: <b>FS ≥ 2.5</b></div>
+              <div>• 허용처짐: <b>3% / 5%</b> (라이닝 유무)</div>
+            </div>
+          </div>
+
+          {/* 구 기준 2004 카드 */}
+          <div
+            style={{
+              ...stdCardBase,
+              borderColor: is2004 ? T.bgActive : T.border,
+              background:  is2004 ? T.bgActiveTint : T.bgPanel,
+            }}
+            onClick={() => setInputs({ designStandard: '2004' } as Parameters<typeof setInputs>[0])}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: '50%',
+                border: `2px solid ${is2004 ? T.bgActive : T.border}`,
+                background: is2004 ? T.bgActive : 'transparent',
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: is2004 ? T.textAccent : T.textLabel }}>
+                구 기준 (상수도 시설기준, 2004)
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: T.textMuted, lineHeight: 1.7, paddingLeft: 24 }}>
+              <div>• 토압: <b>Marston 트렌치식</b> (Cd × γ × B²)</div>
+              <div>• 내압 허용: <b>137 MPa</b> (강관) / <b>105 MPa</b> (주철관)</div>
+              <div>• 링휨: <b>Spangler 복합식</b> (E′ 포함, 강관)</div>
+              <div>• 좌굴 안전율: <b>FS ≥ 2.0</b></div>
+              <div>• 허용처짐: <b>5%</b> (단일, 라이닝 구분 없음)</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 선택된 기준 요약 배지 + 바로가기 버튼 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            fontSize: 11, fontWeight: 600, padding: '4px 10px',
+            borderRadius: 4,
+            background: is2004 ? '#FFF3E0' : T.bgActiveTint,
+            color:      is2004 ? '#8A5A00' : T.textAccent,
+            border:     `1px solid ${is2004 ? '#E8D29A' : T.borderFocus}`,
+          }}>
+            {is2004 ? '구 기준(2004) 선택됨' : '현행 KDS(2025) 선택됨'}
+          </div>
+          <button
+            onClick={() => navigate('/structural/input')}
+            style={{
+              fontSize: 12, fontWeight: 600, padding: '6px 16px',
+              borderRadius: 4, border: 'none', cursor: 'pointer',
+              background: T.bgActive, color: T.textOnDark,
+            }}
+          >
+            검토 입력으로 이동 →
+          </button>
+        </div>
+      </EngPanel>
 
       {/* ── ① 검토 목적 및 적용 범위 ── */}
       <EngPanel title="① 검토 목적 및 적용 범위">
