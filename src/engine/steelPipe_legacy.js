@@ -1,4 +1,313 @@
-// 2004 기준 강관 구조안전성 검토 엔진 (stub — 2단계에서 구현)
+// ============================================================
+// 강관 구조안전성 검토 — 2004 기준 (구 상수도 시설기준)
+// 근거: 환경부 「상수도 시설기준」(2004) 5.9절
+//
+// 현행(2025)과의 주요 차이:
+//   토압: Marston 공식  vs Prism Load
+//   링휨: Spangler 복합식(E' 포함)  vs 단순 Kb식
+//   내압 허용응력: 137 MPa 고정  vs 0.50×fy
+//   좌굴 안전율: FS=2.0  vs 2.5
+//   강종: SS41(허용 137 MPa) 등 구 KS 강종 포함
+// ============================================================
+
+import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
+import { calcTrafficLoad } from './trafficLoad.js'
+
+// ── 2004 기준 강종 허용응력 (MPa) ──────────────────────────
+// SS41(= SM400급) → 허용응력 1,400 kgf/cm² ≒ 137 MPa
+// SPW400 동일 취급. SPS400 이후 강종은 그대로 사용.
+const LEGACY_STEEL_ALLOW = {
+  SS41:    { sigmaA: 137, label: 'SS41 (구 KS)' },
+  SPW400:  { sigmaA: 137, label: 'SPW400 (구 KS)' },
+  SGP:     { sigmaA: 137, label: 'SGP' },
+  STPG38:  { sigmaA: 137, label: 'STPG38' },
+  SPS400:  { sigmaA: 137, label: 'SPS400' },
+  SPS490:  { sigmaA: 137, label: 'SPS490' },
+  MANUAL:  { sigmaA: 137, label: '직접입력' },
+}
+
+// ── Marston 토압 Cd 계수 계산 ─────────────────────────────
+// Marston-Spangler: 트렌치(굴착)식
+//   We = Cd × γ × B²  [kN/m]
+//   Cd = (1 - e^(-2Kμ·H/B)) / (2Kμ)
+//   Kμ = 0.165 (마찰각 φ=30° 가정, 일반 굴착 토사)
+//
+// 매립(embankment)식은 별도이나, 2004 기준 도수·송수관은
+// 트렌치 매설이 기본이므로 트렌치식 적용
+function calcCd(H, B) {
+  const Kmu = 0.165  // K × tan(δ), φ=30° 기준 일반값
+  const exponent = -2 * Kmu * H / B
+  return (1 - Math.exp(exponent)) / (2 * Kmu)
+}
+
+// ── Marston 토압 산정 ─────────────────────────────────────
+// B: 굴착폭 (m), null이면 Do + 0.6m 자동
+function calcMarstonLoad({ gammaSoil, H, Do, excavationWidth }) {
+  const Do_m = Do / 1000  // mm → m
+  const B = excavationWidth != null ? excavationWidth : Do_m + 0.6
+  const Cd = calcCd(H, B)
+  const We = Cd * gammaSoil * B * B  // kN/m (단위길이당)
+  const Pe = We / Do_m               // kPa
+  return { We, Pe, B, Cd }
+}
+
+// ── Spangler 링 휨응력 (복합식, E' 포함) ─────────────────
+// 2004 기준 링휨 공식 (Spangler-Watkins):
+//   σ_b = (2/f) × (1/Z) × W × [Kb × R² + 0.732 × E' × R³ / (EI + 0.061 × E' × R³)]
+//              단, 분모 전체에 나누기 → 아래와 같이 정리
+//
+// 실제 Spangler 원식:
+//   σ_b = (2/f·Z) × Kb × W × R² / (EI + 0.061·E'·R³)   × EI
+//       + (2/f·Z) × 0.732 × E' × W × R³ / (EI + 0.061·E'·R³)
+//
+// 통합 정리:
+//   σ_b = (2 × Kb × W × R²) / (f × Z × (EI + 0.061·E'·R³)) × EI
+//         ← 이 형태가 아님, 올바른 Spangler-Watkins 원식:
+//
+//   σ_b = (2/f) × (W / Z) × [Kb·R²·EI + 0.732·E'·R³] / (EI + 0.061·E'·R³)
+//
+// 여기서:
+//   f  = 형상계수 (1.5, 2004 기준)
+//   Z  = 단면계수 = t²/6  [m³/m]
+//   Kb = 침상계수 (AWWA M11 Table)
+//   R  = 관 중심 반경 = (Do - t)/2  [m]
+//   W  = 단위길이당 하중 [kN/m]
+//   E' = 탄성지반반력계수 [kPa]
+//   EI = 관의 휨강성 [kN·m²/m]
+//
+// 단위 검증:
+//   분자: W[kN/m] × R²[m²] × EI[kN·m²/m] → kN²·m³/m
+//   분모: Z[m³/m] × (EI[kN·m²/m] + E'[kPa]·R³[m³]) → m³/m × kN·m²/m = kN·m⁵/m²
+//   결과: kN²·m³/m ÷ kN·m⁵/m² = kN/m² = kPa → ÷1000 = MPa  ✓
+function calcSpanglerStress({ W, Kb, R, EI, Eprime, t_m }) {
+  const f  = 1.5
+  const Z  = (t_m ** 2) / 6  // m³/m (단면계수)
+  const R3 = R ** 3
+  const R2 = R ** 2
+
+  const numerator   = Kb * R2 * EI + 0.732 * Eprime * R3
+  const denominator = EI + 0.061 * Eprime * R3
+
+  // σ_b [kPa] → [MPa]
+  const sigma_b_kPa = (2 / f) * (W / Z) * (numerator / denominator)
+  return { sigma_b: sigma_b_kPa / 1000, f, Z }
+}
+
+// ── 2004 기준 차량하중 ────────────────────────────────────
+// 2004 기준은 DB 하중(후축 96 kN). 단순화된 분산 사용.
+// 현행 DB-24(196 kN)의 약 절반 수준.
+// 2004 기준의 정확한 표가 없으므로 현행 trafficLoad를 DB-24 기준으로
+// 계산한 뒤, 하중 비율(96/196 ≈ 0.490)을 적용해 보정.
+// ※ 보고서에 이 가정을 명시함.
+const DB_LEGACY_RATIO = 96 / 196  // 구 DB 후축하중 / DB-24 후축하중
+
+/**
+ * 2004 기준 강관 전체 구조안전성 검토
+ * @param {object} inputs
+ * @returns {object} 계산 결과
+ */
 export function calcSteelPipeLegacy(inputs) {
-  throw new Error('2004 기준 강관 엔진 준비 중')
+  const {
+    DN, Pd, surgeRatio = 1.5, H,
+    gammaSoil, Eprime,
+    hasTraffic, hasLining, gwLevel,
+    steelBeddingType = 'deg90',
+    pnGrade = 'PN10',
+    pipeDimManual = false, DoManual, tManual,
+    steelGrade = 'SPS400', fyManual = 235,
+    E_pipeManual = false, E_pipe = null,
+    excavationWidth = null,
+  } = inputs
+
+  const mat = PIPE_MATERIAL.steel
+  const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
+
+  // ── 허용응력 결정 (2004 기준: 강종 무관 137 MPa 고정) ──
+  const allowRow  = LEGACY_STEEL_ALLOW[steelGrade] ?? LEGACY_STEEL_ALLOW['SPS400']
+  const sigmaA_normal = allowRow.sigmaA        // 137 MPa
+  const sigmaA_surge  = allowRow.sigmaA * 1.33 // 182.2 MPa (수격 1.33배 완화)
+
+  // fy는 최소두께 역산 참고용으로만 사용 (구 기준에서도 두께 계산은 동일)
+  const gradeRow = STEEL_GRADES.find(g => g.key === steelGrade)
+  const fy = steelGrade === 'MANUAL' ? fyManual : (gradeRow?.fy ?? 235)
+
+  // ── 관 제원 ────────────────────────────────────────────
+  let Do, tAdopt
+  if (pipeDimManual) {
+    Do = DoManual
+    tAdopt = tManual
+  } else {
+    const row = STEEL_THICKNESS[DN]
+    if (!row) throw new Error(`강관 DN${DN}은 지원하지 않습니다.`)
+    Do = row.Do
+    tAdopt = row[pnGrade]
+    if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
+  }
+
+  // ────────────────────────────────────────
+  // STEP 1: 내압 검토 (Barlow 공식, 2004)
+  // 허용응력: 137 MPa (SS41 기준 고정)
+  // 수격압: 허용응력 × 1.33 완화
+  // ────────────────────────────────────────
+  const Psurge      = Pd * surgeRatio
+  const sigma_normal = (Pd     * Do) / (2 * tAdopt)  // MPa
+  const sigma_surge  = (Psurge * Do) / (2 * tAdopt)  // MPa
+
+  const tp_normal  = (Pd     * Do) / (2 * sigmaA_normal)
+  const tp_surge   = (Psurge * Do) / (2 * sigmaA_surge)
+  const tHandling  = Do / mat.handlingDivisor
+  const tCalcMin   = Math.max(tp_normal, tp_surge, tHandling)
+  const tRequired  = tCalcMin + mat.corrosionAllowance
+
+  const ok_normal = sigma_normal <= sigmaA_normal
+  const ok_surge  = sigma_surge  <= sigmaA_surge
+
+  // ────────────────────────────────────────
+  // STEP 2: 토압 산정 (Marston 트렌치식)
+  // ────────────────────────────────────────
+  const { We, Pe, B, Cd } = calcMarstonLoad({ gammaSoil, H, Do, excavationWidth })
+
+  // ────────────────────────────────────────
+  // STEP 3: 차량하중 산정 (구 DB 하중)
+  // DB-24 테이블에서 계산 후 96/196 비율 보정
+  // ────────────────────────────────────────
+  const trafficDB24 = calcTrafficLoad({ H, Do, hasTraffic })
+  const WL_legacy   = trafficDB24.WL * DB_LEGACY_RATIO
+  const PL_legacy   = trafficDB24.PLraw * DB_LEGACY_RATIO
+  const Wtotal = We + WL_legacy
+  const Ptotal = Wtotal / (Do / 1000)  // kPa
+
+  // ────────────────────────────────────────
+  // STEP 4: 외압 링 휨응력 검토 (Spangler 복합식)
+  // 허용응력: 137 MPa (2004 기준 고정)
+  // ────────────────────────────────────────
+  const beddingRow = STEEL_BEDDING[steelBeddingType] || STEEL_BEDDING['deg90']
+  const Kb_steel   = beddingRow.Kb
+  const Kx_steel   = beddingRow.Kx
+
+  const t_m  = tAdopt / 1000
+  const Do_m = Do / 1000
+  const R    = (Do_m - t_m) / 2   // 중심 반경 [m]
+  const I    = (t_m ** 3) / 12
+  const EI   = Es * 1e3 * I       // kN·m²/m
+
+  const { sigma_b, f: f_shape, Z: Z_section } = calcSpanglerStress({
+    W: Wtotal, Kb: Kb_steel, R, EI, Eprime, t_m,
+  })
+  const sigmaA_bend = sigmaA_normal  // 137 MPa (2004 기준 — 현행과 달리 fy 비례 아님)
+  const ok_bending  = sigma_b <= sigmaA_bend
+
+  // ────────────────────────────────────────
+  // STEP 5: 변형량 검토 (Modified Iowa)
+  // 허용처짐: 5% 단일 (라이닝 구분 없음, 2004 기준)
+  // ────────────────────────────────────────
+  const DL = 1.5
+  const K  = Kx_steel
+  const r  = R  // Spangler 에서 쓴 R과 동일 (중심반경)
+
+  const EI_r3       = EI / (r ** 3)
+  const denominator = EI_r3 + 0.061 * Eprime
+  const deflectionRatio = (DL * K * Ptotal) / denominator * 100  // %
+  const maxDeflection   = 5.0  // % — 2004 기준: 라이닝 구분 없이 5%
+  const ok_deflection   = deflectionRatio <= maxDeflection
+
+  // ────────────────────────────────────────
+  // STEP 6: 외압 좌굴 검토 (AWWA M11 식, FS=2.0)
+  // 2004 기준: 안전율 FS=2.0 (현행 2.5보다 낮음)
+  // Rw는 명시적 적용 없음 → Rw=1.0 고정
+  // ────────────────────────────────────────
+  const FS_legacy = 2.0  // 2004 기준 좌굴 안전율
+  const Rw        = 1.0  // 2004 기준: 지하수위 계수 미적용
+
+  const HoverDo = H / Do_m
+  const Bprime  = 1 / (1 + 4 * Math.exp(-0.065 * HoverDo))
+  const EI_Do3  = EI / (Do_m ** 3)
+
+  const Pcr = (1 / FS_legacy) * Math.sqrt(32 * Rw * Bprime * Eprime * EI_Do3)
+  const Pe_ext          = Ptotal
+  const bucklingFS_actual = Pcr / Pe_ext
+  const ok_buckling       = bucklingFS_actual >= FS_legacy
+
+  // ────────────────────────────────────────
+  // 최종 결과 조립
+  // ────────────────────────────────────────
+  const overallOK = ok_normal && ok_surge && ok_bending && ok_deflection && ok_buckling
+
+  return {
+    pipeType: 'steel',
+    designStandard: '2004',
+    pipeDimManual,
+    DN: pipeDimManual ? null : DN,
+    Do, tAdopt, tRequired,
+    pnGrade: pipeDimManual ? null : pnGrade,
+    steelGrade, fy,
+    steps: {
+      step1: {
+        title: '내압 검토',
+        ref: '구 상수도 시설기준(2004) 5.9절 / Barlow 공식',
+        Pd, Psurge, surgeRatio,
+        steelGrade, sigmaA_normal, sigmaA_surge,
+        tp_normal, tp_surge, tHandling, tCalcMin, tRequired,
+        tAdopt, pnGrade,
+        sigma_normal, sigma_surge,
+        ok_normal, ok_surge,
+        ok: ok_normal && ok_surge,
+        note: '2004 기준: 허용응력 137 MPa 고정 (SS41 기준), 수격 1.33배 완화',
+      },
+      step2: {
+        title: '토압 산정 (Marston 트렌치식)',
+        ref: '구 상수도 시설기준(2004) 5.9절 / Marston-Spangler',
+        gammaSoil, H, Do,
+        excavationWidth, B, Cd,
+        We, Pe,
+        note: `굴착폭 B=${B.toFixed(2)}m, Cd=${Cd.toFixed(3)} (Kμ=0.165)`,
+      },
+      step3: {
+        title: '차량하중 산정 (구 DB 하중)',
+        ref: '구 상수도 시설기준(2004) 5.9절 (후축 96 kN)',
+        hasTraffic, H,
+        PL_legacy, WL_legacy,
+        DB_LEGACY_RATIO,
+        Wtotal, Ptotal,
+        note: 'DB-24 Boussinesq 기반 계산 후 96/196 비율 보정 적용',
+      },
+      step4: {
+        title: '외압 링 휨응력 검토 (Spangler 복합식)',
+        ref: '구 상수도 시설기준(2004) 5.9절 / Spangler-Watkins',
+        steelBeddingType, Kb_steel,
+        beddingLabel: beddingRow.label,
+        f_shape, Z_section,
+        R, EI, Eprime,
+        Wtotal, Do, tAdopt,
+        sigma_b, sigmaA_bend,
+        ok: ok_bending,
+        note: '2004 기준: σ_b = (2/f·Z)·W·[Kb·R²·EI + 0.732·E\'·R³] / (EI + 0.061·E\'·R³)',
+      },
+      step5: {
+        title: '변형량 검토 (Modified Iowa)',
+        ref: '구 상수도 시설기준(2004) 5.9절 / Modified Iowa',
+        DL, K,
+        r, I, EI, EI_r3, Eprime,
+        Ptotal, denominator, deflectionRatio, maxDeflection,
+        ok: ok_deflection,
+        note: '2004 기준: 허용처짐 5% 단일 적용 (라이닝 구분 없음)',
+      },
+      step6: {
+        title: '외압 좌굴 검토',
+        ref: '구 상수도 시설기준(2004) 5.9절 / AWWA M11 준용',
+        Rw, HoverDo, Do_m, H, Bprime, EI_Do3, Eprime,
+        Pcr, Pe_ext, bucklingFS_actual, FS_allow: FS_legacy,
+        ok: ok_buckling,
+        note: '2004 기준: FS=2.0 (현행 2.5), Rw=1.0 고정 (지하수위 계수 미적용)',
+      },
+    },
+    verdict: {
+      hoopNormal:  { label: '내압응력 (상시)', value: sigma_normal,      allow: sigmaA_normal, unit: 'MPa', ok: ok_normal },
+      hoopSurge:   { label: '내압응력 (수격)', value: sigma_surge,       allow: sigmaA_surge,  unit: 'MPa', ok: ok_surge },
+      bending:     { label: '링 휨응력',       value: sigma_b,           allow: sigmaA_bend,   unit: 'MPa', ok: ok_bending },
+      deflection:  { label: '처짐율',          value: deflectionRatio,   allow: maxDeflection, unit: '%',   ok: ok_deflection },
+      buckling:    { label: '좌굴 안전율',     value: bucklingFS_actual, allow: FS_legacy,     unit: '',    ok: ok_buckling },
+      overallOK,
+    },
+  }
 }
