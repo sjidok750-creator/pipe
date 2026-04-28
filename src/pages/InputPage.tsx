@@ -905,8 +905,10 @@ export default function InputPage() {
                   background: '#FFF8E1', border: '1px solid #FFE082',
                   borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
                 }}>
-                  <strong>2004 기준 허용응력 (원문 확인)</strong>{' '}
-                  — 내압: 105 MPa (fu/4, 참고표-4.2.12) / 링휨: <strong>100 MPa</strong> (참고표-4.2.13 각주e)
+                  <strong>2004 기준 허용응력</strong>{' '}
+                  — 내압: 105 MPa (fu/4, 참고표-4.2.12) / 링휨: 98 MPa (1,000 kgf/cm², 잠정값)
+                  <br/>
+                  <span style={{ fontSize: 10, color: '#A07030' }}>※ 링휨 허용응력은 원문 조항 미확인 — 분석파일 근거 잠정 적용</span>
                 </div>
               )}
 

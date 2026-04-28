@@ -13,13 +13,13 @@ import { PIPE_MATERIAL, DI_THICKNESS, BEDDING } from './constants.js'
 import { calcTrafficLoad } from './trafficLoad.js'
 
 // ── 2004 기준 덕타일 주철관 허용응력 ─────────────────────
-// 출처: 구 상수도 시설기준(2004) 참고표-4.2.12 / 참고표-4.2.13
-// 내압: MRS(정기정수압강도) 기반 → 허용응력 10 MPa → Naday식 안전율 2배
-//       실질 허용 내압응력: 5MPa (관주), 표-4.2.12에서 확인
-//       설계 목적 허용응력 = fu/4 = 420/4 = 105 MPa 적용
-// 링휨: 참고표-4.2.13 각주 e) "굴리에밀면관의 굽힘 탄성률: 100 MPa" 명시
-const LEGACY_DI_SIGMA_HOOP = 105   // MPa (fu/4, 참고표-4.2.12)
-const LEGACY_DI_SIGMA_BEND = 100   // MPa (참고표-4.2.13 각주 e, 원문 확인)
+// 출처: 구 상수도 시설기준(2004) 참고표-4.2.12
+// 내압: fu/4 = 420/4 = 105 MPa (GC400급 기준, 참고표-4.2.12 확인)
+// 링휨: 원문 미확인 — 분석파일 근거 98 MPa (1,000 kgf/cm²) 잠정 적용
+//       ※ 참고표-4.2.13은 PE관(폴리에틸렌) 계산결과표로 주철관과 무관
+//       ※ 덕타일 주철관 링휨 허용응력 원문 조항 추가 확인 필요
+const LEGACY_DI_SIGMA_HOOP = 105   // MPa (fu/4, 참고표-4.2.12 확인)
+const LEGACY_DI_SIGMA_BEND = 98    // MPa (1,000 kgf/cm² 환산, 원문 미확인 — 잠정값)
 
 // ── Marston 토압 Cd 계수 계산 (강관과 동일 공식) ─────────
 function calcCd(H, B) {
