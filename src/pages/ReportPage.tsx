@@ -51,6 +51,7 @@ export default function ReportPage() {
   const fy = resultFy ?? 235
   const rs = steps as any
   const today = new Date().toLocaleDateString('ko-KR')
+  const is2004 = result.designStandard === '2004'
   const F = T.fontSans
   const mono: React.CSSProperties = { fontFamily: T.fontMono }
 
@@ -94,13 +95,16 @@ export default function ReportPage() {
           <WIcon size={54} id="rpt-struct" radius={10} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
-              KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
+              {is2004
+                ? '구 상수도 시설기준 (2004) · 환경부'
+                : 'KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로'}
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
               매설관로 구조안전성 검토서
             </div>
             <div style={{ fontSize: 9.5, color: T.textMuted }}>
               {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
+              {is2004 && <span style={{ marginLeft: 8, color: '#8A5A00', fontWeight: 600 }}>[구 기준 2004 적용]</span>}
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -116,10 +120,16 @@ export default function ReportPage() {
         <div style={rh}>1. 검토 개요</div>
         <table style={TABLE}><tbody>
           {([
-            ['적용기준', 'KDS 57 10 00 : 2022 상수도 시설 설계기준'],
-            ['검토방법', pipeType === 'steel'
-              ? '허용응력법(내압) / 수정Iowa식(처짐) / DIPRA링휨 / AWWA M11 외압좌굴'
-              : '허용응력법(내압) / DIPRA링휨 / 수정Iowa식(처짐)'],
+            ['적용기준', is2004
+              ? '구 상수도 시설기준 (환경부, 2004) 5.9~5.10절'
+              : 'KDS 57 10 00 : 2022 상수도 시설 설계기준'],
+            ['검토방법', is2004
+              ? (pipeType === 'steel'
+                  ? '허용응력법(내압 137MPa) / Marston토압 / Spangler링휨(E\'포함) / Iowa처짐 / AWWA좌굴(FS=2.0)'
+                  : '허용응력법(내압 105MPa, 링휨 98MPa) / Marston토압 / DIPRA링휨 / Iowa처짐')
+              : (pipeType === 'steel'
+                  ? '허용응력법(내압) / 수정Iowa식(처짐) / DIPRA링휨 / AWWA M11 외압좌굴'
+                  : '허용응력법(내압) / DIPRA링휨 / 수정Iowa식(처짐)')],
             ['관종', pipeType === 'steel' ? `도복장강관 (KS D 3565)  fy = ${fy} MPa` : '덕타일 주철관 (KS D 4311)  fu = 420 MPa'],
             ...(pipeType === 'steel' && resultSteelGrade ? [['강종', `${resultSteelGrade}  /  fy = ${fy} MPa`] as [string,string]] : []),
             ...(result.pipeDimManual
@@ -166,22 +176,46 @@ export default function ReportPage() {
         <div style={SUB}>3.1 하중 산정</div>
 
         {/* 토피하중 */}
-        <FormulaBlock>
-          <FormulaRow>
-            <strong>① 토피하중 (Prism Load)</strong>&nbsp;&nbsp;
-            W<Sub>e</Sub> = γ<Sub>s</Sub> × H × D<Sub>o</Sub>
-            &nbsp;[KDS 57 10 00 §3.3]
-          </FormulaRow>
-        </FormulaBlock>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
-          <CalcRow label="흙 단위중량 γs" expr="" result={inputs.gammaSoil} unit="kN/m³"/>
-          <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
-          <CalcRow label="외경 Do" expr="" result={Do} unit="mm"/>
-          <HR/>
-          <CalcRow label="토피하중 We"
-            expr={`${inputs.gammaSoil} × ${inputs.H} × ${Do}/1000`}
-            result={s2?.We ?? 0} unit="kN/m"/>
-        </div>
+        {is2004 ? (
+          <>
+            <FormulaBlock>
+              <FormulaRow>
+                <strong>① 토피하중 (Marston 트렌치식)</strong>&nbsp;&nbsp;
+                W<Sub>e</Sub> = C<Sub>d</Sub> × γ<Sub>s</Sub> × B²
+                &nbsp;[구 상수도 시설기준 2004 5.9절]
+              </FormulaRow>
+            </FormulaBlock>
+            <div style={{ background: '#fff8f0', border: '1px solid #f5ddb5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+              <CalcRow label="흙 단위중량 γs" expr="" result={inputs.gammaSoil} unit="kN/m³"/>
+              <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
+              <CalcRow label="굴착폭 B" expr={s2?.excavationWidth == null ? `Do+0.6m = ${(Do/1000+0.6).toFixed(2)}m` : '직접입력'} result={s2?.B ?? (Do/1000+0.6)} unit="m"/>
+              <CalcRow label="토압계수 Cd" expr="(1-e^(-2Kμ·H/B))/(2Kμ), Kμ=0.165" result={s2?.Cd ?? 0} unit=""/>
+              <HR/>
+              <CalcRow label="토피하중 We"
+                expr={`${s2?.Cd?.toFixed(3)} × ${inputs.gammaSoil} × ${s2?.B?.toFixed(2)}²`}
+                result={s2?.We ?? 0} unit="kN/m"/>
+            </div>
+          </>
+        ) : (
+          <>
+            <FormulaBlock>
+              <FormulaRow>
+                <strong>① 토피하중 (Prism Load)</strong>&nbsp;&nbsp;
+                W<Sub>e</Sub> = γ<Sub>s</Sub> × H × D<Sub>o</Sub>
+                &nbsp;[KDS 57 10 00 §3.3]
+              </FormulaRow>
+            </FormulaBlock>
+            <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+              <CalcRow label="흙 단위중량 γs" expr="" result={inputs.gammaSoil} unit="kN/m³"/>
+              <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
+              <CalcRow label="외경 Do" expr="" result={Do} unit="mm"/>
+              <HR/>
+              <CalcRow label="토피하중 We"
+                expr={`${inputs.gammaSoil} × ${inputs.H} × ${Do}/1000`}
+                result={s2?.We ?? 0} unit="kN/m"/>
+            </div>
+          </>
+        )}
 
         {/* 차량하중 */}
         {inputs.hasTraffic && (

@@ -99,11 +99,28 @@ export default function ResultPage() {
 
   const gaugeItems = verdictItems.map(([k, v]) => ({ ...v, higherIsBetter: k === 'buckling' }))
 
+  const is2004 = result.designStandard === '2004'
+
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 검토 결과 ───────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+
+        {/* 적용 기준 배지 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6,
+          padding: '5px 10px',
+          background: is2004 ? '#FFF3E0' : T.bgActiveTint,
+          border: `1px solid ${is2004 ? '#E8D29A' : T.borderFocus}`,
+          borderRadius: T.radiusSm,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: is2004 ? '#8A5A00' : T.textAccent }}>
+            {is2004
+              ? '적용기준: 구 상수도 시설기준 (2004) — Marston / Spangler / 허용응력 137 MPa / FS 2.0'
+              : '적용기준: 현행 KDS 57 10 00 (2025) — Prism Load / Kb식 / 0.5fy / FS 2.5'}
+          </span>
+        </div>
 
         {/* 관 기본 정보 */}
         <EngPanel title="채택 관 제원">
