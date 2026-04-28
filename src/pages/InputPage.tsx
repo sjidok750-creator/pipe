@@ -67,26 +67,34 @@ export default function InputPage() {
       {/* ── 좌측: 입력 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
 
-        {/* 적용 기준 배지 */}
+        {/* 적용 기준 선택 토글 */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          marginBottom: 6, padding: '5px 10px',
-          background: is2004 ? '#FFF3E0' : T.bgActiveTint,
-          border: `1px solid ${is2004 ? '#E8D29A' : T.borderFocus}`,
+          display: 'flex', alignItems: 'center', gap: 6,
+          marginBottom: 6, padding: '5px 8px',
+          background: T.bgSection, border: `1px solid ${T.border}`,
           borderRadius: T.radiusSm,
         }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: is2004 ? '#8A5A00' : T.textAccent }}>
-            {is2004 ? '구 기준 (상수도 시설기준 2004)' : '현행 기준 (KDS 57, 2025)'}
-          </span>
-          <span style={{ fontSize: 10, color: T.textMuted }}>
-            {is2004
-              ? '토압: Marston / 링휨: Spangler 복합식 / 허용응력: 137 MPa (강관) / FS: 2.0'
-              : '토압: Prism Load / 링휨: Kb 단순식 / 허용응력: 0.5fy / FS: 2.5'}
-          </span>
-          <a href="/structural/overview" onClick={e => { e.preventDefault(); window.history.back() }}
-            style={{ marginLeft: 'auto', fontSize: 10, color: T.textLink, textDecoration: 'underline', cursor: 'pointer' }}>
-            기준 변경
-          </a>
+          <span style={{ fontSize: 11, color: T.textLabel, fontWeight: 600, marginRight: 4, flexShrink: 0 }}>적용기준</span>
+          {[
+            { key: '2025', label: '현행 (KDS 57, 2025)', sub: 'Prism / 0.5fy / FS 2.5' },
+            { key: '2004', label: '구 기준 (2004)',       sub: 'Marston / 137MPa / FS 2.0' },
+          ].map(opt => {
+            const active = inputs.designStandard === opt.key
+            return (
+              <button key={opt.key}
+                onClick={() => handleChange('designStandard', opt.key)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                  padding: '3px 10px', cursor: 'pointer', borderRadius: 3,
+                  border: `1px solid ${active ? (opt.key === '2004' ? '#E8D29A' : T.borderFocus) : T.border}`,
+                  background: active ? (opt.key === '2004' ? '#FFF3E0' : T.bgActiveTint) : T.bgPanel,
+                  color: active ? (opt.key === '2004' ? '#8A5A00' : T.textAccent) : T.textLabel,
+                }}>
+                <span style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{opt.label}</span>
+                <span style={{ fontSize: 9.5, color: active ? (opt.key === '2004' ? '#A07030' : T.textAccent) : T.textMuted, whiteSpace: 'nowrap' }}>{opt.sub}</span>
+              </button>
+            )
+          })}
         </div>
 
         {/* ① 관종 및 기본조건 */}
