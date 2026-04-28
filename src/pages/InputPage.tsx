@@ -59,11 +59,35 @@ export default function InputPage() {
   const gradeField = inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade
   const grades = inputs.pipeType === 'steel' ? STEEL_PN_GRADES : DI_K_GRADES
 
+  const is2004 = inputs.designStandard === '2004'
+
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 입력 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
+
+        {/* 적용 기준 배지 */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          marginBottom: 6, padding: '5px 10px',
+          background: is2004 ? '#FFF3E0' : T.bgActiveTint,
+          border: `1px solid ${is2004 ? '#E8D29A' : T.borderFocus}`,
+          borderRadius: T.radiusSm,
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: is2004 ? '#8A5A00' : T.textAccent }}>
+            {is2004 ? '구 기준 (상수도 시설기준 2004)' : '현행 기준 (KDS 57, 2025)'}
+          </span>
+          <span style={{ fontSize: 10, color: T.textMuted }}>
+            {is2004
+              ? '토압: Marston / 링휨: Spangler 복합식 / 허용응력: 137 MPa (강관) / FS: 2.0'
+              : '토압: Prism Load / 링휨: Kb 단순식 / 허용응력: 0.5fy / FS: 2.5'}
+          </span>
+          <a href="/structural/overview" onClick={e => { e.preventDefault(); window.history.back() }}
+            style={{ marginLeft: 'auto', fontSize: 10, color: T.textLink, textDecoration: 'underline', cursor: 'pointer' }}>
+            기준 변경
+          </a>
+        </div>
 
         {/* ① 관종 및 기본조건 */}
         <EngPanel title="① 관종 및 설계 조건">
@@ -822,6 +846,53 @@ export default function InputPage() {
               </div>
             </EngPopover>
           </EngRow>
+
+          {/* 2004 기준 전용: 굴착폭 B 입력 */}
+          {is2004 && (
+            <>
+              <EngDivider label="구 기준(2004) 추가 입력" />
+              <EngRow label="굴착폭 B" unit="m" popover={
+                <EngPopover title="굴착폭 B — Marston 트렌치식 (2004 기준)">
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>Marston 트렌치식: We = Cd × γ × B²</strong><br/>
+                    굴착폭 B는 관 외경 Do에 여유폭을 더한 값입니다.<br/>
+                    Cd = (1 - e^(-2Kμ·H/B)) / (2Kμ),  Kμ=0.165 (φ=30° 기준)
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>자동값 (비워두면 적용)</strong><br/>
+                    B = Do + 0.6 m (관경 + 양측 0.3m 여유)<br/>
+                    예: DN600 (Do=610mm) → B = 1.21 m
+                  </div>
+                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                    <strong>실제 굴착폭이 더 넓은 경우</strong><br/>
+                    B가 클수록 Cd가 감소하여 토압이 오히려 줄어드는 경우가 있음.<br/>
+                    Marston식의 양면성 — 좁은 굴착이 유리할 수도, 불리할 수도 있음.
+                  </div>
+                </EngPopover>
+              }>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <EngInput
+                    value={inputs.excavationWidth ?? (effectiveDo / 1000 + 0.6)}
+                    onChange={v => handleChange('excavationWidth', parseFloat(v) || null)}
+                    min={0.5} max={20} step={0.05} width={90}
+                  />
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                    <input type="checkbox"
+                      checked={inputs.excavationWidth == null}
+                      onChange={e => handleChange('excavationWidth', e.target.checked ? null : (effectiveDo / 1000 + 0.6))}
+                      style={{ width: 12, height: 12, accentColor: T.bgActive }}
+                    />
+                    <span style={{ fontSize: '10px', color: T.textMuted }}>자동 (Do+0.6m)</span>
+                  </label>
+                  {inputs.excavationWidth == null && (
+                    <span style={{ fontSize: '10px', color: T.textOK, fontFamily: T.fontMono }}>
+                      → {(effectiveDo / 1000 + 0.6).toFixed(2)} m
+                    </span>
+                  )}
+                </div>
+              </EngRow>
+            </>
+          )}
         </EngPanel>
 
         {/* 입력 요약 */}
