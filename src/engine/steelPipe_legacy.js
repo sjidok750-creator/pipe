@@ -11,7 +11,6 @@
 // ============================================================
 
 import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
-import { calcTrafficLoad } from './trafficLoad.js'
 
 // ── 2004 기준 강종 및 허용응력 (참고표-4.2.5) ─────────────
 // 출처: 구 상수도 시설기준(2004) 참고표-4.2.5 허용응력
@@ -97,7 +96,6 @@ function calcSpanglerStress({ W, Kb, R, EI, Eprime, t_m, f_override = 1.5 }) {
 // 2004 기준의 정확한 표가 없으므로 현행 trafficLoad를 DB-24 기준으로
 // 계산한 뒤, 하중 비율(96/196 ≈ 0.490)을 적용해 보정.
 // ※ 보고서에 이 가정을 명시함.
-const DB_LEGACY_RATIO = 96 / 196  // 구 DB 후축하중 / DB-24 후축하중
 
 /**
  * 2004 기준 강관 전체 구조안전성 검토
@@ -114,12 +112,12 @@ export function calcSteelPipeLegacy(inputs) {
     steelGrade = 'STWW400',
     E_pipeManual = false, E_pipe = null,
     excavationWidth = null,
-    shapeFactor = 1.5,   // 형상계수 f
-    deflectionLag = 1.5, // 처짐 지연계수 DL
+    shapeFactor = 1.5,      // 형상계수 f
+    deflectionLag = 1.5,    // 처짐 지연계수 DL
+    legacyTrafficLoad = 0,  // 노면하중 Wt (kN/m) — 직접 입력
   } = inputs
 
   // 2004 기준 강관: 관경 드롭다운(DN→Do 참고) + 두께 직접입력(tManual) 방식
-  // pipeDimManual 플래그와 무관하게 tManual 우선 사용
 
   const mat = PIPE_MATERIAL.steel
   const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
@@ -169,12 +167,10 @@ export function calcSteelPipeLegacy(inputs) {
   const { We, Pe, B, Cd } = calcMarstonLoad({ gammaSoil, H, Do, excavationWidth })
 
   // ────────────────────────────────────────
-  // STEP 3: 차량하중 산정 (구 DB 하중)
-  // DB-24 테이블에서 계산 후 96/196 비율 보정
+  // STEP 3: 노면하중 (직접 입력값 사용)
+  // 2004 기준: 25톤 트럭 기준 등분포 환산값을 그래프/표에서 읽어 직접 입력
   // ────────────────────────────────────────
-  const trafficDB24 = calcTrafficLoad({ H, Do, hasTraffic })
-  const WL_legacy   = trafficDB24.WL * DB_LEGACY_RATIO
-  const PL_legacy   = trafficDB24.PLraw * DB_LEGACY_RATIO
+  const WL_legacy = hasTraffic ? (legacyTrafficLoad ?? 0) : 0  // kN/m
   const Wtotal = We + WL_legacy
   const Ptotal = Wtotal / (Do / 1000)  // kPa
 
@@ -264,13 +260,11 @@ export function calcSteelPipeLegacy(inputs) {
         note: `굴착폭 B=${B.toFixed(2)}m, Cd=${Cd.toFixed(3)} (Kμ=0.165)`,
       },
       step3: {
-        title: '차량하중 산정 (구 DB 하중)',
-        ref: '구 상수도 시설기준(2004) 5.9절 (후축 96 kN)',
-        hasTraffic, H,
-        PL_legacy, WL_legacy,
-        DB_LEGACY_RATIO,
-        Wtotal, Ptotal,
-        note: 'DB-24 Boussinesq 기반 계산 후 96/196 비율 보정 적용',
+        title: '노면하중 산정 (직접 입력)',
+        ref: '구 상수도 시설기준(2004) 참고도-4.2.4 / 25톤 트럭 기준',
+        hasTraffic,
+        WL_legacy, Wtotal, Ptotal,
+        note: '2004 기준: 25톤 트럭 기준 토피별 등분포 환산값(Wt)을 직접 입력',
       },
       step4: {
         title: '외압 링 휨응력 검토 (Spangler 복합식)',

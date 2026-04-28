@@ -10,7 +10,6 @@
 // ============================================================
 
 import { PIPE_MATERIAL, DI_THICKNESS, BEDDING } from './constants.js'
-import { calcTrafficLoad } from './trafficLoad.js'
 
 // ── 2004 기준 덕타일 주철관 허용응력 ─────────────────────
 // 출처: 구 상수도 시설기준(2004) 참고표-4.2.12
@@ -54,6 +53,7 @@ export function calcDuctileIronLegacy(inputs) {
     pipeDimManual = false, DoManual, tManual,
     E_pipeManual = false, E_pipe = null,
     excavationWidth = null,
+    legacyTrafficLoad = 0,  // 노면하중 Wt (kN/m) — 직접 입력
   } = inputs
 
   const mat = PIPE_MATERIAL.ductile
@@ -93,9 +93,7 @@ export function calcDuctileIronLegacy(inputs) {
   // STEP 2: 토압 + 차량하중 (Marston + 구 DB)
   // ────────────────────────────────────────
   const { We, Pe, B, Cd } = calcMarstonLoad({ gammaSoil, H, Do, excavationWidth })
-  const trafficDB24  = calcTrafficLoad({ H, Do, hasTraffic })
-  const WL_legacy    = trafficDB24.WL * DB_LEGACY_RATIO
-  const PL_legacy    = trafficDB24.PLraw * DB_LEGACY_RATIO
+  const WL_legacy = hasTraffic ? (legacyTrafficLoad ?? 0) : 0  // kN/m 직접입력
   const Wtotal = We + WL_legacy
   const Ptotal = Wtotal / (Do / 1000)  // kPa
 
@@ -153,9 +151,9 @@ export function calcDuctileIronLegacy(inputs) {
         ref: '구 상수도 시설기준(2004) 5.10절',
         gammaSoil, H, Do,
         excavationWidth, B, Cd,
-        We, PL_legacy, WL_legacy, DB_LEGACY_RATIO,
+        We, WL_legacy,
         Wtotal, Ptotal,
-        note: `굴착폭 B=${B.toFixed(2)}m, Cd=${Cd.toFixed(3)} / DB 하중: 96/196 비율 보정`,
+        note: `굴착폭 B=${B.toFixed(2)}m, Cd=${Cd.toFixed(3)} / 노면하중 Wt=${WL_legacy} kN/m (직접 입력)`,
       },
       step3: {
         title: '링 휨응력 검토',

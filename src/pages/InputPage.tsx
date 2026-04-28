@@ -25,6 +25,14 @@ const SOIL_CLASSES = [
   { key: 'loose', label: '연약',  sub: '연약지반' },
 ]
 
+// 2004 기준 흙의 종류 분류 (참고표-4.2.2)
+const SOIL_CLASSES_2004 = [
+  { key: 'SC1',   label: '조립토', sub: '자갈·모래계' },
+  { key: 'SC2',   label: '세립토', sub: 'LL≤50' },
+  { key: 'SC3',   label: '세립토', sub: 'LL>50' },
+  { key: 'loose', label: '유기질토', sub: '이탄·연약점토' },
+]
+
 export default function InputPage() {
   const navigate = useNavigate()
   const { inputs, setInputs, setEprimeManual, setPipeDimManual, calcResult, saveToHistory } = useStore()
@@ -33,6 +41,7 @@ export default function InputPage() {
   const [showManualFy, setShowManualFy] = useState(false)
   const [kgfPipeInput, setKgfPipeInput] = useState('')
   const [kgfEprimeInput, setKgfEprimeInput] = useState('')
+  const [kgfTrafficInput, setKgfTrafficInput] = useState('')
 
   const handleChange = (field: string, value: unknown) => {
     setInputs({ [field]: value } as any)
@@ -555,36 +564,30 @@ export default function InputPage() {
           </EngRow>
 
           <EngDivider label="부가 하중 조건" />
-          <EngRow label="DB-24 차량하중" popover={
-            <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
-                도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
-                Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
-                H ≥ 3.0m이면 차량하중 영향 무시 가능.
-              </div>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>하중 분산 방식 (KDS 24 12 20)</strong><br/>
-                Wt = Cs × P / (L × Do) [kN/m]<br/>
-                Cs: 충격계수 포함 하중분산계수<br/>
-                매설깊이 H가 클수록 분산면적 증가 → Wt 감소
-              </div>
-              <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>적용 여부 판단 기준</strong><br/>
-                도로 하부: 적용 (H &lt; 3.0m 구간은 반드시)<br/>
-                농지·공원: 미적용 가능<br/>
-                H &lt; 0.6m: 차량하중 집중 → 위험. 매설심도 재검토 권장
-              </div>
-            </EngPopover>
-          }>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox" checked={inputs.hasTraffic}
-                onChange={e => handleChange('hasTraffic', e.target.checked)}
-                style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
-              <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
-            </label>
-          </EngRow>
+          {!is2004 && (
+            <EngRow label="DB-24 차량하중" popover={
+              <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
+                  도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
+                  Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
+                  H ≥ 3.0m이면 차량하중 영향 무시 가능.
+                </div>
+                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                  도로 하부: 적용 / 농지·공원: 미적용 가능<br/>
+                  H &lt; 0.6m: 차량하중 집중 → 매설심도 재검토 권장
+                </div>
+              </EngPopover>
+            }>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={inputs.hasTraffic}
+                  onChange={e => handleChange('hasTraffic', e.target.checked)}
+                  style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
+                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
+                <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
+              </label>
+            </EngRow>
+          )}
           {/* 라이닝: 2025만 표시 (2004는 5% 단일 고정) */}
           {inputs.pipeType === 'steel' && !is2004 && (
             <EngRow label="시멘트 모르타르 라이닝" popover={
@@ -619,68 +622,121 @@ export default function InputPage() {
 
         {/* ② 지반·시공 조건 */}
         <EngPanel title="② 지반·시공 조건">
-          <EngRow label="토질 등급">
+          <EngRow label={is2004 ? '흙의 종류' : '토질 등급'}>
             <EngSegment
-              options={SOIL_CLASSES}
+              options={is2004 ? SOIL_CLASSES_2004 : SOIL_CLASSES}
               value={inputs.soilClass}
               onChange={v => handleChange('soilClass', v)}
             />
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>토질 등급 (SC 분류) — AWWA M11 / KDS 57 10 00</div>
-              <p style={{ marginTop: 0 }}>토질 등급은 되메움 재료의 특성에 따른 분류로, 탄성지반반력 E'를 결정하는 핵심 변수입니다.</p>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>SC1 — 자갈·모래 (조립토)</strong><br/>
-                깨끗한 자갈, 모래자갈, 조립모래. E' = 2700~14000 kPa (다짐도에 따라 변동)<br/>
-                배수 양호, 내부마찰각 높음. 되메움 재료로 가장 우수.
-              </div>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>SC2 — 혼합토 (실트질 모래)</strong><br/>
-                실트·점토 함유 모래, 모래질 실트. E' = 1400~6900 kPa<br/>
-                다짐에 민감. 다짐 불량 시 E' 급감.
-              </div>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>SC3 — 점토·실트 (세립토)</strong><br/>
-                고소성 점토, 실트. E' = 700~2800 kPa<br/>
-                다짐 효과 제한적. 처짐 불리. 되메움 재료로 부적합.
-              </div>
-              <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
-                <strong>연약 — 연약지반</strong><br/>
-                유기질토, 이탄, 연약점토. E' = 300 kPa (고정)<br/>
-                다짐 개선 불가. 지반 치환 또는 특수 시공 필요.
-              </div>
+              {is2004 ? (<>
+                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>흙의 종류 — 구 상수도 시설기준(2004) 참고표-4.2.2</div>
+                <p style={{ marginTop: 0 }}>되메움 흙의 종류에 따라 흙의 반력계수 E'가 결정됩니다. (참고표-4.2.2)</p>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>조립토 (자갈·모래계)</strong><br/>
+                  GM, GP, SW, SP (12% 이상의 조립토 포함)<br/>
+                  E': 다지지않음 1.4 / 가벼운다짐 7.0 / 중간다짐 14.0 kgf/mm²
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>세립토 LL≤50</strong><br/>
+                  CL, ML, CL-ML (소성이 낮은 흙)<br/>
+                  E': 다지지않음 0.35 / 가벼운다짐 1.4 / 중간다짐 2.8 kgf/mm²
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>세립토 LL&gt;50</strong><br/>
+                  CH, MH, CH-MH (소성이 높은 흙)<br/>
+                  E': 다지지않음 0.7 / 가벼운다짐 2.8 / 중간다짐 7.0 kgf/mm²
+                </div>
+                <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
+                  <strong>유기질토</strong><br/>
+                  이탄, 유기질토, 연약점토. E'는 일반적으로 0을 사용<br/>
+                  지반개량 또는 되메움 재료 교체 필요
+                </div>
+              </>) : (<>
+                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>토질 등급 (SC 분류) — AWWA M11 / KDS 57 10 00</div>
+                <p style={{ marginTop: 0 }}>토질 등급은 되메움 재료의 특성에 따른 분류로, 탄성지반반력 E'를 결정하는 핵심 변수입니다.</p>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>SC1 — 자갈·모래 (조립토)</strong><br/>깨끗한 자갈, 모래자갈, 조립모래. E' = 2700~14000 kPa
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>SC2 — 혼합토</strong><br/>실트·점토 함유 모래. E' = 1400~6900 kPa
+                </div>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>SC3 — 점토·실트</strong><br/>고소성 점토, 실트. E' = 700~2800 kPa
+                </div>
+                <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
+                  <strong>연약지반</strong><br/>유기질토, 이탄. E' = 300 kPa 고정
+                </div>
+              </>)}
             </EngPopover>
           </EngRow>
 
           {inputs.soilClass !== 'loose' && (
-            <EngRow label="다짐도">
-              <div style={{ display: 'flex', gap: 4 }}>
-                {[80, 85, 90].map(c => (
-                  <button key={c} onClick={() => handleChange('compaction', c)}
-                    style={{
-                      padding: '2px 14px', fontSize: '12px', cursor: 'pointer',
-                      border: `1px solid ${inputs.compaction === c ? T.bgActive : T.border}`,
-                      background: inputs.compaction === c ? T.bgActive : T.bgPanel,
-                      color: inputs.compaction === c ? T.textOnDark : T.textPrimary,
-                      fontFamily: T.fontMono, borderRadius: 2, fontWeight: inputs.compaction === c ? 700 : 400,
-                    }}>
-                    {c}%
-                  </button>
-                ))}
-              </div>
+            <EngRow label={is2004 ? '시공방법' : '다짐도'}>
+              {is2004 ? (
+                // 2004 기준: 참고표-4.2.3 시공방법 3단계
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[
+                    { val: 80, label: '다지지 않음', sub: 'punning/tamping' },
+                    { val: 85, label: '가벼운 다짐', sub: 'tamper·1층 30cm' },
+                    { val: 90, label: '중간정도 다짐', sub: 'compactor·3회↑' },
+                  ].map(opt => (
+                    <button key={opt.val} onClick={() => handleChange('compaction', opt.val)}
+                      style={{
+                        flex: '1 1 auto', padding: '3px 8px', fontSize: '11px', cursor: 'pointer',
+                        border: `1px solid ${inputs.compaction === opt.val ? T.bgActive : T.border}`,
+                        background: inputs.compaction === opt.val ? T.bgActive : T.bgPanel,
+                        color: inputs.compaction === opt.val ? T.textOnDark : T.textPrimary,
+                        fontFamily: T.fontSans, borderRadius: 2, textAlign: 'center',
+                      }}>
+                      <div style={{ fontWeight: 700 }}>{opt.label}</div>
+                      <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 4 }}>
+                  {[80, 85, 90].map(c => (
+                    <button key={c} onClick={() => handleChange('compaction', c)}
+                      style={{
+                        padding: '2px 14px', fontSize: '12px', cursor: 'pointer',
+                        border: `1px solid ${inputs.compaction === c ? T.bgActive : T.border}`,
+                        background: inputs.compaction === c ? T.bgActive : T.bgPanel,
+                        color: inputs.compaction === c ? T.textOnDark : T.textPrimary,
+                        fontFamily: T.fontMono, borderRadius: 2, fontWeight: inputs.compaction === c ? 700 : 400,
+                      }}>
+                      {c}%
+                    </button>
+                  ))}
+                </div>
+              )}
               <EngPopover>
-                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>다짐도 — AWWA M11 Table 5-2</div>
-                <p style={{ marginTop: 0 }}>되메움 토사의 다짐 정도입니다. E' 값에 직접 영향을 미치며, 처짐·좌굴 계산의 핵심 입력값입니다.</p>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>프록터 다짐도 기준 (Modified Proctor)</strong><br/>
-                  85%: 일반적인 상수도관 매설 시공 기준 (KDS 권장)<br/>
-                  90%: 도로 하부 고다짐 구간 / 중요 노선<br/>
-                  80%: 최소 기준 (불량 시공 시 처짐·좌굴 위험)
-                </div>
-                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  <strong>다짐도에 따른 E' 변화 (SC1 예시)</strong><br/>
-                  80% → 2,700 kPa / 85% → 6,900 kPa / 90% → 14,000 kPa<br/>
-                  다짐도가 낮으면 E'가 급감하여 처짐·좌굴 불리. 현장 다짐 관리가 중요합니다.
-                </div>
+                {is2004 ? (<>
+                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>시공방법 — 구 상수도 시설기준(2004) 참고표-4.2.3</div>
+                  <p style={{ marginTop: 0 }}>되메움 흙의 시공방법에 따라 흙의 반력계수 E'가 결정됩니다. (참고표-4.2.2, 참고표-4.2.3)</p>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>다지지 않음</strong><br/>
+                    관체 측면의 되메움을 손으로 다지거나, punning이나 tamping rod로<br/>1층씩 마감두께 30cm 정도로 다지는 방법
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>가벼운 다짐</strong><br/>
+                    tamper나 compactor와 tamper rod로 3회 이상으로<br/>1층씩 마감두께 30cm로 다지는 방법
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>중간정도 다짐</strong><br/>
+                    가까이 설정이나 현장의 실험에 의한 시험방법과 그에 따른 E'값이<br/>확실하게 가대할 수 있는 경우
+                  </div>
+                </>) : (<>
+                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>다짐도 — AWWA M11 Table 5-2</div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>프록터 다짐도 기준 (Modified Proctor)</strong><br/>
+                    85%: 일반 상수도관 매설 시공 기준 (KDS 권장)<br/>
+                    90%: 도로 하부 고다짐 / 80%: 최소 기준
+                  </div>
+                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                    <strong>SC1 예시</strong>: 80%→2,700 / 85%→6,900 / 90%→14,000 kPa
+                  </div>
+                </>)}
               </EngPopover>
             </EngRow>
           )}
@@ -763,40 +819,46 @@ export default function InputPage() {
               : `AWWA M11 Table 참고값 자동적용 (${inputs.soilClass}, ${inputs.compaction}%) — 지반조사 결과 있으면 수동입력 권장`}
           </div>
 
-          <EngDivider label={inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)'} />
+          <EngDivider label={is2004
+            ? (inputs.pipeType === 'steel' ? '관밑다지기 지지각' : '관밑다지기 조건')
+            : (inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)')} />
           <div style={{ marginBottom: 6 }}>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>
-                {inputs.pipeType === 'steel' ? '기초지지각 — AWWA M11 Table 5-1' : '침상 조건 (Bedding Type) — DIPRA Method'}
+                {is2004
+                  ? (inputs.pipeType === 'steel' ? '관밑다지기 지지각 — 구 상수도 시설기준(2004) 참고-4.2.1' : '관밑다지기 조건 — 구 상수도 시설기준(2004)')
+                  : (inputs.pipeType === 'steel' ? '기초지지각 — AWWA M11 Table 5-1' : '침상 조건 (Bedding Type) — DIPRA Method')}
               </div>
-              {inputs.pipeType === 'steel' ? (<>
-                <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
+              {is2004 ? (<>
+                <p style={{ marginTop: 0 }}>관 밑바닥의 지지각도에 따라 굽힘모멘트계수(K₁, K₂)와 변형계수(K₃, K₄)가 결정됩니다. (참고-4.2.1 표)</p>
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>deg90 (90° 지지)</strong>: Kb=0.235, Kx=0.108 — 일반 모래 기초<br/>
-                  <strong>deg120 (120° 지지)</strong>: Kb=0.189, Kx=0.090 — 자갈 기초<br/>
-                  <strong>deg150 (150° 지지)</strong>: Kb=0.157, Kx=0.075 — 콘크리트 기초<br/>
-                  지지각이 클수록 하중 분산 유리 → Kb·Kx 감소 → 응력·처짐 감소
+                  <strong>60° 지지</strong>: 관밑다지기 최소 조건<br/>
+                  <strong>90° 지지</strong>: 일반 모래·자갈 되메움 (표준)<br/>
+                  <strong>120° 지지</strong>: 양질의 모래·자갈 기초<br/>
+                  <strong>150° 이상</strong>: 콘크리트 기초 등 특수 조건<br/>
+                  지지각이 클수록 K₁·K₂ 감소 → 굽힘응력·처짐 감소
                 </div>
                 <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  <strong>실무 적용 기준 (KDS 57 10 00)</strong><br/>
-                  표준 시공: deg90 (모래 되메움)<br/>
-                  고압·대구경: deg120 이상 적용 권장<br/>
-                  콘크리트 기초: deg150
+                  <strong>2004 기준 참고-4.2.1</strong><br/>
+                  K₁(관 상단 굽힘모멘트계수), K₂(관 밑바닥 굽힘모멘트계수)<br/>
+                  K₃, K₄(변형계수)는 지지각 및 토피에 따라 표에서 결정
                 </div>
-              </>) : (<>
-                <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다. Kb(링휨계수), Kd(처짐계수)에 영향을 미칩니다.</p>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>Type 1</strong>: Kb=0.235, Kd=0.108 — 관바닥 모양 맞춤 굴착<br/>
-                  <strong>Type 2</strong>: Kb=0.150, Kd=0.090 — 일반 평탄 굴착 (표준)<br/>
-                  <strong>Type 3</strong>: Kb=0.110, Kd=0.083 — 모래·자갈 쿠션 기초<br/>
-                  <strong>Type 4</strong>: Kb=0.085, Kd=0.075 — 콘크리트 기초
-                </div>
-                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  <strong>실무 적용</strong><br/>
-                  일반 상수도 매설: Type 2 (표준)<br/>
-                  연약지반·고하중 구간: Type 3~4 권장
-                </div>
-              </>)}
+              </>) : (
+                inputs.pipeType === 'steel' ? (<>
+                  <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>deg90</strong>: Kb=0.157, Kx=0.083 — 일반 (표준)<br/>
+                    <strong>deg120</strong>: Kb=0.128, Kx=0.069 — 자갈 기초<br/>
+                    <strong>deg180</strong>: Kb=0.090, Kx=0.053 — 콘크리트 전면지지
+                  </div>
+                </>) : (<>
+                  <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다.</p>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                    <strong>Type 2</strong>: 표준 모래 다짐 (일반)<br/>
+                    <strong>Type 4</strong>: 콘크리트 전면지지 (최우수)
+                  </div>
+                </>)
+              )}
             </EngPopover>
           </div>
 
@@ -904,6 +966,81 @@ export default function InputPage() {
           {is2004 && (
             <>
               <EngDivider label="구 기준(2004) 추가 입력" />
+
+              {/* 2004 노면하중 직접입력 */}
+              <EngRow label="노면하중 Wt" unit="kN/m" popover={
+                <EngPopover title="노면하중 — 구 상수도 시설기준(2004) 참고도-4.2.4">
+                  <div style={{ background: '#FFF8E1', borderLeft: `3px solid #FFB300`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>2004 기준: 25톤 트럭 기준 등분포 환산값 직접 입력</strong><br/>
+                    2004 기준은 DB-24(현행)가 아닌 <strong>25톤 트럭</strong>을 기준으로 하며,<br/>
+                    토피(H)와 관경에 따른 노면하중을 참고도-4.2.4 그래프에서 읽어 입력합니다.
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>단위 환산</strong><br/>
+                    1 kgf/m = 0.009807 kN/m<br/>
+                    1 kN/m = 101.97 kgf/m<br/>
+                    그래프 값이 kgf/m 단위이면 아래 환산란에 입력하세요.
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>참고: 토피별 대략적인 노면하중 (25톤 트럭)</strong><br/>
+                    H = 0.6m → 약 20~30 kN/m (대구경 기준)<br/>
+                    H = 1.0m → 약 10~15 kN/m<br/>
+                    H = 1.5m → 약 5~8 kN/m<br/>
+                    H ≥ 3.0m → 노면하중 무시 가능 (0 입력)
+                  </div>
+                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                    도로 하부 매설이 아닌 경우 0을 입력하십시오.<br/>
+                    노면하중 미고려 시 Wt = 0으로 처리됩니다.
+                  </div>
+                </EngPopover>
+              }>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={inputs.hasTraffic}
+                        onChange={e => {
+                          handleChange('hasTraffic', e.target.checked)
+                          if (!e.target.checked) { handleChange('legacyTrafficLoad', 0); setKgfTrafficInput('') }
+                        }}
+                        style={{ width: 12, height: 12, accentColor: T.bgActive }}/>
+                      <span style={{ fontSize: 11, color: T.textLabel }}>노면하중 적용</span>
+                    </label>
+                  </div>
+                  {inputs.hasTraffic && (<>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <EngInput
+                        value={inputs.legacyTrafficLoad ?? 0}
+                        onChange={v => { handleChange('legacyTrafficLoad', parseFloat(v) || 0); setKgfTrafficInput('') }}
+                        min={0} max={200} step={0.1} width={90}
+                      />
+                      <span style={{ fontSize: 10, color: T.textMuted }}>kN/m</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <input type="number" placeholder="kgf/m 입력 → kN/m 환산"
+                        value={kgfTrafficInput}
+                        onChange={e => {
+                          const raw = e.target.value; setKgfTrafficInput(raw)
+                          const kgf = parseFloat(raw)
+                          if (!isNaN(kgf) && kgf >= 0) handleChange('legacyTrafficLoad', Math.round(kgf * 0.009807 * 100) / 100)
+                        }}
+                        style={{
+                          width: 160, height: T.inputH, border: `1px solid ${T.border}`,
+                          borderRadius: T.radiusSm, fontSize: 11, fontFamily: T.fontMono,
+                          padding: '0 6px', background: '#fffef0', color: T.textPrimary,
+                        }}/>
+                      <span style={{ fontSize: 10, color: T.textMuted }}>kgf/m</span>
+                      {kgfTrafficInput && !isNaN(parseFloat(kgfTrafficInput)) && (
+                        <span style={{ fontSize: 10, color: T.textOK, fontFamily: T.fontMono }}>
+                          → {(parseFloat(kgfTrafficInput) * 0.009807).toFixed(2)} kN/m
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 10, color: T.textMuted }}>
+                      참고도-4.2.4 그래프에서 토피 H={inputs.H}m에 해당하는 값을 읽어 입력
+                    </div>
+                  </>)}
+                </div>
+              </EngRow>
 
               {/* 허용응력 안내 */}
               {inputs.pipeType === 'steel' ? (() => {

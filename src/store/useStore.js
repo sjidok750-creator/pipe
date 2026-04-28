@@ -12,8 +12,9 @@ import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 const DEFAULT_INPUTS = {
   designStandard: '2025', // '2025' | '2004'
   excavationWidth: null,  // 2004 전용: 굴착폭 B (m), null이면 Do+0.6m 자동
-  shapeFactor: 1.5,        // 2004 전용: 형상계수 f (Spangler 링휨식)
+  shapeFactor: 1.5,       // 2004 전용: 형상계수 f (Spangler 링휨식)
   deflectionLag: 1.5,     // 2004 전용: 처짐 지연계수 DL (1.0~1.5)
+  legacyTrafficLoad: 0,   // 2004 전용: 노면하중 등분포 환산값 Wt (kN/m)
   pipeType: 'steel',
   DN: 600,
   pnGrade: 'PN10',         // 강관 PN 등급 (사용자 선택)
