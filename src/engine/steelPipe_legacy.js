@@ -134,9 +134,10 @@ export function calcSteelPipeLegacy(inputs) {
   const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
 
   // ── 허용응력: 강종별 참고표-4.2.5 값 적용 ──
-  const gradeRow    = LEGACY_STEEL_GRADES.find(g => g.key === steelGrade) ?? LEGACY_STEEL_GRADES[2]
+  const gradeRow      = LEGACY_STEEL_GRADES.find(g => g.key === steelGrade) ?? LEGACY_STEEL_GRADES[2]
   const sigmaA_normal = gradeRow.sigmaA          // MPa (강종별)
   const sigmaA_surge  = gradeRow.sigmaA * 1.33  // 수격 1.33배 완화
+  const fy            = gradeRow.sigmaA          // 참고용 (2004는 sigmaA 고정)
 
   // ── 관 제원 ────────────────────────────────────────────
   // 2004 기준: DN 드롭다운으로 Do 결정, 두께는 tManual 직접입력
@@ -246,18 +247,18 @@ export function calcSteelPipeLegacy(inputs) {
     pipeType: 'steel',
     designStandard: '2004',
     pipeDimManual,
-    DN: pipeDimManual ? null : DN,
+    DN,
     Do, tAdopt, tRequired,
-    pnGrade: pipeDimManual ? null : pnGrade,
+    pnGrade: null,  // 2004 기준: PN등급 없음
     steelGrade, fy,
     steps: {
       step1: {
         title: '내압 검토',
-        ref: '구 상수도 시설기준(2004) 5.9절 / Barlow 공식',
+        ref: '구 상수도 시설기준(2004) 참고표-4.2.5 / Barlow 공식',
         Pd, Psurge, surgeRatio,
         steelGrade, sigmaA_normal, sigmaA_surge,
         tp_normal, tp_surge, tHandling, tCalcMin, tRequired,
-        tAdopt, pnGrade,
+        tAdopt,
         sigma_normal, sigma_surge,
         ok_normal, ok_surge,
         ok: ok_normal && ok_surge,

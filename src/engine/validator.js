@@ -12,23 +12,34 @@ import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES } from './c
 export function validateInputs(inputs) {
   const errors = {}
 
-  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade, pipeDimManual, DoManual, tManual } = inputs
+  const {
+    pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio,
+    pnGrade, diKGrade, pipeDimManual, DoManual, tManual,
+    designStandard,
+  } = inputs
 
-  if (pipeDimManual) {
+  const is2004steel = designStandard === '2004' && pipeType === 'steel'
+
+  if (pipeDimManual && !is2004steel) {
+    // 현행 기준 직접입력: Do + t 모두 필요
     if (!DoManual || DoManual < 50 || DoManual > 4000) {
       errors.DoManual = '외경은 50~4000mm 범위여야 합니다.'
     }
     if (!tManual || tManual < 1 || tManual > 100) {
       errors.tManual = '두께는 1~100mm 범위여야 합니다.'
     }
+  } else if (is2004steel) {
+    // 2004+강관: 호칭지름 + 두께 직접입력 방식 (DoManual 없어도 됨)
+    if (!tManual || tManual < 1 || tManual > 100) {
+      errors.tManual = '관 두께를 입력해야 합니다 (1~100mm).'
+    }
   } else {
-    // 관경
+    // 규격 선택 모드
     const table = pipeType === 'steel' ? STEEL_THICKNESS : DI_THICKNESS
     if (!DN || !table[DN]) {
       errors.DN = '지원하지 않는 관경입니다.'
     }
 
-    // 두께/등급
     if (pipeType === 'steel') {
       if (!pnGrade || !STEEL_PN_GRADES.includes(pnGrade)) {
         errors.pnGrade = 'PN 등급을 선택해야 합니다.'
@@ -51,11 +62,13 @@ export function validateInputs(inputs) {
     errors.Pd = '설계압력이 너무 큽니다 (최대 3.0 MPa).'
   }
 
-  // 수격압 배율
-  if (!surgeRatio || surgeRatio < 1.0) {
-    errors.surgeRatio = '수격압 배율은 1.0 이상이어야 합니다.'
-  } else if (surgeRatio > 3.0) {
-    errors.surgeRatio = '수격압 배율이 너무 큽니다 (최대 3.0).'
+  // 수격압 배율 (강관만 적용 — 주철관은 수격압 배율 미사용)
+  if (pipeType === 'steel') {
+    if (!surgeRatio || surgeRatio < 1.0) {
+      errors.surgeRatio = '수격압 배율은 1.0 이상이어야 합니다.'
+    } else if (surgeRatio > 3.0) {
+      errors.surgeRatio = '수격압 배율이 너무 큽니다 (최대 3.0).'
+    }
   }
 
   // 매설깊이
