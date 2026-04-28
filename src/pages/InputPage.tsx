@@ -7,6 +7,7 @@ import {
   STEEL_THICKNESS, DI_THICKNESS,
   STEEL_PN_GRADES, DI_K_GRADES, STEEL_GRADES,
 } from '../engine/constants.js'
+import { LEGACY_STEEL_GRADES } from '../engine/steelPipe_legacy.js'
 import { validateInputs } from '../engine/validator.js'
 import {
   EngPanel, EngSection, EngRow, EngInput,
@@ -150,67 +151,82 @@ export default function InputPage() {
                 </div>
               </EngPopover>
             }>
-              {/* 강종 버튼 그룹 */}
-              <div style={{ display: 'flex', gap: 4, flex: 1 }}>
-                {STEEL_GRADES.map((g: any) => {
+              {/* 강종 버튼 그룹 — 2004/2025 다른 목록 */}
+              <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
+                {(is2004 ? LEGACY_STEEL_GRADES : STEEL_GRADES as any[]).map((g: any) => {
                   const active = inputs.steelGrade === g.key
                   return (
                     <button key={g.key} onClick={() => handleChange('steelGrade', g.key)}
                       style={{
-                        flex: 1, padding: '3px 4px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
+                        flex: '1 1 calc(33% - 4px)', padding: '3px 4px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
                         border: `1px solid ${active ? T.bgActive : T.border}`,
                         background: active ? T.bgActive : T.bgPanel,
                         color: active ? T.textOnDark : T.textPrimary,
                         fontFamily: T.fontSans, lineHeight: 1.35, textAlign: 'center',
                       }}>
-                      <span style={{ fontWeight: 700 }}>{g.label.split(' ')[0]}</span>
-                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>fy={g.fy}</span>
+                      <span style={{ fontWeight: 700 }}>{g.key}</span>
+                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>
+                        {is2004 ? '137 MPa' : `fy=${g.fy}`}
+                      </span>
                     </button>
                   )
                 })}
               </div>
               {/* 설명 줄 + 직접입력 토글 */}
-              {(() => {
-                const g = (STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
-                const fyVal = showManualFy ? (inputs.fyManual ?? 235) : (g?.fy ?? 235)
-                const fuVal = g ? Math.round(fyVal / g.fy * g.fu) : 400
-                return (
-                  <>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, width: '100%' }}>
-                      <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                        {showManualFy
-                          ? `직접입력 — fy = ${fyVal} MPa, fu = ${fuVal} MPa`
-                          : g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : ''}
-                      </span>
-                      <button
-                        onClick={() => {
-                          const next = !showManualFy
-                          setShowManualFy(next)
-                          if (next) handleChange('steelGrade', 'MANUAL')
-                          else handleChange('steelGrade', 'SPS400')
-                        }}
-                        style={{
-                          padding: '1px 7px', fontSize: '10px', cursor: 'pointer', borderRadius: 2,
-                          border: `1px solid ${showManualFy ? T.bgActive : T.border}`,
-                          background: showManualFy ? T.bgActive : T.bgPanel,
-                          color: showManualFy ? T.textOnDark : T.textMuted,
-                          fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
-                        }}>
-                        직접입력
-                      </button>
+              {is2004 ? (
+                /* 2004: 허용응력 고정 안내, 강종은 참고용 */
+                (() => {
+                  const g = (LEGACY_STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
+                  return (
+                    <div style={{ fontSize: 10, color: '#8A5A00', fontFamily: T.fontSans, marginTop: 2 }}>
+                      {g ? `${g.key} — fy = ${g.fy} MPa (참고) / 허용응력: 137 MPa 고정 (2004 기준)` : ''}
                     </div>
-                    {showManualFy && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, width: '100%' }}>
-                        <span style={{ fontSize: '10px', color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>fy =</span>
-                        <EngInput value={inputs.fyManual ?? 235}
-                          onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
-                          min={200} max={600} step={5} width={72} compact/>
-                        <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>MPa</span>
+                  )
+                })()
+              ) : (
+                /* 2025: 기존 강종 설명 + 직접입력 */
+                (() => {
+                  const g = (STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
+                  const fyVal = showManualFy ? (inputs.fyManual ?? 235) : (g?.fy ?? 235)
+                  const fuVal = g ? Math.round(fyVal / g.fy * g.fu) : 400
+                  return (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                          {showManualFy
+                            ? `직접입력 — fy = ${fyVal} MPa, fu = ${fuVal} MPa`
+                            : g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : ''}
+                        </span>
+                        <button
+                          onClick={() => {
+                            const next = !showManualFy
+                            setShowManualFy(next)
+                            if (next) handleChange('steelGrade', 'MANUAL')
+                            else handleChange('steelGrade', 'SPS400')
+                          }}
+                          style={{
+                            padding: '1px 7px', fontSize: '10px', cursor: 'pointer', borderRadius: 2,
+                            border: `1px solid ${showManualFy ? T.bgActive : T.border}`,
+                            background: showManualFy ? T.bgActive : T.bgPanel,
+                            color: showManualFy ? T.textOnDark : T.textMuted,
+                            fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
+                          }}>
+                          직접입력
+                        </button>
                       </div>
-                    )}
-                  </>
-                )
-              })()}
+                      {showManualFy && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, width: '100%' }}>
+                          <span style={{ fontSize: '10px', color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>fy =</span>
+                          <EngInput value={inputs.fyManual ?? 235}
+                            onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
+                            min={200} max={600} step={5} width={72} compact/>
+                          <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>MPa</span>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()
+              )}
             </EngRow>
           )}
 
@@ -548,7 +564,8 @@ export default function InputPage() {
               <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
             </label>
           </EngRow>
-          {inputs.pipeType === 'steel' && (
+          {/* 라이닝: 2025만 표시 (2004는 5% 단일 고정) */}
+          {inputs.pipeType === 'steel' && !is2004 && (
             <EngRow label="시멘트 모르타르 라이닝" popover={
               <EngPopover title="시멘트 모르타르 라이닝 — KDS 57 10 00 §3.5 / AWWA M11">
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
@@ -808,16 +825,25 @@ export default function InputPage() {
 
           <EngDivider />
           <EngRow label="지하수위">
-            <select value={inputs.gwLevel} onChange={e => handleChange('gwLevel', e.target.value)}
-              style={{
-                height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
-                fontSize: T.fontSzInput, fontFamily: T.fontSans, padding: '0 4px',
-                background: T.bgInput, color: T.textPrimary, width: 180,
-              }}>
-              {GW_LEVEL_OPTIONS.map(({ value, label }: any) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
+            {is2004 && inputs.pipeType === 'steel' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textMuted, background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '4px 10px' }}>
+                  Rw = 1.0 고정
+                </span>
+                <span style={{ fontSize: 10, color: T.textMuted }}>(구 기준 2004: 지하수위 계수 미적용)</span>
+              </div>
+            ) : (
+              <select value={inputs.gwLevel} onChange={e => handleChange('gwLevel', e.target.value)}
+                style={{
+                  height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+                  fontSize: T.fontSzInput, fontFamily: T.fontSans, padding: '0 4px',
+                  background: T.bgInput, color: T.textPrimary, width: 180,
+                }}>
+                {GW_LEVEL_OPTIONS.map(({ value, label }: any) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            )}
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>지하수위 — AWWA M11 (강관 좌굴 검토)</div>
               <p style={{ marginTop: 0 }}>지하수위는 강관의 외압 좌굴 검토(AWWA M11 Eq.5-5)에서 부력수압계수 Rw 산정에 사용됩니다. 주철관 검토에는 영향 없음.</p>
@@ -828,10 +854,8 @@ export default function InputPage() {
                 지하수위 관저 이상: Rw = 0.5 (최대 부력)
               </div>
               <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>좌굴 공식에서의 역할</strong><br/>
-                Pcr = (1/FS)·√(32·Rw·B'·E'·EI/Do³)<br/>
-                Rw가 작을수록 허용 외압이 감소 → 좌굴 안전율 불리.<br/>
-                지하수위가 높은 현장에서는 반드시 보수적으로 입력.
+                <strong>구 기준(2004) 처리</strong><br/>
+                2004 기준은 지하수위 계수(Rw)를 명시적으로 적용하지 않으므로 Rw = 1.0 고정 처리합니다.
               </div>
             </EngPopover>
           </EngRow>
@@ -855,26 +879,35 @@ export default function InputPage() {
             </EngPopover>
           </EngRow>
 
-          {/* 2004 기준 전용: 굴착폭 B 입력 */}
+          {/* ── 2004 기준 전용 추가 입력 섹션 ── */}
           {is2004 && (
             <>
               <EngDivider label="구 기준(2004) 추가 입력" />
+
+              {/* 허용응력 고정값 안내 */}
+              <div style={{
+                margin: '4px 0 6px', padding: '6px 10px',
+                background: '#FFF8E1', border: '1px solid #FFE082',
+                borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
+              }}>
+                <strong>2004 기준 허용응력 (고정)</strong>
+                {inputs.pipeType === 'steel'
+                  ? ' — 강관: 137 MPa (전 강종), 수격 시 1.33배 완화 (182 MPa)'
+                  : ' — 주철관: 내압 105 MPa (fu/4), 링휨 98 MPa (1,000 kgf/cm²)'}
+              </div>
+
+              {/* 굴착폭 B */}
               <EngRow label="굴착폭 B" unit="m" popover={
                 <EngPopover title="굴착폭 B — Marston 트렌치식 (2004 기준)">
                   <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                     <strong>Marston 트렌치식: We = Cd × γ × B²</strong><br/>
-                    굴착폭 B는 관 외경 Do에 여유폭을 더한 값입니다.<br/>
-                    Cd = (1 - e^(-2Kμ·H/B)) / (2Kμ),  Kμ=0.165 (φ=30° 기준)
+                    Cd = (1 - e^(-2Kμ·H/B)) / (2Kμ),  Kμ = 0.165 (φ=30°)
                   </div>
                   <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>자동값 (비워두면 적용)</strong><br/>
-                    B = Do + 0.6 m (관경 + 양측 0.3m 여유)<br/>
-                    예: DN600 (Do=610mm) → B = 1.21 m
+                    <strong>자동값</strong>: B = Do + 0.6 m (관경 + 양측 0.3m 여유)
                   </div>
                   <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    <strong>실제 굴착폭이 더 넓은 경우</strong><br/>
-                    B가 클수록 Cd가 감소하여 토압이 오히려 줄어드는 경우가 있음.<br/>
-                    Marston식의 양면성 — 좁은 굴착이 유리할 수도, 불리할 수도 있음.
+                    B가 클수록 Cd 감소 → 경우에 따라 토압 감소 (Marston식 양면성)
                   </div>
                 </EngPopover>
               }>
@@ -890,15 +923,96 @@ export default function InputPage() {
                       onChange={e => handleChange('excavationWidth', e.target.checked ? null : (effectiveDo / 1000 + 0.6))}
                       style={{ width: 12, height: 12, accentColor: T.bgActive }}
                     />
-                    <span style={{ fontSize: '10px', color: T.textMuted }}>자동 (Do+0.6m)</span>
+                    <span style={{ fontSize: 10, color: T.textMuted }}>자동 (Do+0.6m)</span>
                   </label>
                   {inputs.excavationWidth == null && (
-                    <span style={{ fontSize: '10px', color: T.textOK, fontFamily: T.fontMono }}>
-                      → {(effectiveDo / 1000 + 0.6).toFixed(2)} m
+                    <span style={{ fontSize: 10, color: T.textOK, fontFamily: T.fontMono }}>
+                      = {(effectiveDo / 1000 + 0.6).toFixed(2)} m
                     </span>
                   )}
                 </div>
               </EngRow>
+
+              {/* 강관 전용: 형상계수 f + 처짐 지연계수 DL */}
+              {inputs.pipeType === 'steel' && (<>
+                <EngRow label="형상계수 f" popover={
+                  <EngPopover title="형상계수 f — Spangler 링 휨응력식 (2004 기준)">
+                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                      <strong>σ_b = (2/f·Z) × W × [Kb·R²·EI + 0.732·E'·R³] / (EI + 0.061·E'·R³)</strong><br/>
+                      f는 관 단면 형상에 따른 계수입니다.
+                    </div>
+                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                      <strong>원형관: f = 1.5</strong> (일반 상수도관 — 거의 모든 경우)<br/>
+                      타원형관: f = 1.0 (특수 단면, 실무 사용 드묾)
+                    </div>
+                    <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                      원형 강관은 f = 1.5 고정. 특수 단면이 아니면 변경 불필요.
+                    </div>
+                  </EngPopover>
+                }>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[
+                      { val: 1.5, label: '1.5', sub: '원형관 (일반)' },
+                      { val: 1.0, label: '1.0', sub: '타원형 (특수)' },
+                    ].map(opt => {
+                      const active = (inputs.shapeFactor ?? 1.5) === opt.val
+                      return (
+                        <button key={opt.val} onClick={() => handleChange('shapeFactor', opt.val)}
+                          style={{
+                            padding: '3px 14px', fontSize: 11, cursor: 'pointer', borderRadius: 2,
+                            border: `1px solid ${active ? T.bgActive : T.border}`,
+                            background: active ? T.bgActive : T.bgPanel,
+                            color: active ? T.textOnDark : T.textPrimary,
+                            fontFamily: T.fontSans,
+                          }}>
+                          <div style={{ fontWeight: 700 }}>f = {opt.label}</div>
+                          <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </EngRow>
+
+                <EngRow label="처짐 지연계수 DL" popover={
+                  <EngPopover title="처짐 지연계수 DL — Modified Iowa식 (2004 기준)">
+                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                      <strong>Δy/D = DL × Kx × Ptotal / (EI/r³ + 0.061·E')</strong><br/>
+                      DL은 시간 경과에 따른 처짐 증가를 반영하는 계수입니다.
+                    </div>
+                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                      <strong>DL = 1.5</strong>: 장기 처짐 고려 (일반 설계 — 보수적)<br/>
+                      <strong>DL = 1.0</strong>: 초기 처짐만 고려 (단기 또는 즉시 처짐)
+                    </div>
+                    <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                      현행 KDS 2025는 DL = 1.5 고정.<br/>
+                      2004 기준은 1.0~1.5 선택 가능. 일반 설계는 1.5 권장.
+                    </div>
+                  </EngPopover>
+                }>
+                  <div style={{ display: 'flex', gap: 4 }}>
+                    {[
+                      { val: 1.5, label: '1.5', sub: '장기 (일반)' },
+                      { val: 1.25, label: '1.25', sub: '중간' },
+                      { val: 1.0, label: '1.0', sub: '단기·즉시' },
+                    ].map(opt => {
+                      const active = (inputs.deflectionLag ?? 1.5) === opt.val
+                      return (
+                        <button key={opt.val} onClick={() => handleChange('deflectionLag', opt.val)}
+                          style={{
+                            padding: '3px 10px', fontSize: 11, cursor: 'pointer', borderRadius: 2,
+                            border: `1px solid ${active ? T.bgActive : T.border}`,
+                            background: active ? T.bgActive : T.bgPanel,
+                            color: active ? T.textOnDark : T.textPrimary,
+                            fontFamily: T.fontSans,
+                          }}>
+                          <div style={{ fontWeight: 700 }}>DL={opt.label}</div>
+                          <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </EngRow>
+              </>)}
             </>
           )}
         </EngPanel>

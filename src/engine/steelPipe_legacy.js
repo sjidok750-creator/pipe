@@ -14,17 +14,17 @@ import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } fr
 import { calcTrafficLoad } from './trafficLoad.js'
 
 // ── 2004 기준 강종 허용응력 (MPa) ──────────────────────────
-// SS41(= SM400급) → 허용응력 1,400 kgf/cm² ≒ 137 MPa
-// SPW400 동일 취급. SPS400 이후 강종은 그대로 사용.
-const LEGACY_STEEL_ALLOW = {
-  SS41:    { sigmaA: 137, label: 'SS41 (구 KS)' },
-  SPW400:  { sigmaA: 137, label: 'SPW400 (구 KS)' },
-  SGP:     { sigmaA: 137, label: 'SGP' },
-  STPG38:  { sigmaA: 137, label: 'STPG38' },
-  SPS400:  { sigmaA: 137, label: 'SPS400' },
-  SPS490:  { sigmaA: 137, label: 'SPS490' },
-  MANUAL:  { sigmaA: 137, label: '직접입력' },
-}
+// SS41 → 1,400 kgf/cm² ≒ 137 MPa (구 KS 주력 강종)
+// 모든 강종 137 MPa 고정 (2004 기준 단일 허용응력 체계)
+export const LEGACY_STEEL_GRADES = [
+  { key: 'SS41',   label: 'SS41',   fy: 245, note: '구 KS 일반구조용 (현 SS400)' },
+  { key: 'SPW400', label: 'SPW400', fy: 235, note: '상수도용 강관 (구 KS)' },
+  { key: 'SGP',    label: 'SGP',    fy: 245, note: '일반 배관용 강관' },
+  { key: 'STPG38', label: 'STPG38', fy: 215, note: '압력배관용 강관' },
+  { key: 'SPS400', label: 'SPS400', fy: 235, note: '상수도용 강관 (현행)' },
+  { key: 'SPS490', label: 'SPS490', fy: 315, note: '고강도 상수도용 (현행)' },
+]
+const LEGACY_SIGMA_A = 137  // MPa — 전 강종 고정 (1,400 kgf/cm²)
 
 // ── Marston 토압 Cd 계수 계산 ─────────────────────────────
 // Marston-Spangler: 트렌치(굴착)식
@@ -79,8 +79,8 @@ function calcMarstonLoad({ gammaSoil, H, Do, excavationWidth }) {
 //   분자: W[kN/m] × R²[m²] × EI[kN·m²/m] → kN²·m³/m
 //   분모: Z[m³/m] × (EI[kN·m²/m] + E'[kPa]·R³[m³]) → m³/m × kN·m²/m = kN·m⁵/m²
 //   결과: kN²·m³/m ÷ kN·m⁵/m² = kN/m² = kPa → ÷1000 = MPa  ✓
-function calcSpanglerStress({ W, Kb, R, EI, Eprime, t_m }) {
-  const f  = 1.5
+function calcSpanglerStress({ W, Kb, R, EI, Eprime, t_m, f_override = 1.5 }) {
+  const f  = f_override
   const Z  = (t_m ** 2) / 6  // m³/m (단면계수)
   const R3 = R ** 3
   const R2 = R ** 2
@@ -110,26 +110,26 @@ export function calcSteelPipeLegacy(inputs) {
   const {
     DN, Pd, surgeRatio = 1.5, H,
     gammaSoil, Eprime,
-    hasTraffic, hasLining, gwLevel,
+    hasTraffic, gwLevel,
     steelBeddingType = 'deg90',
     pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
-    steelGrade = 'SPS400', fyManual = 235,
+    steelGrade = 'SPW400',
     E_pipeManual = false, E_pipe = null,
     excavationWidth = null,
+    shapeFactor = 1.5,    // 형상계수 f (Spangler 링휨식, 원형=1.5)
+    deflectionLag = 1.5,  // 처짐 지연계수 DL
   } = inputs
 
   const mat = PIPE_MATERIAL.steel
   const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
 
-  // ── 허용응력 결정 (2004 기준: 강종 무관 137 MPa 고정) ──
-  const allowRow  = LEGACY_STEEL_ALLOW[steelGrade] ?? LEGACY_STEEL_ALLOW['SPS400']
-  const sigmaA_normal = allowRow.sigmaA        // 137 MPa
-  const sigmaA_surge  = allowRow.sigmaA * 1.33 // 182.2 MPa (수격 1.33배 완화)
+  // ── 허용응력: 2004 기준 전 강종 137 MPa 고정 ──
+  const sigmaA_normal = LEGACY_SIGMA_A          // 137 MPa
+  const sigmaA_surge  = LEGACY_SIGMA_A * 1.33  // 182.2 MPa (수격 1.33배 완화)
 
-  // fy는 최소두께 역산 참고용으로만 사용 (구 기준에서도 두께 계산은 동일)
-  const gradeRow = STEEL_GRADES.find(g => g.key === steelGrade)
-  const fy = steelGrade === 'MANUAL' ? fyManual : (gradeRow?.fy ?? 235)
+  const gradeRow = LEGACY_STEEL_GRADES.find(g => g.key === steelGrade)
+  const fy = gradeRow?.fy ?? 235
 
   // ── 관 제원 ────────────────────────────────────────────
   let Do, tAdopt
@@ -192,7 +192,7 @@ export function calcSteelPipeLegacy(inputs) {
   const EI   = Es * 1e3 * I       // kN·m²/m
 
   const { sigma_b, f: f_shape, Z: Z_section } = calcSpanglerStress({
-    W: Wtotal, Kb: Kb_steel, R, EI, Eprime, t_m,
+    W: Wtotal, Kb: Kb_steel, R, EI, Eprime, t_m, f_override: shapeFactor,
   })
   const sigmaA_bend = sigmaA_normal  // 137 MPa (2004 기준 — 현행과 달리 fy 비례 아님)
   const ok_bending  = sigma_b <= sigmaA_bend
@@ -201,7 +201,7 @@ export function calcSteelPipeLegacy(inputs) {
   // STEP 5: 변형량 검토 (Modified Iowa)
   // 허용처짐: 5% 단일 (라이닝 구분 없음, 2004 기준)
   // ────────────────────────────────────────
-  const DL = 1.5
+  const DL = deflectionLag  // 처짐 지연계수 (입력값)
   const K  = Kx_steel
   const r  = R  // Spangler 에서 쓴 R과 동일 (중심반경)
 
@@ -290,7 +290,7 @@ export function calcSteelPipeLegacy(inputs) {
         r, I, EI, EI_r3, Eprime,
         Ptotal, denominator, deflectionRatio, maxDeflection,
         ok: ok_deflection,
-        note: '2004 기준: 허용처짐 5% 단일 적용 (라이닝 구분 없음)',
+        note: `2004 기준: DL=${DL}, 허용처짐 5% 단일 (라이닝 구분 없음)`,
       },
       step6: {
         title: '외압 좌굴 검토',
