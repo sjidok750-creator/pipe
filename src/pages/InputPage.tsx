@@ -7,7 +7,7 @@ import {
   STEEL_THICKNESS, DI_THICKNESS,
   STEEL_PN_GRADES, DI_K_GRADES, STEEL_GRADES,
 } from '../engine/constants.js'
-import { LEGACY_STEEL_GRADES } from '../engine/steelPipe_legacy.js'
+import { LEGACY_STEEL_GRADES, LEGACY_STEEL_BEDDING } from '../engine/steelPipe_legacy.js'
 import { validateInputs } from '../engine/validator.js'
 import {
   EngPanel, EngSection, EngRow, EngInput,
@@ -898,7 +898,9 @@ export default function InputPage() {
 
           {inputs.pipeType === 'steel' ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {Object.entries(STEEL_BEDDING as Record<string, { Kb: number; Kx: number; label: string }>).map(([type, { label, Kb, Kx }]) => {
+              {Object.entries(
+                (is2004 ? LEGACY_STEEL_BEDDING : STEEL_BEDDING) as Record<string, { Kb: number; Kx: number; label: string }>
+              ).map(([type, { label, Kb, Kx }]) => {
                 const active = inputs.steelBeddingType === type
                 return (
                   <button key={type} onClick={() => handleChange('steelBeddingType', type)}
@@ -912,6 +914,7 @@ export default function InputPage() {
                     <div style={{ fontWeight: 700, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label.split('—')[0].trim()}</div>
                     <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {label.split('—')[1]?.trim()}  Kb={Kb} Kx={Kx}
+                      {is2004 && <span style={{ color: '#8A5A00', marginLeft: 4 }}>(참고표-4.2.4)</span>}
                     </div>
                   </button>
                 )

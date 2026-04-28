@@ -10,7 +10,18 @@
 //   강종: SS41(허용 137 MPa) 등 구 KS 강종 포함
 // ============================================================
 
-import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
+import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_GRADES } from './constants.js'
+
+// ── 2004 기준 강관 밑바닥 지지각 계수 (참고표-4.2.4) ─────────
+// 출처: 구 상수도 시설기준(2004) 참고표-4.2.4
+// Kb: 굽힘모멘트계수, Kx: 변형계수 (단위: ×10⁻⁶, 아래는 소수값)
+// 현행 AWWA M11 값과 Kx가 다름 — 원문 그대로 적용
+export const LEGACY_STEEL_BEDDING = {
+  deg60:  { Kb: 0.189, Kx: 0.103, label: '60° — 모래·자갈 최소다짐' },
+  deg90:  { Kb: 0.157, Kx: 0.096, label: '90° — 모래·자갈 균일다짐 (표준)' },
+  deg120: { Kb: 0.138, Kx: 0.089, label: '120° — 모래·자갈 중간다짐' },
+  deg150: { Kb: 0.128, Kx: 0.085, label: '150° — 양질 자갈 또는 콘크리트 기초' },
+}
 
 // ── 2004 기준 강종 및 허용응력 (참고표-4.2.5) ─────────────
 // 출처: 구 상수도 시설기준(2004) 참고표-4.2.5 허용응력
@@ -178,7 +189,8 @@ export function calcSteelPipeLegacy(inputs) {
   // STEP 4: 외압 링 휨응력 검토 (Spangler 복합식)
   // 허용응력: 137 MPa (2004 기준 고정)
   // ────────────────────────────────────────
-  const beddingRow = STEEL_BEDDING[steelBeddingType] || STEEL_BEDDING['deg90']
+  // 2004 기준: 참고표-4.2.4 침상계수 사용 (현행 AWWA M11과 Kx 다름)
+  const beddingRow = LEGACY_STEEL_BEDDING[steelBeddingType] || LEGACY_STEEL_BEDDING['deg90']
   const Kb_steel   = beddingRow.Kb
   const Kx_steel   = beddingRow.Kx
 
