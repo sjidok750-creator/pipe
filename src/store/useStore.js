@@ -5,9 +5,13 @@
 import { create } from 'zustand'
 import { calcSteelPipe } from '../engine/steelPipe.js'
 import { calcDuctileIron } from '../engine/ductileIron.js'
+import { calcSteelPipeLegacy } from '../engine/steelPipe_legacy.js'
+import { calcDuctileIronLegacy } from '../engine/ductileIron_legacy.js'
 import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 
 const DEFAULT_INPUTS = {
+  designStandard: '2025', // '2025' | '2004'
+  excavationWidth: null,  // 2004 전용: 굴착폭 B (m), null이면 Do+0.6m 자동
   pipeType: 'steel',
   DN: 600,
   pnGrade: 'PN10',         // 강관 PN 등급 (사용자 선택)
@@ -101,10 +105,18 @@ export const useStore = create((set, get) => ({
     const { inputs } = get()
     try {
       let result
-      if (inputs.pipeType === 'steel') {
-        result = calcSteelPipe(inputs)
+      if (inputs.designStandard === '2004') {
+        if (inputs.pipeType === 'steel') {
+          result = calcSteelPipeLegacy(inputs)
+        } else {
+          result = calcDuctileIronLegacy(inputs)
+        }
       } else {
-        result = calcDuctileIron(inputs)
+        if (inputs.pipeType === 'steel') {
+          result = calcSteelPipe(inputs)
+        } else {
+          result = calcDuctileIron(inputs)
+        }
       }
       set({ result, calcError: null })
       return result
