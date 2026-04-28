@@ -114,9 +114,12 @@ export function calcSteelPipeLegacy(inputs) {
     steelGrade = 'STWW400',
     E_pipeManual = false, E_pipe = null,
     excavationWidth = null,
-    shapeFactor = 1.5,    // 형상계수 f (Spangler 링휨식, 원형=1.5)
-    deflectionLag = 1.5,  // 처짐 지연계수 DL
+    shapeFactor = 1.5,   // 형상계수 f
+    deflectionLag = 1.5, // 처짐 지연계수 DL
   } = inputs
+
+  // 2004 기준 강관: 관경 드롭다운(DN→Do 참고) + 두께 직접입력(tManual) 방식
+  // pipeDimManual 플래그와 무관하게 tManual 우선 사용
 
   const mat = PIPE_MATERIAL.steel
   const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es  // 206,000 MPa
@@ -127,16 +130,19 @@ export function calcSteelPipeLegacy(inputs) {
   const sigmaA_surge  = gradeRow.sigmaA * 1.33  // 수격 1.33배 완화
 
   // ── 관 제원 ────────────────────────────────────────────
+  // 2004 기준: DN 드롭다운으로 Do 결정, 두께는 tManual 직접입력
   let Do, tAdopt
-  if (pipeDimManual) {
+  if (pipeDimManual && DoManual) {
+    // 완전 직접입력 모드 (비규격)
     Do = DoManual
-    tAdopt = tManual
+    tAdopt = tManual ?? 8
   } else {
     const row = STEEL_THICKNESS[DN]
-    if (!row) throw new Error(`강관 DN${DN}은 지원하지 않습니다.`)
+    if (!row) throw new Error(`강관 DN(호칭) ${DN}A는 지원하지 않습니다.`)
     Do = row.Do
-    tAdopt = row[pnGrade]
-    if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
+    // 2004 기준: tManual로 두께 지정 (PN등급 없음)
+    tAdopt = tManual ?? 8
+    if (!tAdopt || tAdopt <= 0) throw new Error('관 두께 t를 입력하십시오.')
   }
 
   // ────────────────────────────────────────

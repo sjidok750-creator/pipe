@@ -152,22 +152,24 @@ export default function InputPage() {
               </EngPopover>
             }>
               {/* 강종 버튼 그룹 — 2004/2025 다른 목록 */}
-              <div style={{ display: 'flex', gap: 4, flex: 1, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4, flex: 1 }}>
                 {(is2004 ? LEGACY_STEEL_GRADES : STEEL_GRADES as any[]).map((g: any) => {
                   const active = inputs.steelGrade === g.key
                   return (
                     <button key={g.key} onClick={() => handleChange('steelGrade', g.key)}
                       style={{
-                        flex: '1 1 calc(33% - 4px)', padding: '3px 4px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
+                        flex: '1 1 auto', minWidth: is2004 ? 72 : 56, maxWidth: 100,
+                        padding: '3px 6px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
                         border: `1px solid ${active ? T.bgActive : T.border}`,
                         background: active ? T.bgActive : T.bgPanel,
                         color: active ? T.textOnDark : T.textPrimary,
                         fontFamily: T.fontSans, lineHeight: 1.35, textAlign: 'center',
+                        whiteSpace: 'nowrap',
                       }}>
-                      <span style={{ fontWeight: 700 }}>{is2004 ? g.label : g.key}</span>
-                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>
+                      <div style={{ fontWeight: 700 }}>{is2004 ? g.label : g.key}</div>
+                      <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>
                         {is2004 ? `${g.sigmaA} MPa` : `fy=${g.fy}`}
-                      </span>
+                      </div>
                     </button>
                   )
                 })}
@@ -270,18 +272,20 @@ export default function InputPage() {
           <EngRow label="">
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: is2004 && inputs.pipeType === 'steel' ? 'default' : 'pointer' }}>
               <input type="checkbox"
-                checked={is2004 && inputs.pipeType === 'steel' ? true : !!inputs.pipeDimManual}
+                checked={is2004 && inputs.pipeType === 'steel' ? false : !!inputs.pipeDimManual}
                 onChange={e => { if (!(is2004 && inputs.pipeType === 'steel')) setPipeDimManual(e.target.checked) }}
                 disabled={is2004 && inputs.pipeType === 'steel'}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
+              <span style={{ fontSize: '12px', color: is2004 && inputs.pipeType === 'steel' ? T.textDisabled : T.textLabel, fontFamily: T.fontSans }}>
                 관경·두께 직접 입력
               </span>
-              <span style={{ fontSize: '10px', color: T.textMuted }}>(비규격 또는 실측치)</span>
+              <span style={{ fontSize: '10px', color: is2004 && inputs.pipeType === 'steel' ? T.textDisabled : T.textMuted }}>
+                {is2004 && inputs.pipeType === 'steel' ? '(구 기준: 관경 선택 후 두께 직접 입력)' : '(비규격 또는 실측치)'}
+              </span>
             </label>
           </EngRow>
 
-          {inputs.pipeDimManual ? (
+          {inputs.pipeDimManual && !(is2004 && inputs.pipeType === 'steel') ? (
             <>
               <EngRow label="외경 Do" unit="mm">
                 <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
@@ -294,7 +298,7 @@ export default function InputPage() {
             </>
           ) : (
             <>
-              <EngRow label="공칭관경 DN" unit="mm">
+              <EngRow label={is2004 && inputs.pipeType === 'steel' ? '호칭지름' : '공칭관경 DN'} unit="mm">
                 <select
                   value={inputs.DN}
                   onChange={e => handleChange('DN', Number(e.target.value))}
@@ -304,10 +308,12 @@ export default function InputPage() {
                     background: T.bgInput, color: T.textPrimary, width: 100,
                   }}
                 >
-                  {dnList.map(dn => <option key={dn} value={dn}>DN {dn}</option>)}
+                  {dnList.map(dn => <option key={dn} value={dn}>{is2004 && inputs.pipeType === 'steel' ? `${dn}A` : `DN ${dn}`}</option>)}
                 </select>
                 <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
-                  Do = {thicknessRow?.Do ?? '-'} mm
+                  {is2004 && inputs.pipeType === 'steel'
+                    ? `Do = ${thicknessRow?.Do ?? '-'} mm (참고)`
+                    : `Do = ${thicknessRow?.Do ?? '-'} mm`}
                 </span>
                 <EngPopover>
                   <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>공칭관경 (DN) — KS D 3565 / KS D 4311</div>
@@ -325,6 +331,19 @@ export default function InputPage() {
                   </div>
                 </EngPopover>
               </EngRow>
+
+              {/* 2004+강관: 두께 직접 입력 행 */}
+              {is2004 && inputs.pipeType === 'steel' && (
+                <EngRow label="관 두께 t" unit="mm">
+                  <EngInput
+                    value={inputs.tManual ?? 8}
+                    onChange={v => handleChange('tManual', parseFloat(v) || 0)}
+                    min={1} max={100} step={0.5} width={100}
+                  />
+                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
+                  <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 4 }}>설계 계산값 또는 채택 두께 입력</span>
+                </EngRow>
+              )}
 
               {/* PN/K 등급 — 2004+강관이면 숨김 (두께 직접입력 방식) */}
               {!(is2004 && inputs.pipeType === 'steel') && <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
