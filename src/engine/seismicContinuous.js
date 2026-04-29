@@ -93,13 +93,12 @@ export function calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, ep
 }
 
 // ─── 차량하중에 의한 축변형률 (연속관) ──────────────────────
-// 해설식(5.3.37): ε_o = σ_o / E, σ_o = 0.322 × Wm / Z × (E×I / (Kv×D))^(1/4)
+// 해설식(5.3.37): ε_o = σ_o / E, σ_o = 0.322 × Wm / Z × √(E×I / (Kv×D))
 // 탄성지반 위 보(Winkler beam)의 최대 휨응력 → 축변형률 변환
 // 단위: Wm [kN/m], Z [m³], E [kN/m²], I [m⁴], Kv [kN/m³], D [m]
-// ※ 분절관과 동일한 공식 형태: σ_o = 0.322*Wm*(E*I/(Kv*D))^0.25 / Z
 export function calcStrainTrafficContinuous(Wm, Z, E_kN, I, Kv, D_m) {
   if (!Wm || Wm <= 0) return { epsilon_o: 0, sigma_o_kN: 0 }
-  const sigma_o_kN = 0.322 * Wm * Math.pow(E_kN * I / (Kv * D_m), 0.25) / Z
+  const sigma_o_kN = 0.322 * Wm * Math.sqrt(E_kN * I / (Kv * D_m)) / Z
   const epsilon_o = sigma_o_kN / E_kN
   return { epsilon_o, sigma_o_kN }
 }

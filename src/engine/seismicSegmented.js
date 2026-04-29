@@ -90,14 +90,13 @@ export function calcAxialStressInternal(nu, P_MPa, D_mm, t_mm) {
 }
 
 // ─── 차량하중에 의한 축응력 (분절관) ────────────────────────
-// 해설식(5.3.2): σ_o = 0.322 × Wm / Z × (E×I / (Kv×D))^(1/4)
+// 해설식(5.3.2): σ_o = 0.322 × Wm / Z × √(E×I / (Kv×D))
 // 탄성지반 위 보(Winkler beam)의 최대 휨응력 공식
 // 단위: Wm [kN/m], Z [m³], E [kN/m²], I [m⁴], Kv [kN/m³], D [m]
 // 결과 σ_o [kN/m²] → MPa로 변환
-// ※ 예제 역산 검증: σ_o=9.53MPa → (E*I/(Kv*D))^0.25=2.237m → Kv≈1848 kN/m³
 export function calcAxialStressTraffic(Wm, Z_m, E_kN, I_m, Kv, D_m) {
   if (!Wm || Wm <= 0 || !Kv || Kv <= 0) return 0
-  const sigma_o_kN = 0.322 * Wm * Math.pow(E_kN * I_m / (Kv * D_m), 0.25) / Z_m
+  const sigma_o_kN = 0.322 * Wm * Math.sqrt(E_kN * I_m / (Kv * D_m)) / Z_m
   return sigma_o_kN / 1000   // MPa
 }
 
