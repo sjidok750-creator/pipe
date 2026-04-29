@@ -7,7 +7,6 @@ import {
   STEEL_THICKNESS, DI_THICKNESS,
   STEEL_PN_GRADES, DI_K_GRADES, STEEL_GRADES,
 } from '../engine/constants.js'
-import { LEGACY_STEEL_GRADES, LEGACY_STEEL_BEDDING } from '../engine/steelPipe_legacy.js'
 import { validateInputs } from '../engine/validator.js'
 import {
   EngPanel, EngSection, EngRow, EngInput,
@@ -25,14 +24,6 @@ const SOIL_CLASSES = [
   { key: 'loose', label: '연약',  sub: '연약지반' },
 ]
 
-// 2004 기준 흙의 종류 분류 (참고표-4.2.2)
-const SOIL_CLASSES_2004 = [
-  { key: 'SC1',   label: '조립토', sub: '자갈·모래계' },
-  { key: 'SC2',   label: '세립토', sub: 'LL≤50' },
-  { key: 'SC3',   label: '세립토', sub: 'LL>50' },
-  { key: 'loose', label: '유기질토', sub: '이탄·연약점토' },
-]
-
 export default function InputPage() {
   const navigate = useNavigate()
   const { inputs, setInputs, setEprimeManual, setPipeDimManual, calcResult, saveToHistory } = useStore()
@@ -41,8 +32,6 @@ export default function InputPage() {
   const [showManualFy, setShowManualFy] = useState(false)
   const [kgfPipeInput, setKgfPipeInput] = useState('')
   const [kgfEprimeInput, setKgfEprimeInput] = useState('')
-  const [kgfTrafficInput, setKgfTrafficInput] = useState('')
-  const [legacy2004DimManual, setLegacy2004DimManual] = useState(false)
 
   const handleChange = (field: string, value: unknown) => {
     setInputs({ [field]: value } as any)
@@ -70,43 +59,11 @@ export default function InputPage() {
   const gradeField = inputs.pipeType === 'steel' ? inputs.pnGrade : inputs.diKGrade
   const grades = inputs.pipeType === 'steel' ? STEEL_PN_GRADES : DI_K_GRADES
 
-  const is2004 = inputs.designStandard === '2004'
-
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
 
       {/* ── 좌측: 입력 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-
-        {/* 적용 기준 선택 토글 */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 6,
-          marginBottom: 6, padding: '5px 8px',
-          background: T.bgSection, border: `1px solid ${T.border}`,
-          borderRadius: T.radiusSm,
-        }}>
-          <span style={{ fontSize: 11, color: T.textLabel, fontWeight: 600, marginRight: 4, flexShrink: 0 }}>적용기준</span>
-          {[
-            { key: '2025', label: '현행 (KDS 57, 2025)', sub: 'Prism / 0.5fy / FS 2.5' },
-            { key: '2004', label: '구 기준 (2004)',       sub: 'Marston / 137MPa / FS 2.0' },
-          ].map(opt => {
-            const active = inputs.designStandard === opt.key
-            return (
-              <button key={opt.key}
-                onClick={() => handleChange('designStandard', opt.key)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
-                  padding: '3px 10px', cursor: 'pointer', borderRadius: 3,
-                  border: `1px solid ${active ? (opt.key === '2004' ? '#E8D29A' : T.borderFocus) : T.border}`,
-                  background: active ? (opt.key === '2004' ? '#FFF3E0' : T.bgActiveTint) : T.bgPanel,
-                  color: active ? (opt.key === '2004' ? '#8A5A00' : T.textAccent) : T.textLabel,
-                }}>
-                <span style={{ fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{opt.label}</span>
-                <span style={{ fontSize: 9.5, color: active ? (opt.key === '2004' ? '#A07030' : T.textAccent) : T.textMuted, whiteSpace: 'nowrap' }}>{opt.sub}</span>
-              </button>
-            )
-          })}
-        </div>
 
         {/* ① 관종 및 기본조건 */}
         <EngPanel title="① 관종 및 설계 조건">
@@ -161,84 +118,67 @@ export default function InputPage() {
                 </div>
               </EngPopover>
             }>
-              {/* 강종 버튼 그룹 — 2004/2025 다른 목록 */}
-              <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 4, flex: 1 }}>
-                {(is2004 ? LEGACY_STEEL_GRADES : STEEL_GRADES as any[]).map((g: any) => {
+              {/* 강종 버튼 그룹 */}
+              <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+                {STEEL_GRADES.map((g: any) => {
                   const active = inputs.steelGrade === g.key
                   return (
                     <button key={g.key} onClick={() => handleChange('steelGrade', g.key)}
                       style={{
-                        flex: '1 1 auto', minWidth: is2004 ? 72 : 56, maxWidth: 100,
-                        padding: '3px 6px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
+                        flex: 1, padding: '3px 4px', fontSize: '11px', cursor: 'pointer', borderRadius: 2,
                         border: `1px solid ${active ? T.bgActive : T.border}`,
                         background: active ? T.bgActive : T.bgPanel,
                         color: active ? T.textOnDark : T.textPrimary,
                         fontFamily: T.fontSans, lineHeight: 1.35, textAlign: 'center',
-                        whiteSpace: 'nowrap',
                       }}>
-                      <div style={{ fontWeight: 700 }}>{is2004 ? g.label : g.key}</div>
-                      <div style={{ fontSize: '10px', fontFamily: T.fontMono }}>
-                        {is2004 ? `${g.sigmaA} MPa` : `fy=${g.fy}`}
-                      </div>
+                      <span style={{ fontWeight: 700 }}>{g.label.split(' ')[0]}</span>
+                      <span style={{ fontSize: '10px', fontFamily: T.fontMono, display: 'block' }}>fy={g.fy}</span>
                     </button>
                   )
                 })}
               </div>
               {/* 설명 줄 + 직접입력 토글 */}
-              {is2004 ? (
-                /* 2004: 강종별 허용응력 표시 (참고표-4.2.5) */
-                (() => {
-                  const g = (LEGACY_STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
-                  return (
-                    <div style={{ fontSize: 10, color: '#8A5A00', fontFamily: T.fontSans, marginTop: 2 }}>
-                      {g ? `${g.label} — 허용응력 ${g.sigmaA} MPa (참고표-4.2.5) / 수격 시 ${(g.sigmaA * 1.33).toFixed(0)} MPa` : ''}
+              {(() => {
+                const g = (STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
+                const fyVal = showManualFy ? (inputs.fyManual ?? 235) : (g?.fy ?? 235)
+                const fuVal = g ? Math.round(fyVal / g.fy * g.fu) : 400
+                return (
+                  <>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, width: '100%' }}>
+                      <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                        {showManualFy
+                          ? `직접입력 — fy = ${fyVal} MPa, fu = ${fuVal} MPa`
+                          : g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : ''}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const next = !showManualFy
+                          setShowManualFy(next)
+                          if (next) handleChange('steelGrade', 'MANUAL')
+                          else handleChange('steelGrade', 'SPS400')
+                        }}
+                        style={{
+                          padding: '1px 7px', fontSize: '10px', cursor: 'pointer', borderRadius: 2,
+                          border: `1px solid ${showManualFy ? T.bgActive : T.border}`,
+                          background: showManualFy ? T.bgActive : T.bgPanel,
+                          color: showManualFy ? T.textOnDark : T.textMuted,
+                          fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
+                        }}>
+                        직접입력
+                      </button>
                     </div>
-                  )
-                })()
-              ) : (
-                /* 2025: 기존 강종 설명 + 직접입력 */
-                (() => {
-                  const g = (STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade)
-                  const fyVal = showManualFy ? (inputs.fyManual ?? 235) : (g?.fy ?? 235)
-                  const fuVal = g ? Math.round(fyVal / g.fy * g.fu) : 400
-                  return (
-                    <>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, width: '100%' }}>
-                        <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
-                          {showManualFy
-                            ? `직접입력 — fy = ${fyVal} MPa, fu = ${fuVal} MPa`
-                            : g ? `${g.label} — fy = ${g.fy} MPa, fu = ${g.fu} MPa` : ''}
-                        </span>
-                        <button
-                          onClick={() => {
-                            const next = !showManualFy
-                            setShowManualFy(next)
-                            if (next) handleChange('steelGrade', 'MANUAL')
-                            else handleChange('steelGrade', 'SPS400')
-                          }}
-                          style={{
-                            padding: '1px 7px', fontSize: '10px', cursor: 'pointer', borderRadius: 2,
-                            border: `1px solid ${showManualFy ? T.bgActive : T.border}`,
-                            background: showManualFy ? T.bgActive : T.bgPanel,
-                            color: showManualFy ? T.textOnDark : T.textMuted,
-                            fontFamily: T.fontSans, whiteSpace: 'nowrap', flexShrink: 0,
-                          }}>
-                          직접입력
-                        </button>
+                    {showManualFy && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, width: '100%' }}>
+                        <span style={{ fontSize: '10px', color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>fy =</span>
+                        <EngInput value={inputs.fyManual ?? 235}
+                          onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
+                          min={200} max={600} step={5} width={72} compact/>
+                        <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>MPa</span>
                       </div>
-                      {showManualFy && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3, width: '100%' }}>
-                          <span style={{ fontSize: '10px', color: T.textLabel, fontFamily: T.fontSans, whiteSpace: 'nowrap' }}>fy =</span>
-                          <EngInput value={inputs.fyManual ?? 235}
-                            onChange={v => handleChange('fyManual', parseFloat(v) || 235)}
-                            min={200} max={600} step={5} width={72} compact/>
-                          <span style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans }}>MPa</span>
-                        </div>
-                      )}
-                    </>
-                  )
-                })()
-              )}
+                    )}
+                  </>
+                )
+              })()}
             </EngRow>
           )}
 
@@ -281,15 +221,8 @@ export default function InputPage() {
           <EngDivider />
           <EngRow label="">
             <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox"
-                checked={is2004 && inputs.pipeType === 'steel' ? legacy2004DimManual : !!inputs.pipeDimManual}
-                onChange={e => {
-                  if (is2004 && inputs.pipeType === 'steel') {
-                    setLegacy2004DimManual(e.target.checked)
-                  } else {
-                    setPipeDimManual(e.target.checked)
-                  }
-                }}
+              <input type="checkbox" checked={!!inputs.pipeDimManual}
+                onChange={e => setPipeDimManual(e.target.checked)}
                 style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
               <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>
                 관경·두께 직접 입력
@@ -298,39 +231,7 @@ export default function InputPage() {
             </label>
           </EngRow>
 
-          {/* 2004+강관: 별도 직접입력 상태 사용 */}
-          {is2004 && inputs.pipeType === 'steel' ? (
-            legacy2004DimManual ? (
-              <>
-                <EngRow label="외경 Do" unit="mm">
-                  <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
-                  {errors.DoManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.DoManual}</span>}
-                </EngRow>
-                <EngRow label="두께 t" unit="mm">
-                  <EngInput value={inputs.tManual ?? 8} onChange={v => handleChange('tManual', parseFloat(v) || 0)} min={1} max={100} step={0.5} width={100}/>
-                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
-                </EngRow>
-              </>
-            ) : (
-              // 호칭지름 드롭다운 + 두께 직접입력
-              <>
-                <EngRow label="호칭지름" unit="mm">
-                  <select value={inputs.DN} onChange={e => handleChange('DN', Number(e.target.value))}
-                    style={{ height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, fontSize: T.fontSzInput, fontFamily: T.fontMono, padding: '0 4px', background: T.bgInput, color: T.textPrimary, width: 100 }}>
-                    {dnList.map(dn => <option key={dn} value={dn}>{dn}A</option>)}
-                  </select>
-                  <span style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontMono, marginLeft: 4 }}>
-                    Do = {thicknessRow?.Do ?? '-'} mm (참고)
-                  </span>
-                </EngRow>
-                <EngRow label="관 두께 t" unit="mm">
-                  <EngInput value={inputs.tManual ?? 8} onChange={v => handleChange('tManual', parseFloat(v) || 0)} min={1} max={100} step={0.5} width={100}/>
-                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
-                  <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 4 }}>설계 산출값 또는 채택 두께 입력</span>
-                </EngRow>
-              </>
-            )
-          ) : inputs.pipeDimManual ? (
+          {inputs.pipeDimManual ? (
             <>
               <EngRow label="외경 Do" unit="mm">
                 <EngInput value={inputs.DoManual ?? 610} onChange={v => handleChange('DoManual', parseFloat(v) || 0)} min={50} max={4000} step={1} width={100}/>
@@ -375,21 +276,8 @@ export default function InputPage() {
                 </EngPopover>
               </EngRow>
 
-              {/* 2004+강관: 두께 직접 입력 행 */}
-              {is2004 && inputs.pipeType === 'steel' && (
-                <EngRow label="관 두께 t" unit="mm">
-                  <EngInput
-                    value={inputs.tManual ?? 8}
-                    onChange={v => handleChange('tManual', parseFloat(v) || 0)}
-                    min={1} max={100} step={0.5} width={100}
-                  />
-                  {errors.tManual && <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>{errors.tManual}</span>}
-                  <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 4 }}>설계 계산값 또는 채택 두께 입력</span>
-                </EngRow>
-              )}
-
-              {/* PN/K 등급 — 2004+강관이면 숨김 (두께 직접입력 방식) */}
-              {!(is2004 && inputs.pipeType === 'steel') && <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
+              {/* PN/K 등급 */}
+              <EngRow label={inputs.pipeType === 'steel' ? 'PN 등급' : 'K 등급'} popover={
                 <EngPopover>
                   {inputs.pipeType === 'steel' ? (<>
                     <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>PN 등급 (압력 등급) — KS D 3565</div>
@@ -443,7 +331,7 @@ export default function InputPage() {
                 {(errors.pnGrade || errors.diKGrade) && (
                   <span style={{ fontSize: '10px', color: T.textNG, marginLeft: 4 }}>필수 선택</span>
                 )}
-              </EngRow>}
+              </EngRow>
             </>
           )}
 
@@ -598,32 +486,37 @@ export default function InputPage() {
           </EngRow>
 
           <EngDivider label="부가 하중 조건" />
-          {!is2004 && (
-            <EngRow label="DB-24 차량하중" popover={
-              <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
-                  도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
-                  Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
-                  H ≥ 3.0m이면 차량하중 영향 무시 가능.
-                </div>
-                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  도로 하부: 적용 / 농지·공원: 미적용 가능<br/>
-                  H &lt; 0.6m: 차량하중 집중 → 매설심도 재검토 권장
-                </div>
-              </EngPopover>
-            }>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                <input type="checkbox" checked={inputs.hasTraffic}
-                  onChange={e => handleChange('hasTraffic', e.target.checked)}
-                  style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
-                <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
-              </label>
-            </EngRow>
-          )}
-          {/* 라이닝: 2025만 표시 (2004는 5% 단일 고정) */}
-          {inputs.pipeType === 'steel' && !is2004 && (
+          <EngRow label="DB-24 차량하중" popover={
+            <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
+                도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
+                Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
+                H ≥ 3.0m이면 차량하중 영향 무시 가능.
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>하중 분산 방식 (KDS 24 12 20)</strong><br/>
+                Wt = Cs × P / (L × Do) [kN/m]<br/>
+                Cs: 충격계수 포함 하중분산계수<br/>
+                매설깊이 H가 클수록 분산면적 증가 → Wt 감소
+              </div>
+              <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                <strong>적용 여부 판단 기준</strong><br/>
+                도로 하부: 적용 (H &lt; 3.0m 구간은 반드시)<br/>
+                농지·공원: 미적용 가능<br/>
+                H &lt; 0.6m: 차량하중 집중 → 위험. 매설심도 재검토 권장
+              </div>
+            </EngPopover>
+          }>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={inputs.hasTraffic}
+                onChange={e => handleChange('hasTraffic', e.target.checked)}
+                style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
+              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
+              <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
+            </label>
+          </EngRow>
+          {inputs.pipeType === 'steel' && (
             <EngRow label="시멘트 모르타르 라이닝" popover={
               <EngPopover title="시멘트 모르타르 라이닝 — KDS 57 10 00 §3.5 / AWWA M11">
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
@@ -656,121 +549,68 @@ export default function InputPage() {
 
         {/* ② 지반·시공 조건 */}
         <EngPanel title="② 지반·시공 조건">
-          <EngRow label={is2004 ? '흙의 종류' : '토질 등급'}>
+          <EngRow label="토질 등급">
             <EngSegment
-              options={is2004 ? SOIL_CLASSES_2004 : SOIL_CLASSES}
+              options={SOIL_CLASSES}
               value={inputs.soilClass}
               onChange={v => handleChange('soilClass', v)}
             />
             <EngPopover>
-              {is2004 ? (<>
-                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>흙의 종류 — 구 상수도 시설기준(2004) 참고표-4.2.2</div>
-                <p style={{ marginTop: 0 }}>되메움 흙의 종류에 따라 흙의 반력계수 E'가 결정됩니다. (참고표-4.2.2)</p>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>조립토 (자갈·모래계)</strong><br/>
-                  GM, GP, SW, SP (12% 이상의 조립토 포함)<br/>
-                  E': 다지지않음 1.4 / 가벼운다짐 7.0 / 중간다짐 14.0 kgf/mm²
-                </div>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>세립토 LL≤50</strong><br/>
-                  CL, ML, CL-ML (소성이 낮은 흙)<br/>
-                  E': 다지지않음 0.35 / 가벼운다짐 1.4 / 중간다짐 2.8 kgf/mm²
-                </div>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>세립토 LL&gt;50</strong><br/>
-                  CH, MH, CH-MH (소성이 높은 흙)<br/>
-                  E': 다지지않음 0.7 / 가벼운다짐 2.8 / 중간다짐 7.0 kgf/mm²
-                </div>
-                <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
-                  <strong>유기질토</strong><br/>
-                  이탄, 유기질토, 연약점토. E'는 일반적으로 0을 사용<br/>
-                  지반개량 또는 되메움 재료 교체 필요
-                </div>
-              </>) : (<>
-                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>토질 등급 (SC 분류) — AWWA M11 / KDS 57 10 00</div>
-                <p style={{ marginTop: 0 }}>토질 등급은 되메움 재료의 특성에 따른 분류로, 탄성지반반력 E'를 결정하는 핵심 변수입니다.</p>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>SC1 — 자갈·모래 (조립토)</strong><br/>깨끗한 자갈, 모래자갈, 조립모래. E' = 2700~14000 kPa
-                </div>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>SC2 — 혼합토</strong><br/>실트·점토 함유 모래. E' = 1400~6900 kPa
-                </div>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>SC3 — 점토·실트</strong><br/>고소성 점토, 실트. E' = 700~2800 kPa
-                </div>
-                <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
-                  <strong>연약지반</strong><br/>유기질토, 이탄. E' = 300 kPa 고정
-                </div>
-              </>)}
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>토질 등급 (SC 분류) — AWWA M11 / KDS 57 10 00</div>
+              <p style={{ marginTop: 0 }}>토질 등급은 되메움 재료의 특성에 따른 분류로, 탄성지반반력 E'를 결정하는 핵심 변수입니다.</p>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>SC1 — 자갈·모래 (조립토)</strong><br/>
+                깨끗한 자갈, 모래자갈, 조립모래. E' = 2700~14000 kPa (다짐도에 따라 변동)<br/>
+                배수 양호, 내부마찰각 높음. 되메움 재료로 가장 우수.
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>SC2 — 혼합토 (실트질 모래)</strong><br/>
+                실트·점토 함유 모래, 모래질 실트. E' = 1400~6900 kPa<br/>
+                다짐에 민감. 다짐 불량 시 E' 급감.
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                <strong>SC3 — 점토·실트 (세립토)</strong><br/>
+                고소성 점토, 실트. E' = 700~2800 kPa<br/>
+                다짐 효과 제한적. 처짐 불리. 되메움 재료로 부적합.
+              </div>
+              <div style={{ background: '#fff0f0', borderLeft: '3px solid #e05050', padding: '8px 10px', borderRadius: 2 }}>
+                <strong>연약 — 연약지반</strong><br/>
+                유기질토, 이탄, 연약점토. E' = 300 kPa (고정)<br/>
+                다짐 개선 불가. 지반 치환 또는 특수 시공 필요.
+              </div>
             </EngPopover>
           </EngRow>
 
           {inputs.soilClass !== 'loose' && (
-            <EngRow label={is2004 ? '시공방법' : '다짐도'}>
-              {is2004 ? (
-                // 2004 기준: 참고표-4.2.3 시공방법 3단계
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {[
-                    { val: 80, label: '다지지 않음', sub: 'punning/tamping' },
-                    { val: 85, label: '가벼운 다짐', sub: 'tamper·1층 30cm' },
-                    { val: 90, label: '중간정도 다짐', sub: 'compactor·3회↑' },
-                  ].map(opt => (
-                    <button key={opt.val} onClick={() => handleChange('compaction', opt.val)}
-                      style={{
-                        flex: '1 1 auto', padding: '3px 8px', fontSize: '11px', cursor: 'pointer',
-                        border: `1px solid ${inputs.compaction === opt.val ? T.bgActive : T.border}`,
-                        background: inputs.compaction === opt.val ? T.bgActive : T.bgPanel,
-                        color: inputs.compaction === opt.val ? T.textOnDark : T.textPrimary,
-                        fontFamily: T.fontSans, borderRadius: 2, textAlign: 'center',
-                      }}>
-                      <div style={{ fontWeight: 700 }}>{opt.label}</div>
-                      <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {[80, 85, 90].map(c => (
-                    <button key={c} onClick={() => handleChange('compaction', c)}
-                      style={{
-                        padding: '2px 14px', fontSize: '12px', cursor: 'pointer',
-                        border: `1px solid ${inputs.compaction === c ? T.bgActive : T.border}`,
-                        background: inputs.compaction === c ? T.bgActive : T.bgPanel,
-                        color: inputs.compaction === c ? T.textOnDark : T.textPrimary,
-                        fontFamily: T.fontMono, borderRadius: 2, fontWeight: inputs.compaction === c ? 700 : 400,
-                      }}>
-                      {c}%
-                    </button>
-                  ))}
-                </div>
-              )}
+            <EngRow label="다짐도">
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[80, 85, 90].map(c => (
+                  <button key={c} onClick={() => handleChange('compaction', c)}
+                    style={{
+                      padding: '2px 14px', fontSize: '12px', cursor: 'pointer',
+                      border: `1px solid ${inputs.compaction === c ? T.bgActive : T.border}`,
+                      background: inputs.compaction === c ? T.bgActive : T.bgPanel,
+                      color: inputs.compaction === c ? T.textOnDark : T.textPrimary,
+                      fontFamily: T.fontMono, borderRadius: 2, fontWeight: inputs.compaction === c ? 700 : 400,
+                    }}>
+                    {c}%
+                  </button>
+                ))}
+              </div>
               <EngPopover>
-                {is2004 ? (<>
-                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>시공방법 — 구 상수도 시설기준(2004) 참고표-4.2.3</div>
-                  <p style={{ marginTop: 0 }}>되메움 흙의 시공방법에 따라 흙의 반력계수 E'가 결정됩니다. (참고표-4.2.2, 참고표-4.2.3)</p>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>다지지 않음</strong><br/>
-                    관체 측면의 되메움을 손으로 다지거나, punning이나 tamping rod로<br/>1층씩 마감두께 30cm 정도로 다지는 방법
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>가벼운 다짐</strong><br/>
-                    tamper나 compactor와 tamper rod로 3회 이상으로<br/>1층씩 마감두께 30cm로 다지는 방법
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>중간정도 다짐</strong><br/>
-                    가까이 설정이나 현장의 실험에 의한 시험방법과 그에 따른 E'값이<br/>확실하게 가대할 수 있는 경우
-                  </div>
-                </>) : (<>
-                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>다짐도 — AWWA M11 Table 5-2</div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>프록터 다짐도 기준 (Modified Proctor)</strong><br/>
-                    85%: 일반 상수도관 매설 시공 기준 (KDS 권장)<br/>
-                    90%: 도로 하부 고다짐 / 80%: 최소 기준
-                  </div>
-                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    <strong>SC1 예시</strong>: 80%→2,700 / 85%→6,900 / 90%→14,000 kPa
-                  </div>
-                </>)}
+                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>다짐도 — AWWA M11 Table 5-2</div>
+                <p style={{ marginTop: 0 }}>되메움 토사의 다짐 정도입니다. E' 값에 직접 영향을 미치며, 처짐·좌굴 계산의 핵심 입력값입니다.</p>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>프록터 다짐도 기준 (Modified Proctor)</strong><br/>
+                  85%: 일반적인 상수도관 매설 시공 기준 (KDS 권장)<br/>
+                  90%: 도로 하부 고다짐 구간 / 중요 노선<br/>
+                  80%: 최소 기준 (불량 시공 시 처짐·좌굴 위험)
+                </div>
+                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                  <strong>다짐도에 따른 E' 변화 (SC1 예시)</strong><br/>
+                  80% → 2,700 kPa / 85% → 6,900 kPa / 90% → 14,000 kPa<br/>
+                  다짐도가 낮으면 E'가 급감하여 처짐·좌굴 불리. 현장 다짐 관리가 중요합니다.
+                </div>
               </EngPopover>
             </EngRow>
           )}
@@ -853,54 +693,46 @@ export default function InputPage() {
               : `AWWA M11 Table 참고값 자동적용 (${inputs.soilClass}, ${inputs.compaction}%) — 지반조사 결과 있으면 수동입력 권장`}
           </div>
 
-          <EngDivider label={is2004
-            ? (inputs.pipeType === 'steel' ? '관밑다지기 지지각' : '관밑다지기 조건')
-            : (inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)')} />
+          <EngDivider label={inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)'} />
           <div style={{ marginBottom: 6 }}>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>
-                {is2004
-                  ? (inputs.pipeType === 'steel' ? '관밑다지기 지지각 — 구 상수도 시설기준(2004) 참고-4.2.1' : '관밑다지기 조건 — 구 상수도 시설기준(2004)')
-                  : (inputs.pipeType === 'steel' ? '기초지지각 — AWWA M11 Table 5-1' : '침상 조건 (Bedding Type) — DIPRA Method')}
+                {inputs.pipeType === 'steel' ? '기초지지각 — AWWA M11 Table 5-1' : '침상 조건 (Bedding Type) — DIPRA Method'}
               </div>
-              {is2004 ? (<>
-                <p style={{ marginTop: 0 }}>관 밑바닥의 지지각도에 따라 굽힘모멘트계수(K₁, K₂)와 변형계수(K₃, K₄)가 결정됩니다. (참고-4.2.1 표)</p>
+              {inputs.pipeType === 'steel' ? (<>
+                <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>60° 지지</strong>: 관밑다지기 최소 조건<br/>
-                  <strong>90° 지지</strong>: 일반 모래·자갈 되메움 (표준)<br/>
-                  <strong>120° 지지</strong>: 양질의 모래·자갈 기초<br/>
-                  <strong>150° 이상</strong>: 콘크리트 기초 등 특수 조건<br/>
-                  지지각이 클수록 K₁·K₂ 감소 → 굽힘응력·처짐 감소
+                  <strong>deg90 (90° 지지)</strong>: Kb=0.235, Kx=0.108 — 일반 모래 기초<br/>
+                  <strong>deg120 (120° 지지)</strong>: Kb=0.189, Kx=0.090 — 자갈 기초<br/>
+                  <strong>deg150 (150° 지지)</strong>: Kb=0.157, Kx=0.075 — 콘크리트 기초<br/>
+                  지지각이 클수록 하중 분산 유리 → Kb·Kx 감소 → 응력·처짐 감소
                 </div>
                 <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  <strong>2004 기준 참고-4.2.1</strong><br/>
-                  K₁(관 상단 굽힘모멘트계수), K₂(관 밑바닥 굽힘모멘트계수)<br/>
-                  K₃, K₄(변형계수)는 지지각 및 토피에 따라 표에서 결정
+                  <strong>실무 적용 기준 (KDS 57 10 00)</strong><br/>
+                  표준 시공: deg90 (모래 되메움)<br/>
+                  고압·대구경: deg120 이상 적용 권장<br/>
+                  콘크리트 기초: deg150
                 </div>
-              </>) : (
-                inputs.pipeType === 'steel' ? (<>
-                  <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>deg90</strong>: Kb=0.157, Kx=0.083 — 일반 (표준)<br/>
-                    <strong>deg120</strong>: Kb=0.128, Kx=0.069 — 자갈 기초<br/>
-                    <strong>deg180</strong>: Kb=0.090, Kx=0.053 — 콘크리트 전면지지
-                  </div>
-                </>) : (<>
-                  <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다.</p>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    <strong>Type 2</strong>: 표준 모래 다짐 (일반)<br/>
-                    <strong>Type 4</strong>: 콘크리트 전면지지 (최우수)
-                  </div>
-                </>)
-              )}
+              </>) : (<>
+                <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다. Kb(링휨계수), Kd(처짐계수)에 영향을 미칩니다.</p>
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>Type 1</strong>: Kb=0.235, Kd=0.108 — 관바닥 모양 맞춤 굴착<br/>
+                  <strong>Type 2</strong>: Kb=0.150, Kd=0.090 — 일반 평탄 굴착 (표준)<br/>
+                  <strong>Type 3</strong>: Kb=0.110, Kd=0.083 — 모래·자갈 쿠션 기초<br/>
+                  <strong>Type 4</strong>: Kb=0.085, Kd=0.075 — 콘크리트 기초
+                </div>
+                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                  <strong>실무 적용</strong><br/>
+                  일반 상수도 매설: Type 2 (표준)<br/>
+                  연약지반·고하중 구간: Type 3~4 권장
+                </div>
+              </>)}
             </EngPopover>
           </div>
 
           {inputs.pipeType === 'steel' ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {Object.entries(
-                (is2004 ? LEGACY_STEEL_BEDDING : STEEL_BEDDING) as Record<string, { Kb: number; Kx: number; label: string }>
-              ).map(([type, { label, Kb, Kx }]) => {
+              {Object.entries(STEEL_BEDDING as Record<string, { Kb: number; Kx: number; label: string }>).map(([type, { label, Kb, Kx }]) => {
                 const active = inputs.steelBeddingType === type
                 return (
                   <button key={type} onClick={() => handleChange('steelBeddingType', type)}
@@ -914,7 +746,6 @@ export default function InputPage() {
                     <div style={{ fontWeight: 700, fontFamily: T.fontSans, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label.split('—')[0].trim()}</div>
                     <div style={{ fontSize: '10px', opacity: 0.8, fontFamily: T.fontMono, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {label.split('—')[1]?.trim()}  Kb={Kb} Kx={Kx}
-                      {is2004 && <span style={{ color: '#8A5A00', marginLeft: 4 }}>(참고표-4.2.4)</span>}
                     </div>
                   </button>
                 )
@@ -945,25 +776,16 @@ export default function InputPage() {
 
           <EngDivider />
           <EngRow label="지하수위">
-            {is2004 && inputs.pipeType === 'steel' ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, fontFamily: T.fontMono, color: T.textMuted, background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, padding: '4px 10px' }}>
-                  Rw = 1.0 고정
-                </span>
-                <span style={{ fontSize: 10, color: T.textMuted }}>(구 기준 2004: 지하수위 계수 미적용)</span>
-              </div>
-            ) : (
-              <select value={inputs.gwLevel} onChange={e => handleChange('gwLevel', e.target.value)}
-                style={{
-                  height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
-                  fontSize: T.fontSzInput, fontFamily: T.fontSans, padding: '0 4px',
-                  background: T.bgInput, color: T.textPrimary, width: 180,
-                }}>
-                {GW_LEVEL_OPTIONS.map(({ value, label }: any) => (
-                  <option key={value} value={value}>{label}</option>
-                ))}
-              </select>
-            )}
+            <select value={inputs.gwLevel} onChange={e => handleChange('gwLevel', e.target.value)}
+              style={{
+                height: T.inputH, border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+                fontSize: T.fontSzInput, fontFamily: T.fontSans, padding: '0 4px',
+                background: T.bgInput, color: T.textPrimary, width: 180,
+              }}>
+              {GW_LEVEL_OPTIONS.map(({ value, label }: any) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>지하수위 — AWWA M11 (강관 좌굴 검토)</div>
               <p style={{ marginTop: 0 }}>지하수위는 강관의 외압 좌굴 검토(AWWA M11 Eq.5-5)에서 부력수압계수 Rw 산정에 사용됩니다. 주철관 검토에는 영향 없음.</p>
@@ -974,8 +796,10 @@ export default function InputPage() {
                 지하수위 관저 이상: Rw = 0.5 (최대 부력)
               </div>
               <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>구 기준(2004) 처리</strong><br/>
-                2004 기준은 지하수위 계수(Rw)를 명시적으로 적용하지 않으므로 Rw = 1.0 고정 처리합니다.
+                <strong>좌굴 공식에서의 역할</strong><br/>
+                Pcr = (1/FS)·√(32·Rw·B'·E'·EI/Do³)<br/>
+                Rw가 작을수록 허용 외압이 감소 → 좌굴 안전율 불리.<br/>
+                지하수위가 높은 현장에서는 반드시 보수적으로 입력.
               </div>
             </EngPopover>
           </EngRow>
@@ -998,232 +822,6 @@ export default function InputPage() {
               </div>
             </EngPopover>
           </EngRow>
-
-          {/* ── 2004 기준 전용 추가 입력 섹션 ── */}
-          {is2004 && (
-            <>
-              <EngDivider label="구 기준(2004) 추가 입력" />
-
-              {/* 2004 노면하중 직접입력 */}
-              <EngRow label="노면하중 Wt" unit="kN/m" popover={
-                <EngPopover title="노면하중 — 구 상수도 시설기준(2004) 참고도-4.2.4">
-                  <div style={{ background: '#FFF8E1', borderLeft: `3px solid #FFB300`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>2004 기준: 25톤 트럭 기준 등분포 환산값 직접 입력</strong><br/>
-                    2004 기준은 DB-24(현행)가 아닌 <strong>25톤 트럭</strong>을 기준으로 하며,<br/>
-                    토피(H)와 관경에 따른 노면하중을 참고도-4.2.4 그래프에서 읽어 입력합니다.
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>단위 환산</strong><br/>
-                    1 kgf/m = 0.009807 kN/m<br/>
-                    1 kN/m = 101.97 kgf/m<br/>
-                    그래프 값이 kgf/m 단위이면 아래 환산란에 입력하세요.
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>참고: 토피별 대략적인 노면하중 (25톤 트럭)</strong><br/>
-                    H = 0.6m → 약 20~30 kN/m (대구경 기준)<br/>
-                    H = 1.0m → 약 10~15 kN/m<br/>
-                    H = 1.5m → 약 5~8 kN/m<br/>
-                    H ≥ 3.0m → 노면하중 무시 가능 (0 입력)
-                  </div>
-                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    도로 하부 매설이 아닌 경우 0을 입력하십시오.<br/>
-                    노면하중 미고려 시 Wt = 0으로 처리됩니다.
-                  </div>
-                </EngPopover>
-              }>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                      <input type="checkbox" checked={inputs.hasTraffic}
-                        onChange={e => {
-                          handleChange('hasTraffic', e.target.checked)
-                          if (!e.target.checked) { handleChange('legacyTrafficLoad', 0); setKgfTrafficInput('') }
-                        }}
-                        style={{ width: 12, height: 12, accentColor: T.bgActive }}/>
-                      <span style={{ fontSize: 11, color: T.textLabel }}>노면하중 적용</span>
-                    </label>
-                  </div>
-                  {inputs.hasTraffic && (<>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <EngInput
-                        value={inputs.legacyTrafficLoad ?? 0}
-                        onChange={v => { handleChange('legacyTrafficLoad', parseFloat(v) || 0); setKgfTrafficInput('') }}
-                        min={0} max={200} step={0.1} width={90}
-                      />
-                      <span style={{ fontSize: 10, color: T.textMuted }}>kN/m</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <input type="number" placeholder="kgf/m 입력 → kN/m 환산"
-                        value={kgfTrafficInput}
-                        onChange={e => {
-                          const raw = e.target.value; setKgfTrafficInput(raw)
-                          const kgf = parseFloat(raw)
-                          if (!isNaN(kgf) && kgf >= 0) handleChange('legacyTrafficLoad', Math.round(kgf * 0.009807 * 100) / 100)
-                        }}
-                        style={{
-                          width: 160, height: T.inputH, border: `1px solid ${T.border}`,
-                          borderRadius: T.radiusSm, fontSize: 11, fontFamily: T.fontMono,
-                          padding: '0 6px', background: '#fffef0', color: T.textPrimary,
-                        }}/>
-                      <span style={{ fontSize: 10, color: T.textMuted }}>kgf/m</span>
-                      {kgfTrafficInput && !isNaN(parseFloat(kgfTrafficInput)) && (
-                        <span style={{ fontSize: 10, color: T.textOK, fontFamily: T.fontMono }}>
-                          → {(parseFloat(kgfTrafficInput) * 0.009807).toFixed(2)} kN/m
-                        </span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 10, color: T.textMuted }}>
-                      참고도-4.2.4 그래프에서 토피 H={inputs.H}m에 해당하는 값을 읽어 입력
-                    </div>
-                  </>)}
-                </div>
-              </EngRow>
-
-              {/* 허용응력 안내 */}
-              {inputs.pipeType === 'steel' ? (() => {
-                const g = (LEGACY_STEEL_GRADES as any[]).find((x: any) => x.key === inputs.steelGrade) ?? (LEGACY_STEEL_GRADES as any[])[2]
-                return (
-                  <div style={{
-                    margin: '4px 0 6px', padding: '6px 10px',
-                    background: '#FFF8E1', border: '1px solid #FFE082',
-                    borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
-                  }}>
-                    <strong>2004 기준 허용응력 (참고표-4.2.5)</strong>{' '}
-                    — {g.label}: <strong>{g.sigmaA} MPa</strong> / 수격 시 {(g.sigmaA * 1.33).toFixed(0)} MPa (1.33배 완화)
-                  </div>
-                )
-              })() : (
-                <div style={{
-                  margin: '4px 0 6px', padding: '6px 10px',
-                  background: '#FFF8E1', border: '1px solid #FFE082',
-                  borderRadius: T.radiusSm, fontSize: 10.5, color: '#7A5500', lineHeight: 1.7,
-                }}>
-                  <strong>2004 기준 허용응력</strong>{' '}
-                  — 내압: 105 MPa (fu/4, 참고표-4.2.12) / 링휨: 98 MPa (1,000 kgf/cm², 잠정값)
-                  <br/>
-                  <span style={{ fontSize: 10, color: '#A07030' }}>※ 링휨 허용응력은 원문 조항 미확인 — 분석파일 근거 잠정 적용</span>
-                </div>
-              )}
-
-              {/* 굴착폭 B */}
-              <EngRow label="굴착폭 B" unit="m" popover={
-                <EngPopover title="굴착폭 B — Marston 트렌치식 (2004 기준)">
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>Marston 트렌치식: We = Cd × γ × B²</strong><br/>
-                    Cd = (1 - e^(-2Kμ·H/B)) / (2Kμ),  Kμ = 0.165 (φ=30°)
-                  </div>
-                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                    <strong>자동값</strong>: B = Do + 0.6 m (관경 + 양측 0.3m 여유)
-                  </div>
-                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                    B가 클수록 Cd 감소 → 경우에 따라 토압 감소 (Marston식 양면성)
-                  </div>
-                </EngPopover>
-              }>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <EngInput
-                    value={inputs.excavationWidth ?? (effectiveDo / 1000 + 0.6)}
-                    onChange={v => handleChange('excavationWidth', parseFloat(v) || null)}
-                    min={0.5} max={20} step={0.05} width={90}
-                  />
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                    <input type="checkbox"
-                      checked={inputs.excavationWidth == null}
-                      onChange={e => handleChange('excavationWidth', e.target.checked ? null : (effectiveDo / 1000 + 0.6))}
-                      style={{ width: 12, height: 12, accentColor: T.bgActive }}
-                    />
-                    <span style={{ fontSize: 10, color: T.textMuted }}>자동 (Do+0.6m)</span>
-                  </label>
-                  {inputs.excavationWidth == null && (
-                    <span style={{ fontSize: 10, color: T.textOK, fontFamily: T.fontMono }}>
-                      = {(effectiveDo / 1000 + 0.6).toFixed(2)} m
-                    </span>
-                  )}
-                </div>
-              </EngRow>
-
-              {/* 강관 전용: 형상계수 f + 처짐 지연계수 DL */}
-              {inputs.pipeType === 'steel' && (<>
-                <EngRow label="형상계수 f" popover={
-                  <EngPopover title="형상계수 f — Spangler 링 휨응력식 (2004 기준)">
-                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>σ_b = (2/f·Z) × W × [Kb·R²·EI + 0.732·E'·R³] / (EI + 0.061·E'·R³)</strong><br/>
-                      f는 관 단면 형상에 따른 계수입니다.
-                    </div>
-                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>원형관: f = 1.5</strong> (일반 상수도관 — 거의 모든 경우)<br/>
-                      타원형관: f = 1.0 (특수 단면, 실무 사용 드묾)
-                    </div>
-                    <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                      원형 강관은 f = 1.5 고정. 특수 단면이 아니면 변경 불필요.
-                    </div>
-                  </EngPopover>
-                }>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[
-                      { val: 1.5, label: '1.5', sub: '원형관 (일반)' },
-                      { val: 1.0, label: '1.0', sub: '타원형 (특수)' },
-                    ].map(opt => {
-                      const active = (inputs.shapeFactor ?? 1.5) === opt.val
-                      return (
-                        <button key={opt.val} onClick={() => handleChange('shapeFactor', opt.val)}
-                          style={{
-                            padding: '3px 14px', fontSize: 11, cursor: 'pointer', borderRadius: 2,
-                            border: `1px solid ${active ? T.bgActive : T.border}`,
-                            background: active ? T.bgActive : T.bgPanel,
-                            color: active ? T.textOnDark : T.textPrimary,
-                            fontFamily: T.fontSans,
-                          }}>
-                          <div style={{ fontWeight: 700 }}>f = {opt.label}</div>
-                          <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </EngRow>
-
-                <EngRow label="처짐 지연계수 DL" popover={
-                  <EngPopover title="처짐 지연계수 DL — Modified Iowa식 (2004 기준)">
-                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>Δy/D = DL × Kx × Ptotal / (EI/r³ + 0.061·E')</strong><br/>
-                      DL은 시간 경과에 따른 처짐 증가를 반영하는 계수입니다.
-                    </div>
-                    <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>DL = 1.5</strong>: 장기 처짐 고려 (일반 설계 — 보수적)<br/>
-                      <strong>DL = 1.0</strong>: 초기 처짐만 고려 (단기 또는 즉시 처짐)
-                    </div>
-                    <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                      현행 KDS 2025는 DL = 1.5 고정.<br/>
-                      2004 기준은 1.0~1.5 선택 가능. 일반 설계는 1.5 권장.
-                    </div>
-                  </EngPopover>
-                }>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[
-                      { val: 1.5, label: '1.5', sub: '장기 (일반)' },
-                      { val: 1.25, label: '1.25', sub: '중간' },
-                      { val: 1.0, label: '1.0', sub: '단기·즉시' },
-                    ].map(opt => {
-                      const active = (inputs.deflectionLag ?? 1.5) === opt.val
-                      return (
-                        <button key={opt.val} onClick={() => handleChange('deflectionLag', opt.val)}
-                          style={{
-                            padding: '3px 10px', fontSize: 11, cursor: 'pointer', borderRadius: 2,
-                            border: `1px solid ${active ? T.bgActive : T.border}`,
-                            background: active ? T.bgActive : T.bgPanel,
-                            color: active ? T.textOnDark : T.textPrimary,
-                            fontFamily: T.fontSans,
-                          }}>
-                          <div style={{ fontWeight: 700 }}>DL={opt.label}</div>
-                          <div style={{ fontSize: 9.5, opacity: 0.85 }}>{opt.sub}</div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </EngRow>
-              </>)}
-            </>
-          )}
         </EngPanel>
 
         {/* 입력 요약 */}
