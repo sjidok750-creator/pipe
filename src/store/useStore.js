@@ -18,6 +18,11 @@ const DEFAULT_INPUTS = {
   surgeRatio: 1.5,
   H: 1.50,
   hasTraffic: true,
+  trafficMethod: 'boussinesq', // 'boussinesq' | 'wm'
+  wmPm: 100,                   // 후륜 1륜당 하중 (kN)
+  wmC: 3.0,                    // 차량 점유 폭 (m)
+  wmA: 0.2,                    // 접지 폭 (m)
+  wmTheta: 45,                 // 하중분포각 (°)
   hasLining: true,
   soilClass: 'SC1',
   compaction: 85,

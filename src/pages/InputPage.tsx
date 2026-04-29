@@ -486,35 +486,72 @@ export default function InputPage() {
           </EngRow>
 
           <EngDivider label="부가 하중 조건" />
-          <EngRow label="DB-24 차량하중" popover={
-            <EngPopover title="DB-24 차량하중 — KDS 24 12 20 / KDS 57 10 00 §3.3">
+          <EngRow label="차량하중" popover={
+            <EngPopover title="차량하중 산정 방식 — KDS 24 12 20 / 내진성능 평가요령 부록C">
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>KDS 57 10 00 §3.3 — 차량하중 적용 기준</strong><br/>
-                도로 하부 매설 시 DB-24 (후축하중 196 kN) 적용.<br/>
-                Boussinesq 분산으로 관 깊이에 따라 하중 감소.<br/>
-                H ≥ 3.0m이면 차량하중 영향 무시 가능.
+                <strong>방식 A — DB-24 Boussinesq (기본)</strong><br/>
+                KDS 24 12 20 / KDS 57 10 00 §3.3<br/>
+                매설깊이별 등가 수직압력 테이블 보간 후 충격계수 적용.<br/>
+                WL = PL × IF × Do [kN/m]
               </div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>하중 분산 방식 (KDS 24 12 20)</strong><br/>
-                Wt = Cs × P / (L × Do) [kN/m]<br/>
-                Cs: 충격계수 포함 하중분산계수<br/>
-                매설깊이 H가 클수록 분산면적 증가 → Wt 감소
+                <strong>방식 B — Wm 직접계산</strong><br/>
+                내진성능 평가요령 부록C 해설식(5.3.3)<br/>
+                Wm = 2·Pm·Do / (C·(a+2h·tanθ)) × (1+i) [kN/m]<br/>
+                충격계수 i: h&lt;1.5→0.5, 1.5≤h≤6.5→0.65-0.1h, h&gt;6.5→0
               </div>
               <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>적용 여부 판단 기준</strong><br/>
                 도로 하부: 적용 (H &lt; 3.0m 구간은 반드시)<br/>
-                농지·공원: 미적용 가능<br/>
-                H &lt; 0.6m: 차량하중 집중 → 위험. 매설심도 재검토 권장
+                농지·공원: 미적용 가능
               </div>
             </EngPopover>
           }>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-              <input type="checkbox" checked={inputs.hasTraffic}
-                onChange={e => handleChange('hasTraffic', e.target.checked)}
-                style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
-              <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
-              <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
-            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={inputs.hasTraffic}
+                  onChange={e => handleChange('hasTraffic', e.target.checked)}
+                  style={{ width: 13, height: 13, accentColor: T.bgActive }}/>
+                <span style={{ fontSize: '12px', color: T.textLabel, fontFamily: T.fontSans }}>적용</span>
+                <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
+              </label>
+              {inputs.hasTraffic && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 4 }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {(['boussinesq', 'wm'] as const).map(m => (
+                      <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        <input type="radio" name="trafficMethod"
+                          checked={inputs.trafficMethod === m}
+                          onChange={() => handleChange('trafficMethod', m)}
+                          style={{ accentColor: T.bgActive }}/>
+                        <span style={{ fontSize: '11px', color: T.textLabel, fontFamily: T.fontMono }}>
+                          {m === 'boussinesq' ? 'DB-24 Boussinesq' : 'Wm 직접계산 (부록C)'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {inputs.trafficMethod === 'wm' && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', paddingLeft: 2 }}>
+                      {([
+                        { key: 'wmPm', label: 'Pm (kN)', unit: 'kN', tip: '후륜 1륜당 하중' },
+                        { key: 'wmC',  label: 'C (m)',   unit: 'm',  tip: '차량 점유 폭' },
+                        { key: 'wmA',  label: 'a (m)',   unit: 'm',  tip: '접지 폭' },
+                        { key: 'wmTheta', label: 'θ (°)', unit: '°', tip: '하중분포각' },
+                      ] as const).map(({ key, label, unit, tip }) => (
+                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <span style={{ fontSize: '10px', color: T.textMuted, width: 70 }} title={tip}>{label}</span>
+                          <input type="number" value={inputs[key] ?? ''}
+                            onChange={e => handleChange(key, parseFloat(e.target.value))}
+                            style={{ width: 56, fontSize: '11px', fontFamily: T.fontMono,
+                              background: T.bgInput, color: T.textValue, border: `1px solid ${T.borderInput}`,
+                              borderRadius: T.radiusSm, padding: '2px 4px', textAlign: 'right' }}/>
+                          <span style={{ fontSize: '10px', color: T.textMuted }}>{unit}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </EngRow>
           {inputs.pipeType === 'steel' && (
             <EngRow label="시멘트 모르타르 라이닝" popover={
