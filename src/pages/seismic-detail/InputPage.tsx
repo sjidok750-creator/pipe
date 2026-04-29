@@ -75,16 +75,23 @@ function LayerEditor({ layers, setLayers }: {
             <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
               min={0.1} step={0.5}
               style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
-            {/* N치 */}
+            {/* N치 — Vs 직접입력 시 비활성화 */}
             <input type="number" value={l.N ?? ''} placeholder="—"
               onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={1} max={300} step={1}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+              disabled={l.Vs_manual != null}
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
+                background: l.Vs_manual != null ? T.bgMuted ?? '#f0f0f0' : undefined,
+                color: l.Vs_manual != null ? T.textMuted : undefined,
+                cursor: l.Vs_manual != null ? 'not-allowed' : undefined,
+              }}/>
             {/* Vs 직접입력 */}
             <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
               onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
               min={50} step={10}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+              style={{ width: '100%', height: INPUT_H, border: `1px solid ${l.Vs_manual != null ? T.textAccent : T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
+                background: l.Vs_manual != null ? (T.bgActive ?? '#e8f4ff') : undefined,
+              }}/>
             {/* Vs 결과 */}
             <div style={{ textAlign: 'center', fontSize: 11, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
               {l.Vs.toFixed(0)}
@@ -108,8 +115,8 @@ function LayerEditor({ layers, setLayers }: {
         </span>
       </div>
       <div style={{ marginTop: 5, fontSize: 9, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.6 }}>
-        * Vs 우선순위: 직접입력 &gt; 암반(760) &gt; N치 공식(65.64×N⁰·⁴⁰⁷)<br/>
-        * N치만 입력 시 자동 계산 / 직접입력 시 N치 무시
+        * Vs 직접입력 시 N치 칸 비활성화 — Vs 우선 적용<br/>
+        * Vs 미입력 시 N치 공식(65.64×N⁰·⁴⁰⁷) 자동 계산 / 암반층: 760 m/s 고정
       </div>
     </div>
   )
