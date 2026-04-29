@@ -396,14 +396,55 @@ export default function SeismicDetailReportPage() {
           나. 차량하중에 의한 {isSegmented ? <>{G.sigma}<Sub>o</Sub></> : <>{G.epsilon}<Sub>o</Sub></>}
         </div>
         {isSegmented ? (
-          <>
-            <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
-              분절관은 이음부 회전변형에 의해 차량하중이 흡수되므로 관체 축응력 산정에서 제외한다.
-            </div>
-            <ResultBlock>
-              <FormulaRow>{G.sigma}<Sub>o</Sub> = 0 (분절관 — 이음부 흡수)</FormulaRow>
-            </ResultBlock>
-          </>
+          (inp.Pm ?? 0) <= 0 ? (
+            <>
+              <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
+                차량하중 없음 (Pm = 0) — 비도로 매설 구간.
+              </div>
+              <ResultBlock>
+                <FormulaRow>{G.sigma}<Sub>o</Sub> = 0</FormulaRow>
+              </ResultBlock>
+            </>
+          ) : (inp.Kv ?? 0) <= 0 ? (
+            <>
+              <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2, color: '#ef4444' }}>
+                Kv 미입력 — σ_o 계산 불가. Kv를 입력하면 차량하중 축응력이 산정됩니다.
+              </div>
+              <ResultBlock>
+                <FormulaRow>{G.sigma}<Sub>o</Sub> = 0 (Kv 미입력)</FormulaRow>
+              </ResultBlock>
+            </>
+          ) : (() => {
+            // 분절관 + Pm > 0 + Kv > 0 → 실제 계산 표시
+            const Kv_r   = rs.Kv_used ?? (inp.Kv ?? 0)
+            const Wm_r   = rs.Wm ?? 0
+            const i_r    = rs.impact_i ?? 0
+            const sig_o  = rs.sigma_o ?? 0   // MPa
+            const D_m_r  = (inp.D_out ?? 322) / 1000
+            const C_r    = (inp as any).C_width ?? 3.0
+            const a_r    = (inp as any).a_contact ?? 0.2
+            const h_r    = inp.hCover ?? 1.5
+            return (
+              <>
+                <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
+                  부록C 해설식(5.3.2): σ_o = 0.322 × Wm/Z × (EI/KvD)^0.25
+                </div>
+                <FormulaBlock>
+                  <FormulaRow>
+                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}D / [C{G.times}(a+2h{G.times}tan45°)] {G.times}(1+i)
+                    &nbsp;= {Wm_r.toFixed(3)} kN/m&nbsp;&nbsp;(i={i_r.toFixed(2)})
+                  </FormulaRow>
+                  <FormulaRow>
+                    {G.sigma}<Sub>o</Sub> = 0.322{G.times}W<Sub>m</Sub>{G.times}(EI/K<Sub>v</Sub>D)^0.25 / Z
+                    &nbsp;= <strong>{sig_o.toFixed(3)} MPa</strong>
+                  </FormulaRow>
+                </FormulaBlock>
+                <ResultBlock ok={sig_o >= 0}>
+                  <FormulaRow>{G.sigma}<Sub>o</Sub> =&nbsp;<strong>{sig_o.toFixed(3)} MPa</strong></FormulaRow>
+                </ResultBlock>
+              </>
+            )
+          })()
         ) : (inp.Pm ?? 0) <= 0 ? (
           <>
             <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
@@ -484,9 +525,9 @@ export default function SeismicDetailReportPage() {
                   {(kvMethod === 'manual' || (!kvN && !layerVs && !tableRow)) && (
                     <FormulaRow>K<Sub>v</Sub> = {Kv_r.toFixed(0)} kN/m³ (직접입력)</FormulaRow>
                   )}
-                  {/* Wm */}
+                  {/* Wm — 부록C 해설식(5.3.3) */}
                   <FormulaRow>
-                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}a / [(a+2h{G.times}tan35°)(b+2h{G.times}tan35°)] {G.times}(1+i)&nbsp;
+                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}D / [C{G.times}(a+2h{G.times}tan45°)] {G.times}(1+i)&nbsp;
                     = {Wm_r.toFixed(3)} kN/m&nbsp;&nbsp;(충격계수 i={i_r.toFixed(2)})
                   </FormulaRow>
                   {/* σ_o */}

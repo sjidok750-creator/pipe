@@ -900,9 +900,9 @@ export default function SeismicDetailInputPage() {
 
               {/* 모드별 결과 영역 */}
               {kvMode === 'manual' ? (
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0, kvMethod: 'manual' } as any)} min={0} step={100} width={100}/>
-                  <span style={{ fontSize: 10.5, color: T.textMuted, lineHeight: '28px' }}>kN/m³</span>
+                  <span style={{ fontSize: 10.5, color: T.textMuted }}>kN/m³</span>
                 </div>
               ) : (() => {
                 const res = kvMode === 'N_E0' ? kvByNE0 : kvMode === 'Vs' ? kvByVs : kvByTable
@@ -915,22 +915,26 @@ export default function SeismicDetailInputPage() {
                   if (kvMode === 'table' && res?.N != null) return `N=${res.N}`
                   return '—'
                 })()
+                const autoKv = res?.Kv ?? null
+                const isApplied = autoKv != null && Math.abs((inp.Kv ?? 0) - autoKv) < 1
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {res?.Kv ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {autoKv != null ? (
                       <>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 12, fontFamily: T.fontMono, color: T.textAccent, fontWeight: 700 }}>
-                            {res.Kv.toLocaleString()} kN/m³
+                          <span style={{ fontSize: 13, fontFamily: T.fontMono, color: T.textAccent, fontWeight: 700 }}>
+                            {autoKv.toLocaleString()} kN/m³
                           </span>
                           <button
-                            onClick={() => set({ Kv: res.Kv!, kvMethod: kvMode } as any)}
+                            onClick={() => set({ Kv: autoKv, kvMethod: kvMode } as any)}
                             style={{
                               padding: '2px 10px', fontSize: 10.5, cursor: 'pointer', borderRadius: 3,
-                              border: `1px solid ${T.bgActive}`, background: T.bgActive,
-                              color: 'white', fontFamily: T.fontSans,
+                              border: `1px solid ${isApplied ? T.borderOK : T.bgActive}`,
+                              background: isApplied ? T.bgOK : T.bgActive,
+                              color: isApplied ? T.textOK : 'white',
+                              fontFamily: T.fontSans, fontWeight: 700,
                             }}>
-                            적용
+                            {isApplied ? '✓ 적용됨' : '적용'}
                           </button>
                         </div>
                         <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono }}>
@@ -939,23 +943,29 @@ export default function SeismicDetailInputPage() {
                       </>
                     ) : (
                       <span style={{ fontSize: 10.5, color: '#ef4444', fontFamily: T.fontSans }}>
-                        {res?.error ?? 'N값 없음'} — 다른 방법으로 전환하거나 직접 입력하세요
+                        {res?.error ?? 'N값 없음'} — 다른 방법으로 전환하거나 직접입력 사용
                       </span>
                     )}
+                    {/* 자동계산 외에 직접 수정도 가능 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontSize: 10, color: T.textMuted }}>직접 수정:</span>
+                      <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0, kvMethod: kvMode } as any)} min={0} step={100} width={90}/>
+                      <span style={{ fontSize: 10, color: T.textMuted }}>kN/m³</span>
+                    </div>
                   </div>
                 )
               })()}
 
-              {/* 현재 적용값 표시 + Pm 경고 */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                {kvMode !== 'manual' && (
-                  <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
-                    현재 적용: <strong>{(inp.Kv ?? 0) > 0 ? `${(inp.Kv ?? 0).toLocaleString()} kN/m³` : '미적용'}</strong>
-                  </span>
-                )}
+              {/* 현재 적용값 + Pm 경고 */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
+                <span style={{ fontSize: 10.5, color: T.textMuted, fontFamily: T.fontMono }}>
+                  현재 적용값: <strong style={{ color: (inp.Kv ?? 0) > 0 ? T.textAccent : '#ef4444' }}>
+                    {(inp.Kv ?? 0) > 0 ? `${(inp.Kv ?? 0).toLocaleString()} kN/m³` : '미적용 (0)'}
+                  </strong>
+                </span>
                 {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
                   <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans }}>
-                    ※ Pm &gt; 0이면 Kv 적용 필요
+                    ⚠ Pm &gt; 0이므로 Kv 입력 필요 — σ_o = 0으로 처리됨
                   </span>
                 )}
               </div>
