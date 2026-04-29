@@ -51,10 +51,8 @@ export function calcTrafficLoad({ H, Do, hasTraffic }) {
 
   const Do_m = Do / 1000  // mm → m
   const { PL: PLraw, IF } = interpolateDB24(H)
-  // DB24_PRESSURE 테이블의 PL은 Boussinesq 적분 순압력
-  // 충격계수(IF)는 참고용 — 예제집 기준: PL을 직접 하중으로 사용 (IF는 별도 적용 안함)
-  // → WL = PL(테이블값) × Do
-  const WL = PLraw * Do_m    // kN/m
+  const PL = PLraw * IF          // 충격계수 적용 설계 차량하중 (kPa)
+  const WL = PL * Do_m           // kN/m
 
-  return { PL: PLraw, WL, IF, PLraw }
+  return { PL, WL, IF, PLraw }
 }
