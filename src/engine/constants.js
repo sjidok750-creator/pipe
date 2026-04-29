@@ -18,7 +18,6 @@ export const PIPE_MATERIAL = {
     Es: 206000,                 // MPa — 강관 탄성계수
     allowRatio_normal: 0.50,    // 상시운전 허용응력 비율
     allowRatio_surge: 0.75,     // 수격압 허용응력 비율
-    corrosionAllowance: 1.5,    // mm — 부식여유 (PE피복 적용 시)
     handlingDivisor: 288,       // t_handling = Do / 288
     maxDeflection_plain: 5.0,   // % — 라이닝 없음
     maxDeflection_lined: 3.0,   // % — 시멘트 모르타르 라이닝
@@ -103,7 +102,7 @@ export const DB24_PRESSURE = {
   4.0: { PL: 1.8,  IF: 1.00 },
 }
 
-// 침상 조건 계수 (DIPRA) — 덕타일 주철관
+// 침상 조건 계수 (AWWA C150) — 덕타일 주철관
 export const BEDDING = {
   Type1: { Kb: 0.294, Kd: 0.110, label: 'Type 1 — 쇄석기초 (0°)' },
   Type2: { Kb: 0.235, Kd: 0.108, label: 'Type 2 — 모래 다짐 120°' },
@@ -154,7 +153,7 @@ export const REFERENCES = {
   hoopStress:   'KDS 57 10 00 / AWWA M11 Eq.3-1',
   deflection:   'AWWA M11 Eq.5-4 (Modified Iowa)',
   buckling:     'AWWA M11 Eq.5-5',
-  diHoop:       'KS D 4311 / DIPRA §2.1',
-  diBending:    'DIPRA §2.3',
-  diDeflection: 'AWWA C150 / DIPRA §2.4',
+  diHoop:       'KS D 4311 §5',
+  diBending:    'KDS 57 10 00 §3.4',
+  diDeflection: 'AWWA C150 / KDS 57 10 00 §3.5',
 }

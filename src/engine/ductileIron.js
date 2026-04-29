@@ -1,6 +1,6 @@
 // ============================================================
 // 덕타일 주철관 구조안전성 검토 — 4단계 (검토 개념: 주어진 K등급으로 안전성 확인)
-// 근거: KS D 4311 / DIPRA / AWWA C150
+// 근거: KS D 4311 / KDS 57 10 00 / AWWA C150
 // ============================================================
 
 import { PIPE_MATERIAL, DI_THICKNESS, BEDDING } from './constants.js'
@@ -42,7 +42,7 @@ export function calcDuctileIron(inputs) {
 
   // ────────────────────────────────────────
   // STEP 1: 내압 검토
-  // 근거: KS D 4311 / DIPRA §2.1
+  // 근거: KS D 4311 §5
   // 채택된 K등급 두께로 후프응력 계산 후 허용응력과 비교
   // ────────────────────────────────────────
   const sigmaA_hoop = mat.fu * mat.allowRatio_hoop     // = 420/3 = 140 MPa
@@ -51,7 +51,7 @@ export function calcDuctileIron(inputs) {
   const Di = Do - 2 * tAdopt  // mm 내경
   const sigma_hoop = (Pd * Di) / (2 * tAdopt)  // MPa (내경 기준 Barlow)
 
-  // 최소관두께 역산 (참고용) — KS D 4311 / DIPRA
+  // 최소관두께 역산 (참고용) — KS D 4311
   // 내압 최소두께: Di기반 Barlow 역산 → t = Pd×Do / (2×(σA+Pd))
   // 외압(링휨) 최소두께: σ_b = Kb×W×Do/t² → t = √(Kb×W×Do/σA_bend) [토압 전 계산 불가, step2 이후 재산정]
   const tp_hoop = (Pd * Do) / (2 * (sigmaA_hoop + Pd))  // mm (내압 기준)
@@ -73,17 +73,18 @@ export function calcDuctileIron(inputs) {
   const tRequired = Math.max(tp_hoop, tp_bend)               // mm (최소 소요 두께, 참고용)
 
   // ────────────────────────────────────────
-  // STEP 3: 링 휨응력 검토 (DIPRA §2.3)
+  // STEP 3: 링 휨응력 검토
+  // 근거: KDS 57 10 00 §3.4
   // σ_b = Kb × W_total[kN/m] × Do[mm] / t²[mm²]  (MPa)
   // 단위: kN/m × mm / mm² = N/mm = MPa  ✓
-  // 허용응력: σ_ba = 0.5 × fu = 210 MPa
+  // 허용응력: σ_ba = 0.5 × fu = 210 MPa  (KS D 4311 GCD400)
   // ────────────────────────────────────────
   const sigma_b_MPa = Kb * Wtotal * Do / (tAdopt ** 2)  // MPa
   const ok_bending  = sigma_b_MPa <= sigmaA_bend
 
   // ────────────────────────────────────────
   // STEP 4: 처짐량 검토 (Modified Iowa)
-  // 근거: AWWA C150 / DIPRA §2.4
+  // 근거: AWWA C150 / KDS 57 10 00 §3.5
   // ────────────────────────────────────────
   const t_m  = tAdopt / 1000
   const Do_m = Do / 1000
@@ -109,7 +110,7 @@ export function calcDuctileIron(inputs) {
     steps: {
       step1: {
         title: '내압 검토',
-        ref: 'KS D 4311 / DIPRA §2.1',
+        ref: 'KS D 4311 §5',
         Pd, Do, Di, tAdopt, selectedGrade: diKGrade,
         sigma_hoop, sigmaA_hoop,
         tp_hoop, tp_bend, tRequired,
@@ -125,7 +126,7 @@ export function calcDuctileIron(inputs) {
       },
       step3: {
         title: '링 휨응력 검토',
-        ref: 'DIPRA §2.3 / KDS 57 10 00 §3.4',
+        ref: 'KDS 57 10 00 §3.4',
         Kb, Wtotal, Do, tAdopt,
         sigma_b: sigma_b_MPa, sigmaA_bend,
         ok: ok_bending,
@@ -133,7 +134,7 @@ export function calcDuctileIron(inputs) {
       },
       step4: {
         title: '처짐량 검토 (Modified Iowa)',
-        ref: 'AWWA C150 / DIPRA §2.4',
+        ref: 'AWWA C150 / KDS 57 10 00 §3.5',
         Kd, r, I, EI, EI_r3, Eprime,
         Ptotal, denominator, deflectionRatio,
         maxDeflection: mat.maxDeflection,

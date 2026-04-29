@@ -62,7 +62,7 @@ export function calcSteelPipe(inputs) {
   const tp_surge   = (Psurge * Do) / (2 * sigmaA_surge)   // mm
   const tHandling  = Do / mat.handlingDivisor              // mm
   const tCalcMin   = Math.max(tp_normal, tp_surge, tHandling)
-  const tRequired  = tCalcMin + mat.corrosionAllowance     // mm (최소 소요 두께, 참고용)
+  const tRequired  = tCalcMin                              // mm (최소 소요 두께, 참고용)
 
   const ok_normal = sigma_normal <= sigmaA_normal
   const ok_surge  = sigma_surge  <= sigmaA_surge
