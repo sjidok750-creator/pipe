@@ -415,32 +415,86 @@ export default function SeismicDetailReportPage() {
               </ResultBlock>
             </>
           ) : (() => {
-            // 분절관 + Pm > 0 + Kv > 0 → 실제 계산 표시
-            const Kv_r   = rs.Kv_used ?? (inp.Kv ?? 0)
-            const Wm_r   = rs.Wm ?? 0
-            const i_r    = rs.impact_i ?? 0
-            const sig_o  = rs.sigma_o ?? 0   // MPa
-            const D_m_r  = (inp.D_out ?? 322) / 1000
-            const C_r    = (inp as any).C_width ?? 3.0
-            const a_r    = (inp as any).a_contact ?? 0.2
-            const h_r    = inp.hCover ?? 1.5
+            // 분절관 + Pm > 0 + Kv > 0 → 실제 계산 표시 (부록C 스타일)
+            const Kv_r  = rs.Kv_used ?? (inp.Kv ?? 0)
+            const Wm_r  = rs.Wm ?? 0
+            const i_r   = rs.impact_i ?? 0
+            const sig_o = rs.sigma_o ?? 0   // MPa
+            const Pm_r  = inp.Pm ?? 100
+            const C_r   = (inp as any).C_width ?? 3.0
+            const a_r   = (inp as any).a_contact ?? 0.2
+            const h_r   = inp.hCover ?? 1.5
+            const E_kN  = E_MPa * 1000
+            // 단면 특성
+            const I_m4  = Math.PI / 64 * (Math.pow(D_m, 4) - Math.pow(D_m - 2*t_m, 4))
+            const Z_m3  = I_m4 / (D_m / 2)
+            const EI    = E_kN * I_m4
+            const EI_KvD = EI / (Kv_r * D_m)
             return (
               <>
-                <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
-                  부록C 해설식(5.3.2): σ_o = 0.322 × Wm/Z × (EI/KvD)^0.25
-                </div>
                 <FormulaBlock>
+                  {/* Wm 공식 */}
                   <FormulaRow>
-                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}D / [C{G.times}(a+2h{G.times}tan45°)] {G.times}(1+i)
-                    &nbsp;= {Wm_r.toFixed(3)} kN/m&nbsp;&nbsp;(i={i_r.toFixed(2)})
+                    W<Sub>m</Sub> =&nbsp;
+                    <Frac
+                      top={<>2 {G.times} P<Sub>m</Sub> {G.times} D</>}
+                      bot={<>C {G.times} (a + 2h {G.times} tan45°)</>}
+                    />
+                    &nbsp;{G.times} (1+i) =&nbsp;
+                    <Frac
+                      top={<>2 {G.times} {Pm_r} {G.times} {D_m.toFixed(3)}</>}
+                      bot={<>{C_r.toFixed(1)} {G.times} ({a_r.toFixed(2)} + 2 {G.times} {h_r.toFixed(2)} {G.times} 1.000)</>}
+                    />
+                    &nbsp;{G.times} (1 + {i_r.toFixed(2)}) = <strong>{Wm_r.toFixed(3)} kN/m</strong>
                   </FormulaRow>
+                  {/* 단면 특성 */}
+                  <FormulaRow indent={1}>
+                    I =&nbsp;
+                    <Frac
+                      top={<>{G.pi} {G.times} (D<Sup>4</Sup> − (D−t)<Sup>4</Sup>)</>}
+                      bot={<>64</>}
+                    />
+                    &nbsp;=&nbsp;
+                    <Frac
+                      top={<>{G.pi} {G.times} ({D_m.toFixed(3)}<Sup>4</Sup> − {(D_m-2*t_m).toFixed(3)}<Sup>4</Sup>)</>}
+                      bot={<>64</>}
+                    />
+                    &nbsp;= {I_m4.toExponential(3)} m<Sup>4</Sup>
+                  </FormulaRow>
+                  <FormulaRow indent={1}>
+                    Z =&nbsp;
+                    <Frac top={<>2I</>} bot={<>D</>}/>
+                    &nbsp;=&nbsp;
+                    <Frac top={<>2 {G.times} {I_m4.toExponential(3)}</>} bot={<>{D_m.toFixed(3)}</>}/>
+                    &nbsp;= {Z_m3.toExponential(3)} m<Sup>3</Sup>
+                  </FormulaRow>
+                  {/* σ_o 공식 */}
                   <FormulaRow>
-                    {G.sigma}<Sub>o</Sub> = 0.322{G.times}W<Sub>m</Sub>{G.times}(EI/K<Sub>v</Sub>D)^0.25 / Z
+                    {G.sigma}<Sub>o</Sub> =&nbsp;
+                    <Frac top={<>0.322 {G.times} W<Sub>m</Sub></>} bot={<>Z</>}/>
+                    &nbsp;{G.times}&nbsp;
+                    <Sqrt inner={
+                      <Frac
+                        top={<>E {G.times} I</>}
+                        bot={<>K<Sub>v</Sub> {G.times} D</>}
+                      />
+                    }/>
+                    &nbsp;=&nbsp;
+                    <Frac top={<>0.322 {G.times} {Wm_r.toFixed(3)}</>} bot={<>{Z_m3.toExponential(3)}</>}/>
+                    &nbsp;{G.times}&nbsp;
+                    <Sqrt inner={
+                      <Frac
+                        top={<>{EI.toExponential(3)}</>}
+                        bot={<>{Kv_r.toFixed(0)} {G.times} {D_m.toFixed(3)}</>}
+                      />
+                    }/>
                     &nbsp;= <strong>{sig_o.toFixed(3)} MPa</strong>
                   </FormulaRow>
                 </FormulaBlock>
-                <ResultBlock ok={sig_o >= 0}>
-                  <FormulaRow>{G.sigma}<Sub>o</Sub> =&nbsp;<strong>{sig_o.toFixed(3)} MPa</strong></FormulaRow>
+                <ResultBlock ok>
+                  <FormulaRow>
+                    {G.sigma}<Sub>o</Sub> = <strong>{sig_o.toFixed(3)} MPa</strong>
+                  </FormulaRow>
                 </ResultBlock>
               </>
             )
@@ -512,7 +566,7 @@ export default function SeismicDetailReportPage() {
                   )}
                   {kvMethod === 'Vs' && layerVs && (
                     <FormulaRow>
-                      K<Sub>v</Sub> = 0.09{G.times}Vs² = 0.09{G.times}{layerVs}²&nbsp;
+                      K<Sub>v</Sub> = 0.09 {G.times} Vs<Sup>2</Sup> = 0.09 {G.times} {layerVs}<Sup>2</Sup>&nbsp;
                       = <strong>{Math.round(0.09 * layerVs * layerVs).toLocaleString()} kN/m³</strong>
                     </FormulaRow>
                   )}
@@ -525,22 +579,64 @@ export default function SeismicDetailReportPage() {
                   {(kvMethod === 'manual' || (!kvN && !layerVs && !tableRow)) && (
                     <FormulaRow>K<Sub>v</Sub> = {Kv_r.toFixed(0)} kN/m³ (직접입력)</FormulaRow>
                   )}
-                  {/* Wm — 부록C 해설식(5.3.3) */}
-                  <FormulaRow>
-                    W<Sub>m</Sub> = 2P<Sub>m</Sub>{G.times}D / [C{G.times}(a+2h{G.times}tan45°)] {G.times}(1+i)&nbsp;
-                    = {Wm_r.toFixed(3)} kN/m&nbsp;&nbsp;(충격계수 i={i_r.toFixed(2)})
-                  </FormulaRow>
-                  {/* σ_o */}
-                  <FormulaRow>
-                    {G.sigma}<Sub>o</Sub> = 0.322{G.times}W<Sub>m</Sub>{G.times}(EI/K<Sub>v</Sub>D)^0.25 / Z&nbsp;
-                    = <strong>{sig_o.toFixed(2)} kN/m²</strong>
-                  </FormulaRow>
-                  {/* ε_o */}
-                  <FormulaRow>
-                    {G.epsilon}<Sub>o</Sub> = {G.sigma}<Sub>o</Sub> / E&nbsp;
-                    = {sig_o.toFixed(2)} / {E_kN.toFixed(0)}&nbsp;
-                    = <strong>{eps_o.toFixed(6)}</strong>
-                  </FormulaRow>
+                  {/* Wm — 부록C 해설식(5.3.3), Frac 표기 */}
+                  {(() => {
+                    const Pm_r  = inp.Pm ?? 100
+                    const C_r   = (inp as any).C_width ?? 3.0
+                    const a_r   = (inp as any).a_contact ?? 0.2
+                    const h_r   = inp.hCover ?? 1.5
+                    const I_m4  = Math.PI / 64 * (Math.pow(D_m, 4) - Math.pow(D_m - 2*t_m, 4))
+                    const Z_m3  = I_m4 / (D_m / 2)
+                    const EI    = E_kN * I_m4
+                    const sig_o_MPa = sig_o / 1000
+                    return (
+                      <>
+                        {/* Kv 산정 공식은 위에서 이미 표시됨 */}
+                        <FormulaRow>
+                          W<Sub>m</Sub> =&nbsp;
+                          <Frac
+                            top={<>2 {G.times} P<Sub>m</Sub> {G.times} D</>}
+                            bot={<>C {G.times} (a + 2h {G.times} tan45°)</>}
+                          />
+                          &nbsp;{G.times} (1+i) =&nbsp;
+                          <Frac
+                            top={<>2 {G.times} {Pm_r} {G.times} {D_m.toFixed(3)}</>}
+                            bot={<>{C_r.toFixed(1)} {G.times} ({a_r.toFixed(2)} + 2{G.times}{h_r.toFixed(2)}{G.times}1.000)</>}
+                          />
+                          &nbsp;{G.times} (1+{i_r.toFixed(2)}) = <strong>{Wm_r.toFixed(3)} kN/m</strong>
+                        </FormulaRow>
+                        <FormulaRow indent={1}>
+                          I =&nbsp;
+                          <Frac
+                            top={<>{G.pi}{G.times}(D<Sup>4</Sup>−(D−t)<Sup>4</Sup>)</>}
+                            bot={<>64</>}
+                          />
+                          &nbsp;= {I_m4.toExponential(3)} m<Sup>4</Sup>,&nbsp;&nbsp;
+                          Z =&nbsp;
+                          <Frac top={<>2I</>} bot={<>D</>}/>
+                          &nbsp;= {Z_m3.toExponential(3)} m<Sup>3</Sup>
+                        </FormulaRow>
+                        <FormulaRow>
+                          {G.sigma}<Sub>o</Sub> =&nbsp;
+                          <Frac top={<>0.322 {G.times} W<Sub>m</Sub></>} bot={<>Z</>}/>
+                          &nbsp;{G.times}&nbsp;
+                          <Sqrt inner={<Frac top={<>E{G.times}I</>} bot={<>K<Sub>v</Sub>{G.times}D</>}/>}/>
+                          &nbsp;=&nbsp;
+                          <Frac top={<>0.322{G.times}{Wm_r.toFixed(3)}</>} bot={<>{Z_m3.toExponential(3)}</>}/>
+                          &nbsp;{G.times}&nbsp;
+                          <Sqrt inner={<Frac top={<>{EI.toExponential(3)}</>} bot={<>{Kv_r.toFixed(0)}{G.times}{D_m.toFixed(3)}</>}/>}/>
+                          &nbsp;= <strong>{sig_o_MPa.toFixed(4)} MPa</strong>
+                        </FormulaRow>
+                        <FormulaRow>
+                          {G.epsilon}<Sub>o</Sub> =&nbsp;
+                          <Frac top={<>{G.sigma}<Sub>o</Sub></>} bot={<>E</>}/>
+                          &nbsp;=&nbsp;
+                          <Frac top={<>{sig_o_MPa.toFixed(4)}</>} bot={<>{E_MPa.toLocaleString()}</>}/>
+                          &nbsp;= <strong>{eps_o.toExponential(4)}</strong>
+                        </FormulaRow>
+                      </>
+                    )
+                  })()}
                 </FormulaBlock>
                 <ResultBlock ok>
                   <FormulaRow>
