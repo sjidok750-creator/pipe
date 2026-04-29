@@ -5,7 +5,7 @@
 
 import { PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES } from './constants.js'
 import { calcEarthLoad } from './earthLoad.js'
-import { calcTrafficLoad } from './trafficLoad.js'
+import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 
 /**
  * 강관 전체 구조안전성 검토 (6단계)
@@ -23,6 +23,9 @@ export function calcSteelPipe(inputs) {
     pipeDimManual = false, DoManual, tManual,
     steelGrade = 'SPS400', fyManual = 235,
     E_pipeManual = false, E_pipe = null,
+    // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)
+    trafficMethod = 'boussinesq',
+    wmPm = 100, wmC = 3.0, wmA = 0.2, wmTheta = 45,
   } = inputs
 
   const mat = PIPE_MATERIAL.steel
@@ -73,9 +76,12 @@ export function calcSteelPipe(inputs) {
   const { We, Pe } = calcEarthLoad({ gammaSoil, H, Do })
 
   // ────────────────────────────────────────
-  // STEP 3: 차량하중 산정 (DB-24)
+  // STEP 3: 차량하중 산정
   // ────────────────────────────────────────
-  const { PL, WL, IF, PLraw } = calcTrafficLoad({ H, Do, hasTraffic })
+  const trafficResult = trafficMethod === 'wm'
+    ? calcTrafficLoadWm({ H, Do, hasTraffic, Pm: wmPm, C: wmC, a: wmA, theta: wmTheta })
+    : calcTrafficLoad({ H, Do, hasTraffic })
+  const { PL, WL, IF, PLraw } = trafficResult
   const Wtotal = We + WL
   const Ptotal = Wtotal / (Do / 1000)  // kPa
 
@@ -167,11 +173,17 @@ export function calcSteelPipe(inputs) {
         formula: 'W_e = \\gamma_s \\times H \\times D_o',
       },
       step3: {
-        title: '차량하중 산정 (DB-24)',
-        ref: 'KDS 24 12 20 §4 (DB-24) / Boussinesq 분산',
+        title: trafficMethod === 'wm' ? '차량하중 산정 (Wm 직접계산)' : '차량하중 산정 (DB-24 Boussinesq)',
+        ref: trafficMethod === 'wm'
+          ? '내진성능 평가요령 부록C 해설식(5.3.3)'
+          : 'KDS 24 12 20 §4 (DB-24) / Boussinesq 분산',
         hasTraffic, H, PLraw, IF, PL,
         WL, Wtotal, Ptotal,
-        formula: 'W_L = P_L \\times D_o',
+        trafficMethod,
+        ...(trafficMethod === 'wm' ? { wmPm, wmC, wmA, wmTheta } : {}),
+        formula: trafficMethod === 'wm'
+          ? 'W_m = \\frac{2P_m D_o}{C(a+2h\\tan\\theta)}(1+i)'
+          : 'W_L = P_L \\times D_o',
       },
       step4: {
         title: '외압 링 휨응력 검토',

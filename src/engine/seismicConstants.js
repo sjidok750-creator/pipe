@@ -270,16 +270,17 @@ export function getImpactFactor(h) {
 }
 
 // ── 차량하중 Wm 산정 (분절관/연속관 공통) ───────────────────
-// 해설식(5.3.3): Wm = 2×Pm×a / ((a+2h×tanθ)×(b+2h×tanθ)) × (1+i)
-// Pm: 후륜 1륜당 하중(kN), b: 차량점유폭(m), a: 접지폭(m)
-// h: 토피(m), θ: 하중분포각(기본 35°), i: 충격계수
-export function calcWm(Pm, b_width, a_contact, h, theta_deg = 35) {
+// 해설식(5.3.3): Wm = 2×Pm×D / (C×(a+2h×tanθ)) × (1+i)
+// 근거: 기존시설물(상수도) 내진성능 평가요령 부록C 그림 C.1.2 / C.2.2
+// Pm: 후륜 1륜당 하중(kN), D: 관외경(m), C: 차량점유폭(m)
+// a: 접지폭(m), h: 토피(m), θ: 하중분포각(45°), i: 충격계수
+export function calcWm(Pm, D_m, C_width, a_contact, h, theta_deg = 45) {
   const theta = theta_deg * Math.PI / 180
   const i = getImpactFactor(h)
-  const Wm = (2 * Pm * a_contact)
-    / ((a_contact + 2 * h * Math.tan(theta)) * (b_width + 2 * h * Math.tan(theta)))
+  const Wm = (2 * Pm * D_m)
+    / (C_width * (a_contact + 2 * h * Math.tan(theta)))
     * (1 + i)
-  return { Wm, i }
+  return { Wm, i, theta_deg }
 }
 
 // ── 지반변형률 ε_G (연속관/분절관 공통) ─────────────────────

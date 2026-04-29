@@ -5,7 +5,7 @@
 
 import { PIPE_MATERIAL, DI_THICKNESS, BEDDING } from './constants.js'
 import { calcEarthLoad } from './earthLoad.js'
-import { calcTrafficLoad } from './trafficLoad.js'
+import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 
 /**
  * 덕타일 주철관 전체 구조안전성 검토 (4단계)
@@ -21,6 +21,9 @@ export function calcDuctileIron(inputs) {
     diKGrade = 'K9',
     pipeDimManual = false, DoManual, tManual,
     E_pipeManual = false, E_pipe = null,
+    // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)
+    trafficMethod = 'boussinesq',
+    wmPm = 100, wmC = 3.0, wmA = 0.2, wmTheta = 45,
   } = inputs
 
   const mat = PIPE_MATERIAL.ductile
@@ -62,7 +65,10 @@ export function calcDuctileIron(inputs) {
   // STEP 2: 토압 + 차량하중
   // ────────────────────────────────────────
   const { We } = calcEarthLoad({ gammaSoil, H, Do })
-  const { PL, WL, IF, PLraw } = calcTrafficLoad({ H, Do, hasTraffic })
+  const trafficResult = trafficMethod === 'wm'
+    ? calcTrafficLoadWm({ H, Do, hasTraffic, Pm: wmPm, C: wmC, a: wmA, theta: wmTheta })
+    : calcTrafficLoad({ H, Do, hasTraffic })
+  const { PL, WL, IF, PLraw } = trafficResult
   const Wtotal = We + WL
   const Ptotal = Wtotal / (Do / 1000)  // kPa
 
@@ -119,10 +125,16 @@ export function calcDuctileIron(inputs) {
       },
       step2: {
         title: '토압 및 차량하중 산정',
-        ref: 'KDS 57 10 00 §3.1 / KDS 24 12 20',
+        ref: trafficMethod === 'wm'
+          ? '내진성능 평가요령 부록C 해설식(5.3.3) / KDS 57 10 00 §3.1'
+          : 'KDS 57 10 00 §3.1 / KDS 24 12 20',
         gammaSoil, H, Do,
         We, PLraw, IF, PL, WL, Wtotal, Ptotal,
-        formula: 'W_{total} = W_e + W_L',
+        trafficMethod,
+        ...(trafficMethod === 'wm' ? { wmPm, wmC, wmA, wmTheta } : {}),
+        formula: trafficMethod === 'wm'
+          ? 'W_m = \\frac{2P_m D}{C(a+2h\\tan\\theta)}(1+i)'
+          : 'W_{total} = W_e + W_L',
       },
       step3: {
         title: '링 휨응력 검토',

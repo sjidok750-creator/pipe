@@ -1,6 +1,7 @@
 // ============================================================
-// DB-24 차량하중 산정 — Boussinesq 환산
-// 근거: KDS 24 12 20 (도로교설계기준)
+// 차량하중 산정
+// [방식 A] Boussinesq 등가압력 (KDS 24 12 20 DB-24) — 구조안전성 기본
+// [방식 B] Wm 직접계산 (내진성능 평가요령 부록C 해설식 5.3.3) — 직접계산 옵션
 // ============================================================
 
 import { DB24_PRESSURE } from './constants.js'
@@ -47,12 +48,49 @@ function interpolateDB24(H) {
  *   PLraw: 충격계수 적용 전 압력 (kPa)
  */
 export function calcTrafficLoad({ H, Do, hasTraffic }) {
-  if (!hasTraffic) return { PL: 0, WL: 0, IF: 0, PLraw: 0 }
+  if (!hasTraffic) return { PL: 0, WL: 0, IF: 0, PLraw: 0, method: 'boussinesq' }
 
   const Do_m = Do / 1000  // mm → m
   const { PL: PLraw, IF } = interpolateDB24(H)
   const PL = PLraw * IF          // 충격계수 적용 설계 차량하중 (kPa)
   const WL = PL * Do_m           // kN/m
 
-  return { PL, WL, IF, PLraw }
+  return { PL, WL, IF, PLraw, method: 'boussinesq' }
+}
+
+/**
+ * [방식 B] Wm 직접계산 — 내진성능 평가요령 부록C 해설식(5.3.3)
+ * Wm = 2·Pm·Do / (C·(a + 2h·tan45°)) × (1+i)
+ * 충격계수 i: h<1.5→0.5, 1.5≤h≤6.5→0.65-0.1h, h>6.5→0
+ *
+ * @param {object} params
+ * @param {number} params.H       - 토피 (m)
+ * @param {number} params.Do      - 관 외경 (mm)
+ * @param {boolean} params.hasTraffic
+ * @param {number} params.Pm      - 후륜 1륜당 하중 (kN), 기본 100
+ * @param {number} params.C       - 차량 점유 폭 (m), 기본 3.0
+ * @param {number} params.a       - 접지 폭 (m), 기본 0.2
+ * @param {number} params.theta   - 하중분포각 (°), 기본 45
+ * @returns {{ WL, Wm, IF, PL, PLraw, method }}
+ */
+export function calcTrafficLoadWm({ H, Do, hasTraffic, Pm = 100, C = 3.0, a = 0.2, theta = 45 }) {
+  if (!hasTraffic) return { WL: 0, Wm: 0, IF: 0, PL: 0, PLraw: 0, method: 'wm' }
+
+  const Do_m = Do / 1000
+  const theta_rad = theta * Math.PI / 180
+
+  // 충격계수
+  let i = 0
+  if (H < 1.5)       i = 0.5
+  else if (H <= 6.5) i = 0.65 - 0.1 * H
+  else               i = 0.0
+
+  // Wm [kN/m]
+  const Wm = (2 * Pm * Do_m) / (C * (a + 2 * H * Math.tan(theta_rad))) * (1 + i)
+
+  // 등가 수직압력 (참고용, kPa)
+  const PLraw = Wm / Do_m         // kPa (충격 전)
+  const PL    = PLraw             // 이미 (1+i) 포함
+
+  return { WL: Wm, Wm, IF: i, PL, PLraw: Wm / (1 + i) / Do_m, method: 'wm', Pm, C, a, theta }
 }

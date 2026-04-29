@@ -352,9 +352,11 @@ export function evalSegmented(params) {
   const sigma_i = calcAxialStressInternal(nu, P_MPa, D, t)  // MPa
 
   // ── Step 10: 차량하중에 의한 축응력 (해설식 5.3.2~5.3.3) ──
+  // Wm = 2×Pm×D / (C×(a+2h×tan45°)) × (1+i)  [부록C 해설식(5.3.3)]
+  const C_width = params.C_width ?? 3.0   // 차량점유폭 (m), 기본 3.0
   let sigma_o = 0, Wm = 0, impact_i = 0
   if (Pm > 0 && Kv > 0) {
-    const wmResult = calcWm(Pm, b_width, a_contact, h_cover)
+    const wmResult = calcWm(Pm, D_m, C_width, a_contact, h_cover)
     Wm = wmResult.Wm
     impact_i = wmResult.i
     sigma_o = calcAxialStressTraffic(Wm, Z_m, E_kN, I_m, Kv, D_m)  // MPa

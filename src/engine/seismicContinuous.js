@@ -243,10 +243,12 @@ export function evalContinuous(params) {
   const { epsilon_i, sigma_theta } = calcStrainInternal(nu, P_kN, D_m, t_m, E_kN)
 
   // ── Step 10: 차량하중에 의한 축변형률 (해설식 5.3.37) ──
+  // Wm = 2×Pm×D / (C×(a+2h×tan45°)) × (1+i)  [부록C 해설식(5.3.3)]
+  const C_width = params.C_width ?? 3.0   // 차량점유폭 (m), 기본 3.0
   const Kv_used = Kv
   let epsilon_o = 0, sigma_o_kN = 0, Wm_traffic = 0, i_traffic = 0
   if (Pm > 0 && Kv_used > 0) {
-    const wmResult = calcWm(Pm, b_width, a_contact, h_cover)
+    const wmResult = calcWm(Pm, D_m, C_width, a_contact, h_cover)
     Wm_traffic = wmResult.Wm
     i_traffic  = wmResult.i
     ;({ epsilon_o, sigma_o_kN } = calcStrainTrafficContinuous(Wm_traffic, Z_m, E_kN, I_m, Kv_used, D_m))
