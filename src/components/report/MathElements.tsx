@@ -46,6 +46,24 @@ export function Sqrt({ children, inner }: { children?: React.ReactNode; inner?: 
   )
 }
 
+// ── 4제곱근 (⁴√) ─────────────────────────────────────────────
+export function FourthRoot({ children, inner }: { children?: React.ReactNode; inner?: React.ReactNode }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
+      <span style={{ fontSize: '0.65em', verticalAlign: 'super', lineHeight: 0, marginRight: 1 }}>4</span>
+      <span style={{ fontSize: '1.1em', lineHeight: 1, marginRight: 1 }}>√</span>
+      <span style={{
+        borderTop: '1.2px solid currentColor',
+        paddingTop: 1,
+        paddingLeft: 1,
+        paddingRight: 2,
+      }}>
+        {inner ?? children}
+      </span>
+    </span>
+  )
+}
+
 // ── 수식 한 줄 컨테이너 ───────────────────────────────────────
 export function FormulaRow({ children, indent }: { children: React.ReactNode; indent?: number }) {
   return (

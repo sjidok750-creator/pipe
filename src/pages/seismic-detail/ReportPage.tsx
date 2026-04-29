@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSeismicStore } from '../../store/useSeismicStore.js'
 import { SEISMIC_ZONE, SEISMIC_GRADE, calcKvFromN, getLayerAtDepth } from '../../engine/seismicConstants.js'
 import {
-  Frac, Sub, Sup, Sqrt, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
+  Frac, Sub, Sup, Sqrt, FourthRoot, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
 } from '../../components/report/MathElements'
 import WIcon from '../../components/WIcon'
 
@@ -468,12 +468,12 @@ export default function SeismicDetailReportPage() {
                     <Frac top={<>2 {G.times} {I_m4.toExponential(3)}</>} bot={<>{D_m.toFixed(3)}</>}/>
                     &nbsp;= {Z_m3.toExponential(3)} m<Sup>3</Sup>
                   </FormulaRow>
-                  {/* σ_o 공식 */}
+                  {/* σ_o 공식 — (EI/KvD)^(1/4) = 4제곱근 */}
                   <FormulaRow>
                     {G.sigma}<Sub>o</Sub> =&nbsp;
                     <Frac top={<>0.322 {G.times} W<Sub>m</Sub></>} bot={<>Z</>}/>
                     &nbsp;{G.times}&nbsp;
-                    <Sqrt inner={
+                    <FourthRoot inner={
                       <Frac
                         top={<>E {G.times} I</>}
                         bot={<>K<Sub>v</Sub> {G.times} D</>}
@@ -482,7 +482,7 @@ export default function SeismicDetailReportPage() {
                     &nbsp;=&nbsp;
                     <Frac top={<>0.322 {G.times} {Wm_r.toFixed(3)}</>} bot={<>{Z_m3.toExponential(3)}</>}/>
                     &nbsp;{G.times}&nbsp;
-                    <Sqrt inner={
+                    <FourthRoot inner={
                       <Frac
                         top={<>{EI.toExponential(3)}</>}
                         bot={<>{Kv_r.toFixed(0)} {G.times} {D_m.toFixed(3)}</>}
@@ -620,11 +620,11 @@ export default function SeismicDetailReportPage() {
                           {G.sigma}<Sub>o</Sub> =&nbsp;
                           <Frac top={<>0.322 {G.times} W<Sub>m</Sub></>} bot={<>Z</>}/>
                           &nbsp;{G.times}&nbsp;
-                          <Sqrt inner={<Frac top={<>E{G.times}I</>} bot={<>K<Sub>v</Sub>{G.times}D</>}/>}/>
+                          <FourthRoot inner={<Frac top={<>E{G.times}I</>} bot={<>K<Sub>v</Sub>{G.times}D</>}/>}/>
                           &nbsp;=&nbsp;
                           <Frac top={<>0.322{G.times}{Wm_r.toFixed(3)}</>} bot={<>{Z_m3.toExponential(3)}</>}/>
                           &nbsp;{G.times}&nbsp;
-                          <Sqrt inner={<Frac top={<>{EI.toExponential(3)}</>} bot={<>{Kv_r.toFixed(0)}{G.times}{D_m.toFixed(3)}</>}/>}/>
+                          <FourthRoot inner={<Frac top={<>{EI.toExponential(3)}</>} bot={<>{Kv_r.toFixed(0)}{G.times}{D_m.toFixed(3)}</>}/>}/>
                           &nbsp;= <strong>{sig_o_MPa.toFixed(4)} MPa</strong>
                         </FormulaRow>
                         <FormulaRow>
