@@ -663,6 +663,31 @@ export default function SeismicDetailInputPage() {
             </EngRow>
           )}
 
+          {/* 포아송비 — 분절관(주철관)만 */}
+          {inp.pipeType === 'segmented' && (
+            <EngRow label="포아송비 ν" popover={
+              <EngPopover title="포아송비 ν — 덕타일 주철관">
+                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                  <strong>사용처: 내압에 의한 축응력 (해설식 5.3.1)</strong><br/>
+                  σ_i = ν × P × (D−t) / (2t)
+                </div>
+                <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                  <strong>덕타일 주철관 포아송비 범위:</strong><br/>
+                  KS D 4311 / 부록C 예제: <strong>0.26</strong><br/>
+                  일부 기준 적용 범위: 0.26 ~ 0.28<br/>
+                  강관(연속관)은 0.30 고정 (강재 일반값)
+                </div>
+              </EngPopover>
+            }>
+              <EngInput
+                value={inp.nu ?? 0.26}
+                onChange={v => set({ nu: parseFloat(v) || 0.26 })}
+                min={0.20} max={0.28} step={0.01} width={80}
+              />
+              <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>기본값 0.26 (범위 0.20~0.28)</span>
+            </EngRow>
+          )}
+
           {/* 차량하중 및 지반반력계수 */}
           <EngDivider label="차량하중 · 지반반력계수"/>
           <EngRow label="흙 단위중량 γ" unit="kN/m³" popover={

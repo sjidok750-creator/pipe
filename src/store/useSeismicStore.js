@@ -48,6 +48,7 @@ const DEFAULT_DETAIL = {
   Kv: 0,                   // kN/m³ (연직방향 지반반력계수)
   kvMethod: 'N_E0',        // Kv 산정 방법: 'N_E0' | 'Vs' | 'table' | 'manual'
   // 분절관
+  nu: 0.26,              // 포아송비 (주철관 기본 0.26, 범위 0.26~0.28)
   Lj: 6,
   isSeismicJoint: false,
   // 연속관
@@ -106,7 +107,7 @@ function calcDetail(inp) {
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
     deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
-    Pm, Kv,
+    Pm, Kv, nu,
     heightMode, H_bedrock, fillGapAsLastLayer,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
@@ -132,6 +133,7 @@ function calcDetail(inp) {
       DN, t: thickness, D: D_out,
       Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
+      nu: nu ?? 0.26,
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv ?? 0,
