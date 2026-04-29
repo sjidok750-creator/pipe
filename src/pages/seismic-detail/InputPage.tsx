@@ -18,85 +18,129 @@ import {
 } from '../../engine/seismicConstants.js'
 
 type Layer = { name: string; H: number; N: number | null; Vs_manual: number | null; isRock: boolean; Vs: number }
+// vsMode: 층별 입력 방식 — 'N'(N치→Vs자동) | 'Vs'(Vs직접입력)
+type VsMode = 'N' | 'Vs'
 
 const LAYER_NAMES = ['매립층', '퇴적층', '충적층', '풍화토층', '풍화암층', '연암층', '경암층', '보통암층', '기반암층', '기타']
-const INPUT_H = '36px'  // T.inputH — 통일된 입력칸 높이
+const INPUT_H = '36px'
 
 // 지반층 입력 컴포넌트
 function LayerEditor({ layers, setLayers }: {
   layers: Layer[]
   setLayers: (l: Layer[]) => void
 }) {
+  // 층별 입력 모드 (N치 or Vs직접) — Layer 외부 상태로 관리
+  const [vsModes, setVsModes] = React.useState<VsMode[]>(() =>
+    layers.map(l => l.Vs_manual != null ? 'Vs' : 'N')
+  )
+
+  const setMode = (i: number, mode: VsMode) => {
+    const next = [...vsModes]
+    next[i] = mode
+    setVsModes(next)
+    // 모드 전환 시 반대쪽 값 초기화
+    if (mode === 'Vs') upd(i, { N: null })
+    else upd(i, { Vs_manual: null })
+  }
+
   const upd = (i: number, patch: Partial<Layer>) => {
     const next = [...layers]
     const merged = { ...next[i], ...patch }
-    // 토층명이 암반이면 isRock 자동 설정
     if (patch.name !== undefined) merged.isRock = ROCK_LAYER_NAMES.includes(patch.name)
     merged.Vs = deriveVs(merged)
     next[i] = merged
     setLayers(next)
   }
+
   const add = () => {
     const blank: Layer = { name: '퇴적층', H: 5, N: null, Vs_manual: null, isRock: false, Vs: 200 }
     setLayers([...layers, { ...blank, Vs: deriveVs(blank) }])
+    setVsModes(prev => [...prev, 'N'])
   }
-  const rm = (i: number) => setLayers(layers.filter((_, j) => j !== i))
+
+  const rm = (i: number) => {
+    setLayers(layers.filter((_, j) => j !== i))
+    setVsModes(prev => prev.filter((_, j) => j !== i))
+  }
 
   const cellStyle: React.CSSProperties = {
     fontSize: 10, fontWeight: 700, color: T.textMuted,
     fontFamily: T.fontSans, textAlign: 'center' as const, padding: '0 2px',
   }
 
+  // 토글 버튼 스타일
+  const toggleBtn = (active: boolean): React.CSSProperties => ({
+    fontSize: 10, padding: '2px 6px', cursor: 'pointer', border: 'none',
+    borderRadius: 3, fontFamily: T.fontMono, fontWeight: active ? 700 : 400,
+    background: active ? T.bgActive : T.bgPanel,
+    color: active ? T.textAccent : T.textMuted,
+    outline: active ? `1px solid ${T.textAccent}` : `1px solid ${T.border}`,
+  })
+
   return (
     <div style={{ overflowX: 'auto' }}>
       {/* 헤더 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '24px 100px 56px 56px 56px 66px 32px', gap: 3, marginBottom: 4 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '24px 100px 52px 70px 72px 62px 32px', gap: 3, marginBottom: 4 }}>
         <span style={cellStyle}></span>
         <span style={cellStyle}>토층명</span>
         <span style={cellStyle}>H (m)</span>
-        <span style={cellStyle}>N치</span>
-        <span style={cellStyle}>Vs입력</span>
+        <span style={cellStyle}>입력방식</span>
+        <span style={cellStyle}>입력값</span>
         <span style={{ ...cellStyle, color: T.textAccent }}>Vs 결과</span>
         <span></span>
       </div>
+
       {layers.map((l, i) => {
-        const vsAuto = calcVsFromN(l.N)
-        const vsSource = l.Vs_manual ? '직접' : l.isRock || ROCK_LAYER_NAMES.includes(l.name) ? '암반' : vsAuto ? 'N치' : '—'
-        const vsColor = l.Vs_manual ? T.textPrimary : T.textAccent
+        const mode = vsModes[i] ?? 'N'
+        const isRock = l.isRock || ROCK_LAYER_NAMES.includes(l.name)
+        const vsSource = isRock ? '암반' : mode === 'Vs' ? '직접' : l.N ? 'N치' : '—'
+        const vsColor = mode === 'Vs' ? T.textPrimary : T.textAccent
+
         return (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px 100px 56px 56px 56px 66px 32px', gap: 3, marginBottom: 3, alignItems: 'center' }}>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px 100px 52px 70px 72px 62px 32px', gap: 3, marginBottom: 4, alignItems: 'center' }}>
             <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>L{i+1}</span>
+
             {/* 토층명 */}
             <select value={l.name} onChange={e => upd(i, { name: e.target.value })}
               style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.border}`, padding: '0 4px', width: '100%', touchAction: 'manipulation' }}>
               {LAYER_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
+
             {/* H */}
             <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
               min={0.1} step={0.5}
               style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
-            {/* N치 — Vs 직접입력 시 비활성화 */}
-            <input type="number" value={l.N ?? ''} placeholder="—"
-              onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
-              min={1} max={300} step={1}
-              disabled={l.Vs_manual != null}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
-                background: l.Vs_manual != null ? T.bgMuted ?? '#f0f0f0' : undefined,
-                color: l.Vs_manual != null ? T.textMuted : undefined,
-                cursor: l.Vs_manual != null ? 'not-allowed' : undefined,
-              }}/>
-            {/* Vs 직접입력 */}
-            <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
-              onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
-              min={50} step={10}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${l.Vs_manual != null ? T.textAccent : T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
-                background: l.Vs_manual != null ? (T.bgActive ?? '#e8f4ff') : undefined,
-              }}/>
+
+            {/* 입력방식 토글 — 암반층은 고정 */}
+            {isRock
+              ? <div style={{ textAlign: 'center', fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>암반 고정</div>
+              : <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+                  <button style={toggleBtn(mode === 'N')} onClick={() => setMode(i, 'N')}>N치</button>
+                  <button style={toggleBtn(mode === 'Vs')} onClick={() => setMode(i, 'Vs')}>Vs</button>
+                </div>
+            }
+
+            {/* 입력값 */}
+            {isRock
+              ? <div style={{ textAlign: 'center', fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>—</div>
+              : mode === 'N'
+                ? <input type="number" value={l.N ?? ''} placeholder="N치 입력"
+                    onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+                    min={1} max={300} step={1}
+                    style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
+                : <input type="number" value={l.Vs_manual ?? ''} placeholder="Vs (m/s)"
+                    onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+                    min={50} step={10}
+                    style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.textAccent}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
+                      background: '#f0f8ff' }}/>
+            }
+
             {/* Vs 결과 */}
-            <div style={{ textAlign: 'center', fontSize: 11, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
+            <div style={{ textAlign: 'center', fontSize: 12, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
               {l.Vs.toFixed(0)}
               <span style={{ fontSize: 9, color: T.textMuted, marginLeft: 2 }}>({vsSource})</span>
             </div>
+
             {/* 삭제 */}
             {layers.length > 1
               ? <button onClick={() => rm(i)} style={{ fontSize: 13, padding: '4px 6px', minWidth: 32, minHeight: 32, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textMuted, touchAction: 'manipulation' }}>×</button>
@@ -105,8 +149,9 @@ function LayerEditor({ layers, setLayers }: {
           </div>
         )
       })}
-      {/* 합계 및 추가 버튼 */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+
+      {/* 합계 및 추가 */}
+      <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
         <button onClick={add} style={{ fontSize: 12, padding: '6px 14px', minHeight: 34, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textAccent, fontFamily: T.fontSans, touchAction: 'manipulation' }}>
           + 층 추가
         </button>
@@ -115,8 +160,8 @@ function LayerEditor({ layers, setLayers }: {
         </span>
       </div>
       <div style={{ marginTop: 5, fontSize: 9, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.6 }}>
-        * Vs 직접입력 시 N치 칸 비활성화 — Vs 우선 적용<br/>
-        * Vs 미입력 시 N치 공식(65.64×N⁰·⁴⁰⁷) 자동 계산 / 암반층: 760 m/s 고정
+        * N치 모드: N값 입력 → Vs 자동계산 (65.64×N⁰·⁴⁰⁷)<br/>
+        * Vs 모드: Vs 직접입력 → N치 불필요 / 암반층: 760 m/s 고정
       </div>
     </div>
   )
