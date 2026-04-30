@@ -1231,7 +1231,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TD}>차량하중 {G.sigma}<Sub>o</Sub></td>
-                  <td style={TDR}>0.00</td>
+                  <td style={TDR}>{rs.sigma_o?.toFixed(2)}</td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
                   <td style={TD}>지진 {G.sigma}<Sub>x</Sub></td>
