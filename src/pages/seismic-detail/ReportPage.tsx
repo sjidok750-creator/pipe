@@ -353,6 +353,10 @@ export default function SeismicDetailReportPage() {
               <FormulaRow>
                 여기서,&nbsp; {G.nu} = {nu},&nbsp; P = {inp.P} MPa,&nbsp;
                 D = {D_m.toFixed(3)} m,&nbsp; t = {t_m.toFixed(4)} m
+                &nbsp;
+                <span style={{ fontSize: 9.5, color: '#64748b' }}>
+                  [t: 입력값 그대로 적용 — 부록C 예제는 t=t₀/1.1 사용, 기준서 본문 미규정]
+                </span>
               </FormulaRow>
             </FormulaBlock>
             <ResultBlock ok>

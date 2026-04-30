@@ -459,23 +459,46 @@ export default function SeismicDetailInputPage() {
             <EngInput value={inp.DN} onChange={v => set({ DN: parseFloat(v)||300 })} min={50} max={3000} step={50} width={90}/>
           </EngRow>
           <EngRow label="관두께 t" unit="mm" popover={
-            <EngPopover title="관두께 t">
+            <EngPopover title="관두께 t — 입력값 주의사항">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 8 }}>
+                  <strong style={{ color: T.textOK }}>
+                    평가요령(2021) §5.3.2: t = 공칭관두께(m)<br/>
+                    설계기준(2025) §4.3.3: t = 공칭관두께(m)
+                  </strong>
                 </div>
-                <div style={{ fontSize: 11 }}>
-                  <strong>연속관(강관)에서 중요:</strong><br/>
-                  국부좌굴 한계변형률 = 46 × t / D_out<br/>
-                  t/D 비가 클수록(두꺼울수록) 좌굴에 유리
+
+                {/* 공차 처리 안내 */}
+                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', borderLeft: '3px solid #f97316', borderRadius: 4, padding: '7px 10px', marginBottom: 8, fontSize: 11 }}>
+                  <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 3 }}>⚠ 공차(t₀/1.1) 적용 여부</div>
+                  <div>
+                    평가요령 <b>부록C 예제</b>에서는 공칭두께 t₀에서<br/>
+                    <b>"주철구조물 공차"를 뺀 값</b>을 사용:<br/>
+                    <span style={{ fontFamily: "'JetBrains Mono','Consolas',monospace", background: '#f8f8f8', padding: '1px 4px', borderRadius: 2 }}>
+                      t = t₀ / 1.1
+                    </span>
+                    &nbsp;(예: t₀=13mm → t=11.8mm)<br/>
+                    <br/>
+                    그러나 <b>본문에는 이 처리가 명시되지 않음</b>.<br/>
+                    KS D 4311의 두께 음의 공차를 반영한 것으로 추정되나<br/>
+                    근거 조항이 기준서에 명기되지 않음.
+                  </div>
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
-                  현재: t = {inp.thickness} mm, D_out = {inp.D_out} mm<br/>
-                  46·t/D = {(46 * inp.thickness / inp.D_out * 0.01).toFixed(4)} (소수)
+
+                <div style={{ fontSize: 11, marginBottom: 6 }}>
+                  <b>입력 권장:</b>
+                  <ul style={{ margin: '4px 0 0 14px', padding: 0, lineHeight: 1.9 }}>
+                    <li>보수적 산정: <b>t = t₀ / 1.1</b> 입력 (부록C 예제 방식)</li>
+                    <li>기준서 본문 준수: <b>t = t₀</b> (공칭두께) 입력</li>
+                  </ul>
                 </div>
-                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
-                  구조안전성 검토 시 채택한 두께와 동일한 값 입력 권장
-                </div>
+
+                {inp.pipeType === 'continuous' && (
+                  <div style={{ marginTop: 6, padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: "'JetBrains Mono','Consolas',monospace", fontSize: 11 }}>
+                    연속관 국부좌굴 한계변형률 = 46·t / D_out<br/>
+                    현재: 46 × {inp.thickness} / {inp.D_out} = {(46 * inp.thickness / inp.D_out).toFixed(4)} ‰
+                  </div>
+                )}
               </div>
             </EngPopover>
           }>
