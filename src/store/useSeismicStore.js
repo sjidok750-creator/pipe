@@ -57,6 +57,7 @@ const DEFAULT_DETAIL = {
   deltaT: 20,
   D_settle: 0,
   L_settle: 0,
+  h2_settle: 0,   // 성토고 h″ (m) — 부등침하 Winkler beam 계산용
   strainCriterion: 'buckling',  // 'yield' (σ_y/E) | 'buckling' (46t/D, 실무기준)
   // 지반 층 (name, H, N, Vs_manual, isRock, Vs)
   // Vs = Vs_manual ?? (isRock ? 760 : 65.64*N^0.407)
@@ -107,7 +108,7 @@ function calcDetail(inp) {
   const {
     pipeType, zone, seismicGrade, soilType,
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
-    hasSettle, deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
+    hasSettle, deltaT, D_settle, L_settle, h2_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
     Pm, Kv, kvMethod, nu,
     heightMode, H_bedrock, fillGapAsLastLayer,
@@ -162,7 +163,7 @@ function calcDetail(inp) {
       seismicGrade, Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
       gamma: inp.gammaSoil ?? 18,
-      deltaT, D_settle, L_settle, strainCriterion,
+      deltaT, D_settle, L_settle, h2_settle: h2_settle ?? 0, strainCriterion,
       h_cover: hCover, z_pipe,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv_eff,

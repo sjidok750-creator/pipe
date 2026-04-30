@@ -45,15 +45,39 @@ export function calcStrainTemperature(deltaT, alpha_T = 1.2e-5) {
   return alpha_T * deltaT
 }
 
-// ─── 부등침하에 의한 축변형률 ────────────────────────────────
-// 지침 해설식(5.3.41): ε_d = δ / (2 × l)
-// δ: 부등침하량 (m), l: 침하 구간 길이 (m)
-// 근거: 경사 θ = δ/l, 축변형률 = sin²(θ)/2 ≈ (δ/l)²/2 (소변위 근사)가 아닌
-//       지침 예제 및 해설식은 단순히 δ/(2l) 적용 — 관의 처짐각에 의한 축방향 신장량
-//       tan(θ)/2 = (δ/l)/2 = δ/(2l) 로 직접 적용 (지침 부록C 예제값 검증 완료)
-export function calcStrainSettlement(D_settle, L_settle) {
-  if (L_settle <= 0) return 0
-  return D_settle / (2 * L_settle)
+// ─── 부등침하에 의한 축변형률 (연속관 — Winkler beam 모델) ──
+// 근거: 2025년 상수도설계기준해설편 §4.3.3(3)라, 평가요령(2021) 해설식(5.3.39~5.3.42)
+// 관을 탄성지반 위 보로 간주, 최대 휨모멘트 M = max(M₁, M₂)로 변형률 계산
+//
+// Wd = γ(h + h″)D               연직토하중 (kN/m)
+// β  = ⁴√(K₂/(4EI))             특성값 (m⁻¹)
+// M₁ = Wd/(2β²) × e^(-βL/2) × sin(βL/2)
+// M₂ = 0.3877×Wd/β² × [0.2079 + e^(-βL)×(sin(βL)−cos(βL))]
+// ε_d = M·D / (2·E·I)
+//
+// @param L      연약지반 구간 (m)
+// @param gamma  흙 단위중량 (kN/m³)
+// @param h      토피(흙 두께) (m)
+// @param h2     성토고 h″ (m) — 성토 없으면 0
+// @param D_m    관 외경 (m)
+// @param E_kN   탄성계수 (kN/m²)
+// @param I_m    단면2차모멘트 (m⁴)
+// @param K2     축직교방향 지반강성계수 (kN/m²)
+// 검증: 부록C 예제 → ε_d = 2.17×10⁻⁵ ✓
+export function calcStrainSettlement(L, gamma, h, h2, D_m, E_kN, I_m, K2) {
+  if (L <= 0 || K2 <= 0 || I_m <= 0) return { epsilon_d: 0, M: 0, Wd: 0, beta: 0, M1: 0, M2: 0 }
+
+  const Wd   = gamma * (h + h2) * D_m                   // 연직토하중 (kN/m)
+  const beta = Math.pow(K2 / (4 * E_kN * I_m), 0.25)    // 특성값 (m⁻¹)
+  const bL   = beta * L
+
+  const M1 = (Wd / (2 * beta ** 2)) * Math.exp(-bL / 2) * Math.sin(bL / 2)
+  const M2 = 0.3877 * (Wd / beta ** 2) * (0.2079 + Math.exp(-bL) * (Math.sin(bL) - Math.cos(bL)))
+  const M  = Math.max(M1, M2)
+
+  const epsilon_d = M * D_m / (2 * E_kN * I_m)
+
+  return { epsilon_d, M, Wd, beta, M1, M2 }
 }
 
 // ─── 지진에 의한 축변형률 (연속관) ──────────────────────────
@@ -257,7 +281,12 @@ export function evalContinuous(params) {
   const epsilon_t = calcStrainTemperature(deltaT)
 
   // ── Step 12: 부등침하에 의한 축변형률 (해설식 5.3.39~5.3.42) ──
-  const epsilon_d = calcStrainSettlement(D_settle, L_settle)
+  // L_settle: 연약지반 구간, h2_settle: 성토고 h″ (없으면 0)
+  const h2_settle = params.h2_settle ?? 0
+  const settleResult = (L_settle > 0)
+    ? calcStrainSettlement(L_settle, gamma, h_cover, h2_settle, D_m, E_kN, I_m, K2)
+    : { epsilon_d: 0, M: 0, Wd: 0, beta: 0, M1: 0, M2: 0 }
+  const epsilon_d = settleResult.epsilon_d
 
   // ── Step 13: 지진에 의한 축변형률 (해설식 5.3.43~5.3.53) ──
   const sigma_y = getSteelYieldStrength(t)
@@ -300,6 +329,9 @@ export function evalContinuous(params) {
     A_m, I_m, Z_m,
     // 변형률 성분
     epsilon_i, epsilon_o, epsilon_t, epsilon_d,
+    // 부등침하 세부 (보고서용)
+    settle_M: settleResult.M, settle_M1: settleResult.M1, settle_M2: settleResult.M2,
+    settle_Wd: settleResult.Wd, settle_beta: settleResult.beta,
     epsilon_G, epsilon_L, epsilon_B, epsilon_x,
     // alias (보고서/결과 페이지 호환)
     epsilon_eq: epsilon_x, epsilon_eq_L: epsilon_L, epsilon_eq_B: epsilon_B,

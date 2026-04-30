@@ -1186,44 +1186,59 @@ export default function SeismicDetailInputPage() {
               }>
                 <EngInput value={inp.deltaT} onChange={v => set({ deltaT: parseFloat(v)||20 })} step={1} width={90}/>
               </EngRow>
-              <EngRow label="부등침하량 δ" unit="m" popover={
-                <EngPopover title="부등침하량 δ">
+              <EngDivider label="부등침하 조건"/>
+              <EngRow label="연약지반 구간 L" unit="m" popover={
+                <EngPopover title="연약지반 구간 L">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                     <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                      <strong style={{ color: T.textOK }}>평가요령(2021) 해설식(5.3.39~5.3.42)<br/>설계기준(2025) §4.3.3(3)라</strong>
                     </div>
                     <div style={{ fontSize: 11 }}>
-                      지반 부등침하 또는 지진에 의한 국부 침하 예상량.<br/>
-                      지반조사 결과 또는 인근 구조물 침하 실측값 사용.<br/>
-                      연약 지반 구간, 성토-절토 경계부에서 특히 중요.
+                      성토 지반침하가 발생하는 <b>연약지반 구간의 길이</b>.<br/>
+                      관을 탄성지반 위 보(Winkler beam)로 간주하여<br/>
+                      최대 휨모멘트 M으로 축방향 변형률을 계산.
+                    </div>
+                    <div style={{ marginTop: 6, padding: '5px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                      Wd = γ(h + h″)D&nbsp;&nbsp;[연직토하중]<br/>
+                      β  = ⁴√(K₂/4EI)&nbsp;&nbsp;[특성값]<br/>
+                      M  = max(M₁, M₂)<br/>
+                      ε_d = M·D / (2·E·I)
                     </div>
                     <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
-                      부등침하가 없는 경우 δ = 0 입력.
-                    </div>
-                  </div>
-                </EngPopover>
-              }>
-                <EngInput value={inp.D_settle} onChange={v => set({ D_settle: parseFloat(v)||0 })} min={0} step={0.01} width={90}/>
-              </EngRow>
-              <EngRow label="침하구간 길이" unit="m" popover={
-                <EngPopover title="침하구간 길이 L_settle">
-                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
-                    </div>
-                    <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
-                      굽힘변형률 ε_B = π² · D_out / (2 · L²) · δ
-                    </div>
-                    <div style={{ marginTop: 6, fontSize: 11 }}>
-                      부등침하 δ가 발생하는 구간의 길이 L.<br/>
-                      L이 짧을수록 굽힘변형률이 급격히 증가하므로<br/>
-                      실측 또는 지반조사 결과를 기반으로 보수적 추정 권장.
+                      부등침하 없으면 L = 0 입력.<br/>
+                      부록C 예제: L = 15 m, ε_d = 0.00217%
                     </div>
                   </div>
                 </EngPopover>
               }>
                 <EngInput value={inp.L_settle} onChange={v => set({ L_settle: parseFloat(v)||0 })} min={0} step={1} width={90}/>
               </EngRow>
+              {(inp.L_settle ?? 0) > 0 && (
+                <>
+                  <EngRow label="성토고 h″" unit="m" popover={
+                    <EngPopover title="성토고 h″">
+                      <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                        <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                          <strong style={{ color: T.textOK }}>평가요령(2021) 해설식(5.3.39)</strong>
+                        </div>
+                        <div style={{ fontSize: 11 }}>
+                          연약지반 구간 위의 <b>성토 높이</b>.<br/>
+                          성토가 없는 일반 매설 구간은 <b>h″ = 0</b> 입력.
+                        </div>
+                        <div style={{ marginTop: 6, padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                          Wd = γ × (h + h″) × D<br/>
+                          h: 토피(m), h″: 성토고(m)
+                        </div>
+                        <div style={{ marginTop: 4, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                          부록C 예제: h=1.5m, h″=1.0m → Wd = 17×2.5×1.0 = 42.5 kN/m
+                        </div>
+                      </div>
+                    </EngPopover>
+                  }>
+                    <EngInput value={inp.h2_settle ?? 0} onChange={v => set({ h2_settle: parseFloat(v)||0 } as any)} min={0} step={0.1} width={90}/>
+                  </EngRow>
+                </>
+              )}
               <EngDivider label="허용변형률 기준"/>
               <EngRow label="판정 기준" popover={
                 <EngPopover title="허용변형률 판정 기준">
