@@ -85,11 +85,14 @@ const KS_SOCKET: { dn: number; L2: number }[] = [
   { dn: 1200, L2: 120 },
 ]
 
-// ── 허용굽힘각도 (KS D 4311 / 제조사 기준) ──────────────────
-const THETA_ALLOW: { dn: string; normal: string; seismic: string }[] = [
-  { dn: '75~300',   normal: '3.5°', seismic: '— (제조사 기준)' },
-  { dn: '350~600',  normal: '2.5°', seismic: '— (제조사 기준)' },
-  { dn: '700~1200', normal: '1.5°', seismic: '— (제조사 기준)' },
+// ── 허용굽힘각도 ─────────────────────────────────────────────
+// 평가요령(2021) 및 설계기준(2025) 모두 수치 미규정
+// "제조사의 이음부 신축 관련 허용기준을 참조하여야 한다" (설계기준 2025 §4.3.3)
+// 아래 값은 일부 교재·실무 참고자료에서 인용되는 값으로 공식 기준 아님
+const THETA_ALLOW: { dn: string; normal: string; seismic: string; note: string }[] = [
+  { dn: '75~300',   normal: '~3°',  seismic: '~5° 이상', note: '제조사별 상이' },
+  { dn: '350~600',  normal: '~2°',  seismic: '~5° 이상', note: '제조사별 상이' },
+  { dn: '700~1200', normal: '~1°',  seismic: '~3° 이상', note: '제조사별 상이' },
 ]
 
 // ── 지반 강성계수 K1, K2 산정식 ─────────────────────────────
@@ -332,40 +335,62 @@ export default function SeismicDetailReferencePage() {
           <div>
             <Section title="이음부 허용굽힘각 (θ_allow)">
               <div style={{
-                background: C.bg1, border: `1px solid ${C.border}`,
+                background: '#fff7ed', border: `1px solid #fed7aa`,
                 borderRadius: 6, padding: '10px 14px', marginBottom: 14,
                 fontSize: 12, fontFamily: C.sans, lineHeight: 1.8,
               }}>
-                <div style={{ fontWeight: 700, color: C.navy, marginBottom: 4 }}>산정 기준</div>
-                <div style={{ fontFamily: C.mono, fontSize: 12 }}>
-                  θ_J = (π × Uh / L) × sin(π × Lj / L)&nbsp;&nbsp;[해설식 5.3.36]<br/>
-                  θ_allow: 관경 및 관접합구조에 따라 제조사 기준 참조
+                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>⚠ 주의 — 기준서 미규정 항목</div>
+                <div>
+                  <b>평가요령(2021) §5.3.2</b>: 허용굽힘각 수치 규정 없음 (굽힘각 검토 항목 자체 없음)<br/>
+                  <b>설계기준(2025) §4.3.3</b>: 굽힘각 공식은 있으나 허용값 미규정.<br/>
+                  "허용굽힘각도는 관경과 관접합구조에 따라 달라지므로 <b>제조사의 이음부 신축 관련 허용기준을 참조</b>하여야 한다"
                 </div>
-                <div style={{ marginTop: 8, color: C.muted, fontSize: 11 }}>
-                  2025년 설계기준: "허용굽힘각도는 관경과 관접합구조에 따라 달라지므로 제조사의 이음부 신축 관련 허용기준을 참조하여야 한다"
+                <div style={{ marginTop: 8, color: '#92400e', fontSize: 11 }}>
+                  → 앱에 표시되는 참고 허용값(3.5°/2.5°/1.5°)은 공식 기준 근거 없음. 실무 적용 시 반드시 제조사 카탈로그 확인 필요.
                 </div>
+              </div>
+
+              <div style={{ fontWeight: 700, color: C.navy, fontSize: 12, marginBottom: 8, fontFamily: C.sans }}>
+                굽힘각 산정 공식 (설계기준 2025 §4.3.3(2)다)
+              </div>
+              <div style={{
+                background: C.bg0, border: `1px solid ${C.border}`,
+                borderRadius: 6, padding: '10px 14px', marginBottom: 14,
+                fontSize: 12, fontFamily: C.mono, lineHeight: 2,
+              }}>
+                θ = 4π²·l·Uh / L²<br/>
+                <span style={{ fontFamily: C.sans, fontSize: 11, color: C.muted }}>
+                  θ: 이음부 굽힘각(radian), l: 이음부 간격=관 길이(m),<br/>
+                  Uh: 지표면에서 관 위치 심도에 따른 지반의 수평변위 진폭(m), L: 지진동의 파장(m)<br/>
+                  ※ "추가적으로 검토할 수 있다" — 선택 검토 항목, 최종 합격/불합격에 포함 안 됨
+                </span>
+              </div>
+
+              <div style={{ fontWeight: 700, color: C.navy, fontSize: 12, marginBottom: 8, fontFamily: C.sans }}>
+                제조사별 허용굽힘각 참고 (카탈로그 확인 필수)
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>
                   <th style={TH}>관경 범위</th>
-                  <th style={THC}>일반형 허용굽힘각 (°)</th>
-                  <th style={THC}>내진형 허용굽힘각 (°)</th>
+                  <th style={THC}>일반형 이음 (참고)</th>
+                  <th style={THC}>내진형 이음 (참고)</th>
                   <th style={TH}>비고</th>
                 </tr></thead>
                 <tbody>
-                  {THETA_ALLOW.map(({ dn, normal, seismic }, i) => (
+                  {THETA_ALLOW.map(({ dn, normal, seismic, note }, i) => (
                     <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
                       <td style={TDB}>DN {dn}</td>
-                      <td style={{ ...TDC, fontWeight: 700, color: '#1d6a3a' }}>{normal}</td>
+                      <td style={{ ...TDC, color: C.muted }}>{normal}</td>
                       <td style={{ ...TDC, color: C.blue }}>{seismic}</td>
-                      <td style={{ ...TD, fontSize: 11, color: C.muted }}>평가요령 기준</td>
+                      <td style={{ ...TD, fontSize: 11, color: C.muted }}>{note}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <Note>
-                내진형(NS이음 등)의 허용굽힘각은 제조사별로 5°~10° 범위로 상이하므로 카탈로그 확인 필요.<br/>
-                평가요령 §5.3.2: DN &lt; 300 → 3.5°, DN 300~600 → 2.5°, DN &gt; 600 → 1.5°
+                내진형(NS이음·SII이음 등)의 허용굽힘각은 제조사별로 상이.<br/>
+                한국주철관·현대주철·경동주철 등 각사 카탈로그 또는 KS D 4311 부록 참조.<br/>
+                위 참고값은 공식 기준이 아니며 실무 적용 불가.
               </Note>
             </Section>
           </div>
