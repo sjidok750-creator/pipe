@@ -28,49 +28,48 @@ const DEFAULT_PRELIM = {
   mcone: 'bolted',
 }
 
-// ── 상세평가 기본값 ──────────────────────────────────────────
+// ── 상세평가 기본값 (부록C 예제값) ──────────────────────────
+// 분절관: 부록C.1, 연속관: 부록C.2 기준
 const DEFAULT_DETAIL = {
   pipeType: 'segmented',   // 'segmented' | 'continuous'
   zone: 'I',
   seismicGrade: 'I',
-  soilType: 'S2',
-  DN: 300,
-  thickness: 8.0,
-  D_out: 322,
-  P: 0.5,
-  hCover: 1.5,
+  soilType: 'S3',          // 부록C 예제: S3
+  DN: 900,                 // 부록C.1: DN900
+  thickness: 13.0,         // 부록C.1: t=13mm
+  D_out: 916,              // 부록C.1: D=0.9m → 916mm (DN900 덕타일)
+  P: 1.0,                  // 부록C: P=1MPa
+  hCover: 1.5,             // 부록C: h=1.5m
   // 탄성계수 직접 입력
-  E_manual: false,         // true: 직접입력, false: 관종 자동
-  E_steel: 206000,         // MPa (강관 기본값)
-  E_ductile: 170000,       // MPa (덕타일 주철관 기본값)
+  E_manual: false,
+  E_steel: 206000,
+  E_ductile: 170000,
   // 차량하중 및 지반반력계수
-  gammaSoil: 18,            // kN/m³ (흙 단위중량)
-  Pm: 0,                   // kN/輪 (후륜 1륜 하중, 0=차량없음)
-  Kv: 0,                   // kN/m³ (연직방향 지반반력계수)
-  kvMethod: 'N_E0',        // Kv 산정 방법: 'N_E0' | 'Vs' | 'table' | 'manual'
+  gammaSoil: 18,
+  Pm: 100,                 // 부록C: Pm=100kN/輪
+  Kv: 10000,               // 부록C.2 연속관: Kv=10000 kN/m³
+  kvMethod: 'manual',
   // 분절관
-  nu: 0.26,              // 포아송비 (주철관 기본 0.26, 범위 0.26~0.28)
+  nu: 0.28,                // 부록C.1: ν=0.28
   Lj: 6,
   isSeismicJoint: false,
-  hasSettle: false,      // 부등침하 고려 여부 (분절관)
+  hasSettle: false,
   // 연속관
-  deltaT: 20,
+  deltaT: 15,              // 부록C.2: ΔT=15°C
   D_settle: 0,
   L_settle: 0,
-  h2_settle: 0,   // 성토고 h″ (m) — 부등침하 Winkler beam 계산용
-  strainCriterion: 'buckling',  // 'yield' (σ_y/E) | 'buckling' (46t/D, 실무기준)
-  // 지반 층 (name, H, N, Vs_manual, isRock, Vs)
-  // Vs = Vs_manual ?? (isRock ? 760 : 65.64*N^0.407)
+  h2_settle: 0,
+  strainCriterion: 'buckling',
+  // 지반층: 부록C 예제 (분절관·연속관 동일)
+  // 층1: H=30m, Vs=89.4m/s / 층2: H=5m, Vs=172.9m/s
   layers: [
-    { name: '매립층',   H: 5,  N: null, Vs_manual: null, isRock: false, Vs: 150 },
-    { name: '퇴적층',   H: 10, N: null, Vs_manual: null, isRock: false, Vs: 250 },
-    { name: '풍화토층', H: 5,  N: null, Vs_manual: null, isRock: false, Vs: 350 },
+    { name: '표층',   H: 30, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
+    { name: '중간층', H: 5,  N: null, Vs_manual: 172.9, isRock: false, Vs: 172.9 },
   ],
   Vbs: 500,
-  // 기반암 깊이 입력 모드
-  heightMode: 'sum',        // 'sum': 층 두께 합산(기본) | 'explicit': 직접 입력
-  H_bedrock: null,          // m, explicit 모드에서 사용자가 직접 입력하는 기반암 깊이
-  fillGapAsLastLayer: true, // explicit 모드에서 층 합계 < H_bedrock 시 최하층 Vs로 공백 보정
+  heightMode: 'sum',
+  H_bedrock: null,
+  fillGapAsLastLayer: true,
 }
 
 // ── 예비평가 계산 ────────────────────────────────────────────

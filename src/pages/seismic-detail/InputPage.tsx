@@ -172,7 +172,11 @@ type KvMode = 'N_E0' | 'Vs' | 'table' | 'manual'
 export default function SeismicDetailInputPage() {
   const navigate = useNavigate()
   const { detailInputs: inp, setDetailInputs: set, setDetailLayers, calcDetail } = useSeismicStore()
-  const [kvMode, setKvMode] = useState<KvMode>('N_E0')
+  const [kvMode, setKvMode] = useState<KvMode>('manual')
+  // touched: 사용자가 직접 입력한 필드 키 Set (파란색), 미입력=기본값(빨간색)
+  const [touched, setTouched] = useState<Set<string>>(new Set())
+  const touch = (key: string) => setTouched(prev => new Set(prev).add(key))
+  const hl = (key: string): 'default' | 'touched' => touched.has(key) ? 'touched' : 'default'
 
   const Z = SEISMIC_ZONE[inp.zone as 'I'|'II'].Z
   const I_seismic = inp.seismicGrade === 'I' ? 1.40 : 1.00
@@ -224,7 +228,19 @@ export default function SeismicDetailInputPage() {
     H_bedrock: hBedrock,
   })
 
+  // 핵심 입력 필드 키 목록 (빨간색 경고 대상)
+  const KEY_FIELDS = ['DN', 'thickness', 'D_out', 'P', 'hCover', 'soilType', 'zone', 'seismicGrade']
+  const hasUntouched = KEY_FIELDS.some(k => !touched.has(k))
+
   function handleCalc() {
+    if (hasUntouched) {
+      const ok = window.confirm(
+        '부록C 예제 기본값(빨간색)이 그대로인 항목이 있습니다.\n' +
+        '실제 현장값으로 교체하지 않으면 검토 결과가 현장과 다를 수 있습니다.\n\n' +
+        '그대로 계산하시겠습니까?'
+      )
+      if (!ok) return
+    }
     const result = calcDetail()
     if (result) navigate('/seismic-detail/result')
   }
@@ -290,7 +306,7 @@ export default function SeismicDetailInputPage() {
             />
           </EngRow>
           <EngDivider />
-          <EngRow label="지진구역" popover={
+          <EngRow label={<>지진구역{!touched.has('zone') && <span style={{ color: '#c0392b', marginLeft: 3, fontSize: 9 }}>●</span>}</>} popover={
             <EngPopover title="지진구역 (Seismic Zone)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
@@ -331,10 +347,10 @@ export default function SeismicDetailInputPage() {
                 { key: 'II', label: '구역 Ⅱ  (Z = 0.07)' },
               ]}
               value={inp.zone}
-              onChange={v => set({ zone: v })}
+              onChange={v => { set({ zone: v }); touch('zone') }}
             />
           </EngRow>
-          <EngRow label="내진등급" popover={
+          <EngRow label={<>내진등급{!touched.has('seismicGrade') && <span style={{ color: '#c0392b', marginLeft: 3, fontSize: 9 }}>●</span>}</>} popover={
             <EngPopover title="내진등급 (Seismic Performance Grade)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
@@ -377,10 +393,10 @@ export default function SeismicDetailInputPage() {
                 { key: 'II', label: '내진 Ⅱ 등급', sub: '붕괴 500년 / 기능 50년' },
               ]}
               value={inp.seismicGrade}
-              onChange={v => set({ seismicGrade: v })}
+              onChange={v => { set({ seismicGrade: v }); touch('seismicGrade') }}
             />
           </EngRow>
-          <EngRow label="지반종류" popover={
+          <EngRow label={<>지반종류{!touched.has('soilType') && <span style={{ color: '#c0392b', marginLeft: 3, fontSize: 9 }}>●</span>}</>} popover={
             <EngPopover title="지반종류 (Site Class)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
@@ -423,7 +439,7 @@ export default function SeismicDetailInputPage() {
             <EngSegment
               options={Object.keys(SOIL_TYPE).map(k => ({ key: k, label: k }))}
               value={inp.soilType}
-              onChange={v => set({ soilType: v })}
+              onChange={v => { set({ soilType: v }); touch('soilType') }}
             />
           </EngRow>
           <div style={{ fontSize: 10, color: T.textMuted, marginLeft: 110, marginTop: 2, fontFamily: T.fontSans }}>
@@ -456,7 +472,7 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.DN} onChange={v => set({ DN: parseFloat(v)||300 })} min={50} max={3000} step={50} width={90}/>
+            <EngInput value={inp.DN} onChange={v => { set({ DN: parseFloat(v)||300 }); touch('DN') }} min={50} max={3000} step={50} width={90} highlight={hl('DN')}/>
           </EngRow>
           <EngRow label="관두께 t" unit="mm" popover={
             <EngPopover title="관두께 t — 입력값 주의사항">
@@ -502,7 +518,7 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.thickness} onChange={v => set({ thickness: parseFloat(v)||8 })} min={1} step={0.5} width={90}/>
+            <EngInput value={inp.thickness} onChange={v => { set({ thickness: parseFloat(v)||8 }); touch('thickness') }} min={1} step={0.5} width={90} highlight={hl('thickness')}/>
           </EngRow>
           <EngRow label="외경 D_out" unit="mm" popover={
             <EngPopover title="외경 D_out (Outer Diameter)">
@@ -541,7 +557,7 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.D_out} onChange={v => set({ D_out: parseFloat(v)||322 })} min={50} step={1} width={90}/>
+            <EngInput value={inp.D_out} onChange={v => { set({ D_out: parseFloat(v)||322 }); touch('D_out') }} min={50} step={1} width={90} highlight={hl('D_out')}/>
           </EngRow>
           <EngRow label="설계수압 P" unit="MPa" popover={
             <EngPopover title="설계수압 P">
@@ -561,7 +577,7 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.P} onChange={v => set({ P: parseFloat(v)||0.5 })} min={0.01} step={0.05} width={90}/>
+            <EngInput value={inp.P} onChange={v => { set({ P: parseFloat(v)||0.5 }); touch('P') }} min={0.01} step={0.05} width={90} highlight={hl('P')}/>
           </EngRow>
           <EngRow label="토피 h" unit="m" popover={
             <EngPopover title="토피 h (매설 깊이)">
@@ -581,7 +597,7 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            <EngInput value={inp.hCover} onChange={v => set({ hCover: parseFloat(v)||1.5 })} min={0.3} step={0.1} width={90}/>
+            <EngInput value={inp.hCover} onChange={v => { set({ hCover: parseFloat(v)||1.5 }); touch('hCover') }} min={0.3} step={0.1} width={90} highlight={hl('hCover')}/>
           </EngRow>
 
           {/* 탄성계수 */}
@@ -1487,6 +1503,19 @@ export default function SeismicDetailInputPage() {
             </span>
           </EngRow>
         </EngPanel>
+
+        {/* 부록C 기본값 경고 배너 */}
+        {hasUntouched && (
+          <div style={{
+            padding: '7px 10px', marginBottom: 6,
+            background: '#fff5f5', border: '1px solid #f5b3b3',
+            borderRadius: 2, fontSize: 10.5, color: '#c0392b',
+            fontFamily: T.fontSans, lineHeight: 1.6,
+          }}>
+            <strong>⚠ 부록C 예제 기본값(빨간색)이 남아있습니다.</strong><br/>
+            빨간색 항목을 실제 현장값으로 교체하세요. 그대로 계산하면 부록C 예제 결과가 나옵니다.
+          </div>
+        )}
 
         {/* 계산 버튼 */}
         <button onClick={handleCalc} style={{

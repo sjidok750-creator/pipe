@@ -163,7 +163,7 @@ export function EngDivider({ label }: { label?: string }) {
 export function EngRow({
   label, children, labelWidth = 116, unit, popover,
 }: {
-  label: string
+  label: React.ReactNode
   children: React.ReactNode
   labelWidth?: number
   unit?: string
@@ -204,7 +204,7 @@ export function EngRow({
 // EngInput — 숫자 입력칸 (로컬 draft 상태 — 지우기·재입력 자유)
 // ══════════════════════════════════════════════════════════════
 export function EngInput({
-  value, onChange, min, max, step, width = 96, disabled, compact,
+  value, onChange, min, max, step, width = 96, disabled, compact, highlight,
 }: {
   value: string | number
   onChange?: (v: string) => void
@@ -212,6 +212,7 @@ export function EngInput({
   width?: number
   disabled?: boolean
   compact?: boolean
+  highlight?: 'default' | 'touched' | 'none'
 }) {
   const [draft, setDraft] = useState<string>(String(value ?? ''))
   const [hasError, setHasError] = useState(false)
@@ -269,7 +270,10 @@ export function EngInput({
           fontSize: T.fs.base,
           fontFamily: T.fontMono,
           background: disabled ? T.bgInputDisabled : T.bgInput,
-          color: disabled ? T.textDisabled : hasError ? '#ef4444' : T.textPrimary,
+          color: disabled ? T.textDisabled : hasError ? '#ef4444'
+            : highlight === 'default' ? '#c0392b'
+            : highlight === 'touched' ? '#1a6db5'
+            : T.textPrimary,
           outline: 'none',
           textAlign: 'right',
           boxSizing: 'border-box',
