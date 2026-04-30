@@ -133,6 +133,7 @@ function calcDetail(inp) {
       DN, t: thickness, D: D_out,
       Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
+      gamma: inp.gammaSoil ?? 18,
       nu: nu ?? 0.26,
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
       E: E_use,
