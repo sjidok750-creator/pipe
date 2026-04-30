@@ -1,22 +1,32 @@
-// 설계속도응답스펙트럼 — KDS 17 10 00 그림 2.1.2
-// Y축: 의사속도 Sv = Sa × T × g / (2π) [m/s]
+// 암반 기반면 속도응답스펙트럼 Sv — 매설관 내진 계산용
+// 근거: 평가요령 해설식(5.3.6), KDS 17 10 00
+// - 암반 기준 (Fa=Fv=1.0): T_A=0.06s, T_B=0.3s
+// - Sas = S×2.5 (암반 단주기 스펙트럼 가속도, g배수)
+// - T ≤ T_A: Sa = Sas×(0.4+0.6×T/T_A)  → Sv 선형 증가
+// - T_A ≤ T ≤ T_B: Sa = Sas             → Sv 선형 증가
+// - T > T_B: Sa = Sas×T_B/T             → Sv = Sas×g×T_B/(2π) 일정 (플래토)
+// - 감쇠보정: Sv × η,  η=√(10/(5+ξ)),  붕괴방지ξ=20%→η=0.6325, 기능수행ξ=10%→η=0.8165
+// - 피크 Sv(감쇠보정후) = Sas×g×T_B/(2π)×η 가 Uh 산정에 직접 사용됨
 import React from 'react'
 import { T } from '../tokens'
 
 const G = 9.81
 const PI2 = 2 * Math.PI
+const T_A = 0.06   // 암반 단주기 전이주기
+const T_B = 0.3    // 암반 장주기 전이주기
 
-function saAt(t: number, sds: number, sd1: number, t0: number, ts: number, tl: number): number {
-  if (t < 0.001) return sds * 0.4
-  if (t <= t0) return sds * (0.4 + 0.6 * t / t0)
-  if (t <= ts) return sds
-  if (t <= tl) return sd1 / t
-  return sd1 * tl / (t * t)
+// 암반 기반 Sa 계산 (Fa=Fv=1.0, 감쇠보정 전)
+function saRock(t: number, Sas: number): number {
+  if (t < 0.001) return Sas * 0.4
+  if (t <= T_A) return Sas * (0.4 + 0.6 * t / T_A)
+  if (t <= T_B) return Sas
+  return Sas * T_B / t
 }
 
-function svAt(t: number, sds: number, sd1: number, t0: number, ts: number, tl: number): number {
+// 암반 기반 Sv 계산 (감쇠보정 후)
+function svRock(t: number, Sas: number, eta: number): number {
   if (t < 0.001) t = 0.001
-  return saAt(t, sds, sd1, t0, ts, tl) * t * G / PI2
+  return saRock(t, Sas) * t * G / PI2 * eta
 }
 
 function niceStep(range: number, n = 5): number {
@@ -26,55 +36,62 @@ function niceStep(range: number, n = 5): number {
 }
 
 export function ResponseSpectrumSVG({
-  SDS, SD1, T0, TS, TL = 3.0,
-  SDS_func, SD1_func,
+  // S = Z×I (붕괴방지), Sas_func: 기능수행용 Sas
+  Sas, eta_collapse, Sas_func, eta_func,
+  // 표층지반 응답주기 (관 위치 Sv 산정 기준점)
   Ts,
+  // 실제 사용된 Sv (감쇠보정 후, Ts 위치)
+  Sv_used, Sv_used_func,
   width = 260, height = 170,
 }: {
-  SDS: number; SD1: number; T0: number; TS: number; TL?: number; Ts: number
-  SDS_func?: number; SD1_func?: number
+  Sas: number; eta_collapse: number
+  Sas_func?: number; eta_func?: number
+  Ts: number
+  Sv_used?: number; Sv_used_func?: number
   width?: number; height?: number
 }) {
   const px = 46, py = 16, gw = width - px - 14, gh = height - py - 38
 
-  // Sv 피크 (속도일정구간 = TS ~ TL)
-  const SvPeak = SD1 * G / PI2
-  const SvPeak_f = (SD1_func != null) ? SD1_func * G / PI2 : null
-  const hasFunc = SDS_func != null && SD1_func != null && SvPeak_f != null
+  const hasFunc = Sas_func != null && eta_func != null
 
-  const maxSv = Math.max(SvPeak, SvPeak_f ?? 0) * 1.40
+  // Sv 플래토 (감쇠보정 후) — T_B 이후 일정값
+  const SvPlat_c = Sas * G * T_B / PI2 * eta_collapse
+  const SvPlat_f = hasFunc ? Sas_func! * G * T_B / PI2 * eta_func! : null
+
+  const maxSv = Math.max(SvPlat_c, SvPlat_f ?? 0) * 1.40
   const step = niceStep(maxSv)
   const maxT = 4.0
 
   const tx = (t: number) => px + (t / maxT) * gw
   const ty = (sv: number) => py + gh - (sv / maxSv) * gh
 
-  // 곡선 폴리라인 데이터
-  function buildPts(sds: number, sd1: number): string {
-    return Array.from({ length: 200 }, (_, i) => {
-      const t = (i / 199) * maxT
-      const sv = svAt(t, sds, sd1, T0, TS, TL)
+  // 곡선 폴리라인
+  function buildPts(sas: number, eta: number): string {
+    return Array.from({ length: 300 }, (_, i) => {
+      const t = (i / 299) * maxT
+      const sv = svRock(t, sas, eta)
       return `${tx(t).toFixed(1)},${ty(sv).toFixed(1)}`
     }).join(' ')
   }
-  const ptsC = buildPts(SDS, SD1)
-  const ptsF = hasFunc ? buildPts(SDS_func!, SD1_func!) : null
+  const ptsC = buildPts(Sas, eta_collapse)
+  const ptsF = hasFunc ? buildPts(Sas_func!, eta_func!) : null
 
   // Y축 눈금
   const yTicks: number[] = []
   for (let v = 0; v <= maxSv + step * 0.01; v += step) yTicks.push(parseFloat(v.toFixed(4)))
 
-  // T축 눈금
   const tTicks = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0]
 
-  const ySvC = ty(SvPeak)
-  const ySvF = SvPeak_f != null ? ty(SvPeak_f) : null
+  const ySvC = ty(SvPlat_c)
+  const ySvF = SvPlat_f != null ? ty(SvPlat_f) : null
 
-  // 피크 레이블 X: 플래토 좌측 30% 지점 (범례·TS선과 겹침 방지)
-  // 레이블 폭 ~90px을 고려하여 우상단 범례(gw-114)와도 겹치지 않도록
-  const xLabelStart = tx(TS) + 8
-  const xLabelMid   = tx(TS + (TL - TS) * 0.28)
-  // 레이블이 우상단 범례 영역(px+gw-114)을 침범할 경우 중앙으로 후퇴
+  // Sv_used 점 위치 (Ts에서의 실제 사용값)
+  const ySvUsed   = Sv_used   != null ? ty(Sv_used)   : null
+  const ySvUsedF  = Sv_used_func != null ? ty(Sv_used_func) : null
+
+  // 플래토 레이블 X — 플래토 시작(T_B) 직후
+  const xLabelStart = tx(T_B) + 8
+  const xLabelMid   = tx(T_B + (maxT - T_B) * 0.25)
   const xLabel = (xLabelStart + 95 > px + gw - 114) ? xLabelMid : xLabelStart
 
   return (
@@ -90,12 +107,12 @@ export function ResponseSpectrumSVG({
           stroke="#e4e8ee" strokeWidth="0.7" />
       ))}
 
-      {/* ── 피크 Sv 수평 참조선 ── */}
+      {/* ── Sv 플래토 수평 참조선 ── */}
       <line x1={px} y1={ySvC} x2={px + gw} y2={ySvC}
-        stroke={T.bgActive} strokeWidth="0.8" strokeDasharray="5 3" opacity="0.45" />
+        stroke={T.bgActive} strokeWidth="0.8" strokeDasharray="5 3" opacity="0.4" />
       {ySvF != null && (
         <line x1={px} y1={ySvF} x2={px + gw} y2={ySvF}
-          stroke="#2e7d32" strokeWidth="0.8" strokeDasharray="5 3" opacity="0.45" />
+          stroke="#2e7d32" strokeWidth="0.8" strokeDasharray="5 3" opacity="0.4" />
       )}
 
       {/* ── 채움 영역 ── */}
@@ -115,43 +132,57 @@ export function ResponseSpectrumSVG({
       {/* ── 붕괴방지 곡선 ── */}
       <polyline points={ptsC} fill="none" stroke={T.bgActive} strokeWidth="2.2" />
 
-      {/* ── TS / TL 구분선 ── */}
-      {[{ t: TS, label: 'Ts' }, { t: TL, label: 'TL' }].map(({ t, label }) => (
-        <g key={label}>
-          <line x1={tx(t)} y1={py} x2={tx(t)} y2={py + gh}
-            stroke="#aaa" strokeWidth="0.9" strokeDasharray="3 2" />
-          <text x={tx(t)} y={py + gh + 12}
-            textAnchor="middle" fontSize="7.5" fill="#888" fontFamily={T.fontMono}>
-            {label}
-          </text>
-        </g>
-      ))}
+      {/* ── T_B 전이주기선 (암반 기준, 속도일정구간 시작) ── */}
+      <g>
+        <line x1={tx(T_B)} y1={py} x2={tx(T_B)} y2={py + gh}
+          stroke="#aaa" strokeWidth="0.9" strokeDasharray="3 2" />
+        <text x={tx(T_B)} y={py + gh + 12}
+          textAnchor="middle" fontSize="7.5" fill="#888" fontFamily={T.fontMono}>
+          T_B={T_B}
+        </text>
+      </g>
 
-      {/* ── Ts,pipe (표층지반 응답주기 = 1.25×TG) ── */}
+      {/* ── Ts (표층지반 응답주기 = 1.25×TG) ── */}
       {Ts > 0 && Ts <= maxT && (
         <g>
           <line x1={tx(Ts)} y1={py} x2={tx(Ts)} y2={py + gh}
             stroke="#c0392b" strokeWidth="1.3" strokeDasharray="4 2" />
           <text x={tx(Ts) + 3} y={py + 10}
             fontSize="7.5" fill="#c0392b" fontFamily={T.fontMono}>
-            Ts,pipe={Ts.toFixed(2)}
+            Ts={Ts.toFixed(2)}s
           </text>
         </g>
       )}
 
-      {/* ── 피크 Sv 값 레이블 (굵고 크게) ── */}
+      {/* ── Sv 사용값 포인트 (Ts 위치) ── */}
+      {ySvUsed != null && Ts <= maxT && (
+        <g>
+          <circle cx={tx(Ts)} cy={ySvUsed} r="3.5"
+            fill={T.bgActive} stroke="white" strokeWidth="1" />
+          <text x={tx(Ts) + 5} y={ySvUsed + 4}
+            fontSize="8.5" fontWeight="700" fill={T.bgActive} fontFamily={T.fontMono}>
+            Sv={Sv_used!.toFixed(4)}
+          </text>
+        </g>
+      )}
+      {ySvUsedF != null && Sv_used_func != null && Ts <= maxT && (
+        <circle cx={tx(Ts)} cy={ySvUsedF} r="3"
+          fill="#2e7d32" stroke="white" strokeWidth="1" />
+      )}
+
+      {/* ── 플래토 Sv 레이블 ── */}
       <text x={xLabel} y={ySvC - 3}
         fontSize="10" fontWeight="700" fill={T.bgActive} fontFamily={T.fontMono}>
-        {SvPeak.toFixed(4)} m/s
+        {SvPlat_c.toFixed(4)} m/s
       </text>
-      {ySvF != null && SvPeak_f != null && (
+      {ySvF != null && SvPlat_f != null && (
         <text x={xLabel} y={ySvF - 3}
           fontSize="10" fontWeight="700" fill="#2e7d32" fontFamily={T.fontMono}>
-          {SvPeak_f.toFixed(4)} m/s
+          {SvPlat_f.toFixed(4)} m/s
         </text>
       )}
 
-      {/* ── 범례 (우상단) ── */}
+      {/* ── 범례 ── */}
       {ptsF && (
         <g transform={`translate(${px + gw - 114},${py + 4})`}>
           <rect x={0} y={0} width={114} height={32} rx={2}

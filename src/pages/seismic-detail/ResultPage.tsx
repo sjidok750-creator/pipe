@@ -29,22 +29,16 @@ export default function SeismicDetailResultPage() {
   const isSegmented = inp.pipeType === 'segmented'
   const rs = r as any
 
-  // 기능수행 스펙트럼 파라미터 계산 (붕괴방지와 T_A/T_B 공유, I만 다름)
+  // 암반 기반 속도스펙트럼 파라미터 (Fa=Fv=1.0)
+  // Sas = S×2.5 (암반 단주기 스펙트럼), eta = 감쇠보정계수
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
   const Z = rs.S / (inp.seismicGrade === 'I' ? 1.40 : 1.00)  // Z 역산
+  const Sas_collapse = rs.Sas   // 붕괴방지 암반 스펙트럼 (S_collapse×2.5)
+  const eta_collapse = rs.eta   // 붕괴방지 감쇠보정계수 (η=0.6325)
+  // 기능수행: S_func = Z×I_func, Sas_func = S_func×2.5, eta_func = √(10/15)=0.8165
   const S_func = Z * gradeInfo.I_func
-  let SDS_func: number | undefined
-  let SD1_func: number | undefined
-  try {
-    const ampEntry = (AMP_FACTOR as any)[inp.soilType]
-    if (ampEntry) {
-      const Fa_f = interpAmpFactor(ampEntry.Fa, S_func)
-      const Fv_f = interpAmpFactor(ampEntry.Fv, S_func)
-      const spec = calcDesignSpectrum(S_func, Fa_f, Fv_f)
-      SDS_func = spec.SDS
-      SD1_func = spec.SD1
-    }
-  } catch {}
+  const Sas_func = S_func * 2.5
+  const eta_func = Math.sqrt(10 / 15)   // ξ=10% → η=0.8165
 
   // 지반 해석 파라미터
   const groundParams = [
@@ -160,19 +154,19 @@ export default function SeismicDetailResultPage() {
 
       {/* ── 우측: 삽도 ───────────────────────────────── */}
       <div style={{ flex: '1 1 50%', minWidth: 0 }}>
-        <EngPanel title="설계응답스펙트럼 (KDS 17 10 00 그림 2.1.2)">
+        <EngPanel title="암반 기반 속도응답스펙트럼 Sv (매설관 내진 계산용)">
           <ResponseSpectrumSVG
-            SDS={rs.SDS} SD1={rs.SD1}
-            T0={rs.SDS > 0 ? 0.2 * rs.SD1 / rs.SDS : 0.06}
-            TS={rs.SDS > 0 ? rs.SD1 / rs.SDS : 0.30}
+            Sas={Sas_collapse} eta_collapse={eta_collapse}
+            Sas_func={Sas_func} eta_func={eta_func}
             Ts={rs.Ts}
-            SDS_func={SDS_func} SD1_func={SD1_func}
+            Sv_used={rs.Sv}
             width={440} height={220}
           />
           <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-            SDS = Fa·S·2.5 = {rs.SDS?.toFixed(3)} g&nbsp;|&nbsp;
-            SD1 = Fv·S = {rs.SD1?.toFixed(3)} g&nbsp;|&nbsp;
-            Ts = {rs.Ts?.toFixed(3)} s
+            암반기준 Sas = S·2.5 = {Sas_collapse?.toFixed(3)} g&nbsp;|&nbsp;
+            η(붕괴방지) = {eta_collapse?.toFixed(4)}&nbsp;|&nbsp;
+            Ts(표층지반) = {rs.Ts?.toFixed(3)} s&nbsp;|&nbsp;
+            Sv(사용값) = {rs.Sv?.toFixed(4)} m/s
           </div>
         </EngPanel>
 
