@@ -1434,31 +1434,39 @@ export default function SeismicDetailReportPage() {
             </table>
 
             {/* C.1.4 이음부 굽힘각 */}
-            <div style={SEC_TITLE} className="page-break-before">C.1.4 이음부 굽힘각도 ({G.theta}<Sub>J</Sub>)</div>
+            <div style={SEC_TITLE} className="page-break-before">C.1.4 이음부 굽힘각도 ({G.theta}<Sub>J</Sub>) — 참고 검토</div>
+            <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 6, fontFamily: 'inherit' }}>
+              2025년 상수도설계기준해설편 §4.3.3(2)다: "추가적으로 아래 식으로 계산된 지진 시 이음부의 휨 각도를 설계 허용 휨각도와 비교하여 휨각도에 대한 안전성을 검토할 수 있다" — 선택 검토 항목으로 최종 합격 판정에 포함되지 않음.
+            </div>
             <FormulaBlock>
               <FormulaRow>
                 {G.theta}<Sub>J</Sub> =&nbsp;
                 <Frac top={<>4{G.pi}<Sup>2</Sup> {G.times} L<Sub>j</Sub> {G.times} U<Sub>h</Sub></>} bot={<>L<Sup>2</Sup></>} />
-                &nbsp;(2025년 상수도설계기준해설편 §4.3.3)
               </FormulaRow>
               <FormulaRow>
                 =&nbsp;
                 <Frac top={<>4 {G.times} {G.pi}<Sup>2</Sup> {G.times} {inp.Lj} {G.times} {rs.Uh?.toFixed(4)}</>} bot={<>{rs.L?.toFixed(2)}<Sup>2</Sup></>} />
               </FormulaRow>
               <FormulaRow>
-                허용 굽힘각 {G.theta}<Sub>allow</Sub>:&nbsp;
+                허용 굽힘각 {G.theta}<Sub>allow</Sub> (참고):&nbsp;
                 DN {inp.DN} → {inp.DN < 300 ? '3.5°' : inp.DN <= 600 ? '2.5°' : '1.5°'}&nbsp;&nbsp;
-                (제조사 이음부 허용기준 우선 적용)
+                ※ 실제 허용값은 제조사 이음부 기준 우선
               </FormulaRow>
             </FormulaBlock>
-            <ResultBlock ok={rs.angleOK}>
-              <FormulaRow>
-                {G.theta}<Sub>J</Sub> = <strong>{(rs.theta_J * 180 / Math.PI)?.toFixed(4)} {G.deg}</strong>
-                &nbsp;{rs.angleOK ? G.le : G.ge}&nbsp;
-                {G.theta}<Sub>allow</Sub> = {(rs.theta_allow * 180 / Math.PI)?.toFixed(2)} {G.deg}
-                &nbsp;&nbsp;<OKBadge ok={rs.angleOK} />
-              </FormulaRow>
-            </ResultBlock>
+            <div style={{
+              background: '#f8f8f8', border: '1px solid #ddd',
+              borderLeft: '3px solid #94a3b8', borderRadius: 3,
+              padding: '7px 12px', fontSize: 11.5, color: '#334155',
+              fontFamily: 'inherit',
+            }}>
+              {G.theta}<Sub>J</Sub> = <strong>{(rs.theta_J * 180 / Math.PI)?.toFixed(4)} {G.deg}</strong>
+              &nbsp;{rs.angleOK ? G.le : G.ge}&nbsp;
+              {G.theta}<Sub>allow</Sub> = {(rs.theta_allow * 180 / Math.PI)?.toFixed(2)} {G.deg}
+              &nbsp;&nbsp;
+              <span style={{ fontSize: 10.5, color: rs.angleOK ? '#15803d' : '#b45309', fontWeight: 600 }}>
+                ({rs.angleOK ? '허용 이내' : '허용 초과 — 제조사 기준 확인 필요'})
+              </span>
+            </div>
           </>
         ) : (
           <>
@@ -1655,10 +1663,23 @@ export default function SeismicDetailReportPage() {
                   <td style={TDC}><OKBadge ok={rs.dispOK} /></td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
-                  <td style={TD}>이음부 굽힘각 {G.theta}<Sub>J</Sub></td>
-                  <td style={TDR}>{(rs.theta_J * 180 / Math.PI)?.toFixed(4)} {G.deg}</td>
-                  <td style={TDR}>{(rs.theta_allow * 180 / Math.PI)?.toFixed(2)} {G.deg}</td>
-                  <td style={TDC}><OKBadge ok={rs.angleOK} /></td>
+                  <td style={{ ...TD, color: '#64748b' }}>
+                    이음부 굽힘각 {G.theta}<Sub>J</Sub>
+                    <span style={{ fontSize: 10, marginLeft: 4, color: '#94a3b8' }}>(참고)</span>
+                  </td>
+                  <td style={{ ...TDR, color: '#64748b' }}>{(rs.theta_J * 180 / Math.PI)?.toFixed(4)} {G.deg}</td>
+                  <td style={{ ...TDR, color: '#64748b' }}>{(rs.theta_allow * 180 / Math.PI)?.toFixed(2)} {G.deg}</td>
+                  <td style={TDC}>
+                    <span style={{
+                      fontSize: 10, padding: '1px 6px', borderRadius: 3,
+                      background: rs.angleOK ? '#f0fdf4' : '#fffbeb',
+                      color: rs.angleOK ? '#15803d' : '#b45309',
+                      border: `1px solid ${rs.angleOK ? '#bbf7d0' : '#fde68a'}`,
+                      fontWeight: 600,
+                    }}>
+                      {rs.angleOK ? 'OK' : '확인'}
+                    </span>
+                  </td>
                 </tr>
               </>
             ) : (
