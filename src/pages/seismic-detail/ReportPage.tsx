@@ -1041,7 +1041,7 @@ export default function SeismicDetailReportPage() {
               </FormulaRow>
               {/* α1, α2 산정과정 */}
               <FormulaRow>
-                L' = 2L = 2 &times; {rs.L?.toFixed(2)} = {rs.L ? (2 * rs.L).toFixed(2) : '—'} m
+                L' = &radic;2 &times; L = &radic;2 &times; {rs.L?.toFixed(2)} = {rs.Lprime ? rs.Lprime.toFixed(2) : rs.L ? (Math.SQRT2 * rs.L).toFixed(2) : '—'} m
               </FormulaRow>
               <FormulaRow>
                 {G.alpha}<Sub>1</Sub> =&nbsp;
@@ -1052,7 +1052,7 @@ export default function SeismicDetailReportPage() {
                 &nbsp;=&nbsp;
                 <Frac
                   top="1"
-                  bot={<>1 + (2{G.pi} / ({rs.lambda1?.toFixed(4)} &times; {rs.L ? (2 * rs.L).toFixed(2) : '—'}))<Sup>2</Sup></>}
+                  bot={<>1 + (2{G.pi} / ({rs.lambda1?.toFixed(4)} &times; {rs.Lprime ? rs.Lprime.toFixed(2) : rs.L ? (Math.SQRT2 * rs.L).toFixed(2) : '—'}))<Sup>2</Sup></>}
                 />
                 &nbsp;= <strong>{rs.alpha1?.toFixed(4)}</strong>
               </FormulaRow>

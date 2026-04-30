@@ -402,7 +402,7 @@ export function evalSegmented(params) {
 
   // ── Step 8: λ1, λ2, α1, α2 (해설식 5.3.17~5.3.20) ──
   const { lambda1, lambda2 } = calcLambda(K1, K2, E_kN, A_m, I_m)
-  const { alpha1, alpha2 } = calcAlpha(lambda1, lambda2, L)
+  const { alpha1, alpha2, Lprime } = calcAlpha(lambda1, lambda2, L)
 
   // ── Step 9: 내압에 의한 축응력 (해설식 5.3.1) ──
   const sigma_i = calcAxialStressInternal(nu, P_MPa, D, t)  // MPa
@@ -464,7 +464,7 @@ export function evalSegmented(params) {
     // alias (보고서/결과 페이지 호환)
     L1: Lwave1, L2: Lwave2, eps: epsWave,
     // 지반 강성 / 관 특성
-    K1, K2, lambda1, lambda2, alpha1, alpha2,
+    K1, K2, lambda1, lambda2, alpha1, alpha2, Lprime,
     A_m, I_m, Z_m,
     // 차량하중
     Wm, impact_i,
