@@ -313,7 +313,7 @@ export function evalContinuous(params) {
   const sigma_allow = getAllowableStress_Steel(sigma_y, seismicGrade)
   const stressOK = sigma_vm <= sigma_allow
 
-  const overallOK = strainOK && stressOK
+  const overallOK = strainOK  // 기준서(평가요령 부록C.2): 축변형률 검토만 판정 기준
 
   return {
     ok: overallOK,

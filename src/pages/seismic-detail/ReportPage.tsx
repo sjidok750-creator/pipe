@@ -1601,84 +1601,6 @@ export default function SeismicDetailReportPage() {
               </tbody>
             </table>
 
-            {/* Von Mises */}
-            <div style={SEC_TITLE}>C.2.4 Von Mises 조합응력 검토</div>
-            <FormulaBlock>
-              <FormulaRow>
-                후프응력: {G.sigma}<Sub>{G.theta}</Sub> =&nbsp;
-                <Frac top={<>P(D − t)</>} bot="2t" />
-                &nbsp;=&nbsp;
-                <Frac top={<>{inp.P} {G.times} ({D_m.toFixed(3)} − {t_m.toFixed(4)})</>} bot={<>2 {G.times} {t_m.toFixed(4)}</>} />
-                &nbsp;= {rs.sigma_theta?.toFixed(2)} MPa
-              </FormulaRow>
-              <FormulaRow>
-                축응력: {G.sigma}<Sub>x</Sub> = {G.nu}{G.sigma}<Sub>{G.theta}</Sub> + E({G.epsilon}<Sub>t</Sub> + {G.epsilon}<Sub>d</Sub> + {G.epsilon}<Sub>eq</Sub>)
-              </FormulaRow>
-              <FormulaRow indent={1}>
-                = {nu} {G.times} {rs.sigma_theta?.toFixed(2)} + {(E_MPa / 1000).toFixed(0)} {G.times} 10<Sup>3</Sup>&nbsp;
-                {G.times} ({rs.epsilon_t?.toExponential(3)} + {rs.epsilon_d?.toExponential(3)} + {rs.epsilon_eq?.toExponential(3)})
-                &nbsp;= {rs.sigma_x_total?.toFixed(2)} MPa
-              </FormulaRow>
-              <FormulaRow>
-                Von Mises: {G.sigma}<Sub>vm</Sub> =&nbsp;
-                <Sqrt>
-                  {G.sigma}<Sub>{G.theta}</Sub><Sup>2</Sup> + {G.sigma}<Sub>x</Sub><Sup>2</Sup> − {G.sigma}<Sub>{G.theta}</Sub>{G.sigma}<Sub>x</Sub>
-                </Sqrt>
-              </FormulaRow>
-              <FormulaRow indent={1}>
-                =&nbsp;
-                <Sqrt>
-                  {rs.sigma_theta?.toFixed(2)}<Sup>2</Sup> + {rs.sigma_x_total?.toFixed(2)}<Sup>2</Sup> − {rs.sigma_theta?.toFixed(2)} {G.times} {rs.sigma_x_total?.toFixed(2)}
-                </Sqrt>
-              </FormulaRow>
-            </FormulaBlock>
-            <ResultBlock ok={rs.stressOK}>
-              <FormulaRow>
-                {G.sigma}<Sub>vm</Sub> = <strong>{rs.sigma_vm?.toFixed(2)} MPa</strong>
-                &nbsp;{rs.stressOK ? G.le : G.ge}&nbsp;
-                {G.sigma}<Sub>allow</Sub> = {rs.sigma_allow?.toFixed(1)} MPa&nbsp;&nbsp;
-                <OKBadge ok={rs.stressOK} />
-              </FormulaRow>
-            </ResultBlock>
-
-            <table style={{ ...TABLE, marginTop: 8 }}>
-              <thead>
-                <tr>
-                  <th style={{ ...TH, width: 200 }} colSpan={2}>항목</th>
-                  <th style={TH}>단위: MPa</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ background: '#f8f8f8' }}>
-                  <td style={TDB} colSpan={2}>후프응력 {G.sigma}<Sub>{G.theta}</Sub></td>
-                  <td style={TDR}>{rs.sigma_theta?.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td style={TDB} colSpan={2}>축방향 합성응력 {G.sigma}<Sub>x</Sub></td>
-                  <td style={TDR}>{rs.sigma_x_total?.toFixed(2)}</td>
-                </tr>
-                <tr style={{ background: '#EDEBE6' }}>
-                  <td style={TDB} colSpan={2}>Von Mises 등가응력 {G.sigma}<Sub>vm</Sub></td>
-                  <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{rs.sigma_vm?.toFixed(2)}</td>
-                </tr>
-                <tr>
-                  <td style={TDB} colSpan={2}>
-                    허용응력 {G.sigma}<Sub>allow</Sub>&nbsp;
-                    ({G.sigma}<Sub>y</Sub> {G.times} {inp.seismicGrade === 'I' ? '0.9' : '0.95'},&nbsp;
-                    {G.sigma}<Sub>y</Sub> = {rs.sigma_y} MPa)
-                  </td>
-                  <td style={TDR}>{rs.sigma_allow?.toFixed(1)}</td>
-                </tr>
-                <tr style={{ background: rs.stressOK ? '#f0faf4' : '#fff0f0' }}>
-                  <td style={TDB} colSpan={2}>
-                    {G.sigma}<Sub>vm</Sub> = {rs.sigma_vm?.toFixed(2)} MPa&nbsp;
-                    {rs.stressOK ? G.le : G.ge}&nbsp;
-                    {G.sigma}<Sub>allow</Sub> = {rs.sigma_allow?.toFixed(1)} MPa 이므로
-                  </td>
-                  <td style={TDC}><OKBadge ok={rs.stressOK} /></td>
-                </tr>
-              </tbody>
-            </table>
           </>
         )}
 
@@ -1737,12 +1659,6 @@ export default function SeismicDetailReportPage() {
                   <td style={TDR}>{rs.epsilon_total?.toExponential(4)}</td>
                   <td style={TDR}>{rs.epsilon_allow?.toExponential(4)}</td>
                   <td style={TDC}><OKBadge ok={rs.strainOK} /></td>
-                </tr>
-                <tr>
-                  <td style={TD}>Von Mises 응력 {G.sigma}<Sub>vm</Sub></td>
-                  <td style={TDR}>{rs.sigma_vm?.toFixed(2)} MPa</td>
-                  <td style={TDR}>{rs.sigma_allow?.toFixed(1)} MPa</td>
-                  <td style={TDC}><OKBadge ok={rs.stressOK} /></td>
                 </tr>
               </>
             )}

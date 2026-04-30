@@ -80,11 +80,7 @@ export default function SeismicDetailResultPage() {
     { label: '합산 변형률 ε_total', formula: '|ε_i|+|ε_o|+|ε_t|+|ε_d|+|ε_eq|', value: rs.epsilon_total, unit: '', limit: rs.epsilon_allow, ok: rs.strainOK },
   ] : []
 
-  const contStressRows = !isSegmented ? [
-    { label: '후프응력 σ_θ', formula: 'P(D−t)/(2t)', value: rs.sigma_theta, unit: 'MPa' },
-    { label: '축방향 합성응력 σ_x', formula: 'ν·σ_θ + E·(ε_t+ε_d+ε_eq)', value: rs.sigma_x_total, unit: 'MPa' },
-    { label: 'Von Mises 등가응력 σ_vm', formula: '√(σ_θ²+σ_x²−σ_θ·σ_x)', value: rs.sigma_vm, unit: 'MPa', limit: rs.sigma_allow, ok: rs.stressOK },
-  ] : []
+  const contStressRows = !isSegmented ? [] : []
 
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -121,12 +117,6 @@ export default function SeismicDetailResultPage() {
                 허용변형률 = {rs.strainCriterion === 'buckling'
                   ? `46·t/D = ${rs.epsilon_allow?.toExponential(3)}  (ASCE/KDS 해설, 국부좌굴 한계)`
                   : `σ_y/E = ${rs.epsilon_allow?.toExponential(3)}  (지침 부록C, 항복점 변형률)`}
-              </div>
-            </EngPanel>
-            <EngPanel title="(b) 조합응력 검토 — Von Mises  (연속관)">
-              <EngTable rows={contStressRows}/>
-              <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-                항복강도 σ_y = {rs.sigma_y} MPa  |  허용응력 = {rs.sigma_allow?.toFixed(1)} MPa  (내진등급 {inp.seismicGrade}등급)
               </div>
             </EngPanel>
           </>
