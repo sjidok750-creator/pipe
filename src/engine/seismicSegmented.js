@@ -214,41 +214,36 @@ export function calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l, lamb
 }
 
 // ─── 이음부 신축량 (분절관 지진시) ──────────────────────────
-// 해설식(5.3.28): |uJ| = u0 × ūJ
-// 해설식(5.3.29): u0 = a1 × Ua
-// 해설식(5.3.30): Ua = (1/2) × Uh
-// 해설식(5.3.31): ūJ = |cosh(β1×γ1) - cos(β1×γ1)| / (γ1×sinh(β1×γ1) + cosh(β1×γ1)×... )
-//   ※ PDF에서 수식이 일부 손상되어 있으므로 원형 수식 재구성:
-//   ūJ = (1/2) × |cosh(β1×γ1) - cos(β1×γ1)| / (... )
-//   일본 수도시설 내진공법지침 원식 기반:
-//   ūJ = (sinh(β1×γ1) - sin(β1×γ1)) / (cosh(β1×γ1) + cos(β1×γ1))
-//   ※ 해설식(5.3.32): a = (1+γ1) / (1+(γ1/β1)²) ... 관련 매개변수
-// 해설식(5.3.33): β1 = √(K1×l / (E×A))
-// 해설식(5.3.34): γ1 = π×l / (2×L')
-// 해설식(5.3.35): L' = 2×L
-// K1 [kN/m²], l [m], E [kN/m²], A [m²]
-export function calcJointDispSeismic(Uh, L, K1_kN, E_kN, A_m, l, alpha1) {
-  const Lprime = 2 * L   // 해설식(5.3.35)
+// 근거: 2025년 상수도설계기준해설편 §4.3.3(2)나⑤, 부록C 예제 C.1 마항
+// |uJ| = u0 × ūJ
+// u0 = a1 × Ua
+// Ua = (1/√2) × Uh
+// ūJ = 2γ1|cosh(β1) - cos(γ1)| / (β1·sinh β1)
+// a1 = 1 / (1 + (γ1/β1)²)
+// β1 = √(K1/(E·A)) × l
+// γ1 = 2π·l / L'
+// L' = √2·L
+// 검증: 예제 β1=0.328, γ1=0.122, ūJ=0.138, |uJ|=0.00301 m ✓
+export function calcJointDispSeismic(Uh, L, K1_kN, E_kN, A_m, l) {
+  const Lprime = Math.SQRT2 * L             // L' = √2·L
 
-  // Ua: 무한 연속보 관축방향 상대변위진폭 (해설식 5.3.30)
-  const Ua = 0.5 * Uh    // m
+  const Ua = Uh / Math.SQRT2               // Ua = (1/√2) × Uh
 
-  // u0 (해설식 5.3.29)
-  const u0 = alpha1 * Ua  // m
+  const beta1  = Math.sqrt(K1_kN / (E_kN * A_m)) * l   // β1 = √(K1/(EA))·l
+  const gamma1 = 2 * Math.PI * l / Lprime               // γ1 = 2π·l/L'
 
-  // β1, γ1 (해설식 5.3.33, 5.3.34)
-  const beta1 = Math.sqrt(K1_kN * l / (E_kN * A_m))
-  const gamma1 = Math.PI * l / (2 * Lprime)
+  // a1 = 1/(1+(γ1/β1)²)
+  const a1 = 1 / (1 + (gamma1 / beta1) ** 2)
 
-  const bg = beta1 * gamma1
+  const u0 = a1 * Ua  // m
 
-  // ūJ: 일본 수도시설 내진공법지침 원식
-  // ūJ = (sinh(bg) - sin(bg)) / (cosh(bg) + cos(bg))
-  const uJ_bar = (Math.sinh(bg) - Math.sin(bg)) / (Math.cosh(bg) + Math.cos(bg))
+  // ūJ = 2γ1|cosh(β1) - cos(γ1)| / (β1·sinh β1)
+  const uJ_bar = (2 * gamma1 * Math.abs(Math.cosh(beta1) - Math.cos(gamma1)))
+               / (beta1 * Math.sinh(beta1))
 
-  const uJ = Math.abs(u0 * uJ_bar)  // m (해설식 5.3.28)
+  const uJ = Math.abs(u0 * uJ_bar)  // m
 
-  return { uJ, u0, Ua, beta1, gamma1, uJ_bar }
+  return { uJ, u0, Ua, beta1, gamma1, uJ_bar, a1 }
 }
 
 // ─── 이음부 신축량 (상시하중) ────────────────────────────────
@@ -427,8 +422,8 @@ export function evalSegmented(params) {
   )
 
   // ── Step 14: 이음부 신축량 — 지진시 (해설식 5.3.28~5.3.35) ──
-  const { uJ, u0, Ua, beta1, gamma1, uJ_bar } = calcJointDispSeismic(
-    Uh, L, K1, E_kN, A_m, l_joint, alpha1
+  const { uJ, u0, Ua, beta1, gamma1, uJ_bar, a1: a1_joint } = calcJointDispSeismic(
+    Uh, L, K1, E_kN, A_m, l_joint
   )
 
   // ── Step 15: 이음부 신축량 합산 및 검토 ──
@@ -467,7 +462,7 @@ export function evalSegmented(params) {
     sigma_total, sigma_allow, stressOK,
     // 이음부 신축량 (m)
     e_i, e_o, e_t, e_d,
-    uJ, u0, Ua, beta1, gamma1, uJ_bar,
+    uJ, u0, Ua, beta1, gamma1, uJ_bar, a1_joint,
     e_total, e_allow, dispOK,
     // 이음부 굽힘각도 (rad)
     theta_J, theta_allow, angleOK,

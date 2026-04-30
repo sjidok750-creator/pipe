@@ -149,7 +149,9 @@ export default function SeismicDetailReportPage() {
   const Vs_avg = H_total / sumHV_eff
 
   const e_i_val = rs.sigma_i * inp.Lj / E_MPa
+  const e_o_val = rs.e_o ?? 0
   const e_t_val = 1.2e-5 * (inp.deltaT ?? 20) * inp.Lj
+  const e_d_val = rs.e_d ?? 0
   const piLjL = Math.PI * inp.Lj / (rs.L ?? 1)
   const eps_label = inp.Vbs >= 300 ? '1.0' : '0.85'
 
@@ -1301,29 +1303,29 @@ export default function SeismicDetailReportPage() {
                 지침 해설식(5.3.28~5.3.35): |u<Sub>J</Sub>| = u<Sub>0</Sub> {G.times} ū<Sub>J</Sub>
               </FormulaRow>
               <FormulaRow>
-                u<Sub>0</Sub> = {G.alpha}<Sub>1</Sub> {G.times} U<Sub>a</Sub>,&nbsp;
+                u<Sub>0</Sub> = a<Sub>1</Sub> {G.times} U<Sub>a</Sub>,&nbsp;
                 U<Sub>a</Sub> =&nbsp;
-                <Frac top="1" bot="2" />
+                <Frac top="1" bot={<>&radic;2</>} />
                 &nbsp;{G.times} U<Sub>h</Sub>&nbsp;
                 (해설식 5.3.29~5.3.30)
               </FormulaRow>
               <FormulaRow>
                 {G.beta}<Sub>1</Sub> =&nbsp;
                 <Sqrt>
-                  <Frac top={<>K<Sub>1</Sub> {G.times} L<Sub>j</Sub></>} bot={<>E {G.times} A</>} />
+                  <Frac top={<>K<Sub>1</Sub></>} bot={<>E {G.times} A</>} />
                 </Sqrt>
-                &nbsp;= {rs.beta1?.toFixed(4)},&nbsp;&nbsp;
+                &nbsp;{G.times} L<Sub>j</Sub> = {rs.beta1?.toFixed(4)},&nbsp;&nbsp;
                 {G.gamma}<Sub>1</Sub> =&nbsp;
-                <Frac top={<>{G.pi} {G.times} L<Sub>j</Sub></>} bot={<>2 {G.times} L'</>} />
-                &nbsp;= {rs.gamma1?.toFixed(4)}&nbsp; (L' = 2L)
+                <Frac top={<>2{G.pi} {G.times} L<Sub>j</Sub></>} bot={<>L'</>} />
+                &nbsp;= {rs.gamma1?.toFixed(4)}&nbsp; (L' = &radic;2 {G.times} L)
               </FormulaRow>
               <FormulaRow>
                 ū<Sub>J</Sub> =&nbsp;
-                <Frac top={<>sinh({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>) − sin({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>)</>} bot={<>cosh({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>) + cos({G.beta}<Sub>1</Sub>{G.gamma}<Sub>1</Sub>)</>} />
+                <Frac top={<>2{G.gamma}<Sub>1</Sub>|cosh({G.beta}<Sub>1</Sub>) − cos({G.gamma}<Sub>1</Sub>)|</>} bot={<>{G.beta}<Sub>1</Sub> {G.times} sinh({G.beta}<Sub>1</Sub>)</>} />
                 &nbsp;= {rs.uJ_bar?.toFixed(6)}
               </FormulaRow>
               <FormulaRow>
-                여기서,&nbsp; {G.alpha}<Sub>1</Sub> = {rs.alpha1?.toFixed(4)},&nbsp;
+                여기서,&nbsp; a<Sub>1</Sub> = {rs.a1_joint?.toFixed(4)},&nbsp;
                 U<Sub>h</Sub> = {rs.Uh?.toFixed(4)} m,&nbsp;
                 L<Sub>j</Sub> = {inp.Lj} m,&nbsp; L = {rs.L?.toFixed(2)} m
               </FormulaRow>
@@ -1351,7 +1353,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TD}>차량하중 e<Sub>o</Sub></td>
-                  <td style={TDR}>0.000000</td>
+                  <td style={TDR}>{e_o_val?.toFixed(6)}</td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
                   <td style={TD}>온도효과 ({G.Delta}T = {inp.deltaT ?? 20}°C) e<Sub>t</Sub></td>
@@ -1359,7 +1361,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TD}>부등침하 e<Sub>d</Sub></td>
-                  <td style={TDR}>0.000000</td>
+                  <td style={TDR}>{e_d_val?.toFixed(6)}</td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
                   <td style={TDB} colSpan={2}>지진 |u<Sub>J</Sub>|</td>
@@ -1368,7 +1370,7 @@ export default function SeismicDetailReportPage() {
                 <tr style={{ background: '#EDEBE6' }}>
                   <td style={TDB} colSpan={2}>이음부 신축량 합계</td>
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>
-                    {(e_i_val + e_t_val + rs.u_J)?.toFixed(6)}
+                    {(e_i_val + e_o_val + e_t_val + e_d_val + (rs.u_J ?? 0))?.toFixed(6)}
                   </td>
                 </tr>
                 <tr>
@@ -1380,7 +1382,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr style={{ background: rs.dispOK ? '#f0faf4' : '#fff0f0' }}>
                   <td style={TDB} colSpan={2}>
-                    신축량합계 = {(e_i_val + e_t_val + rs.u_J)?.toFixed(6)} m&nbsp;
+                    신축량합계 = {(e_i_val + e_o_val + e_t_val + e_d_val + (rs.u_J ?? 0))?.toFixed(6)} m&nbsp;
                     {rs.dispOK ? G.le : G.ge}&nbsp;
                     u<Sub>allow</Sub> = {rs.u_allow?.toFixed(4)} m 이므로
                   </td>
