@@ -72,7 +72,7 @@ export default function SeismicDetailResultPage() {
   // 연속관 검토 행
   const contStrainRows = !isSegmented ? [
     { label: '내압 축변형률 ε_i',  formula: '−ν·σ_θ/E', value: rs.epsilon_i, unit: '' },
-    { label: '차량 축변형률 ε_o',  formula: '= 0 (도로매설 축방향)', value: rs.epsilon_o, unit: '' },
+    { label: '차량 축변형률 ε_o',  formula: (rs.epsilon_o && rs.epsilon_o > 0) ? 'σ_o/E' : '= 0 (Pm 또는 Kv 미입력)', value: rs.epsilon_o, unit: '' },
     { label: '온도 축변형률 ε_t',  formula: 'α_T·ΔT', value: rs.epsilon_t, unit: '' },
     { label: '부등침하 변형률 ε_d', formula: 'δ/(2·L_settle)', value: rs.epsilon_d, unit: '' },
     { label: '지진 변형률 ε_eq(축방향)', formula: '4Uh/L', value: rs.epsilon_eq_L, unit: '' },

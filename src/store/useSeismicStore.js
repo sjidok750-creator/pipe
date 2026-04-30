@@ -10,6 +10,7 @@ import {
   KIND_INDEX, EARTH_INDEX, SIZE_INDEX,
   CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
   getSizeIndex, calcSeismicGroup, deriveVs,
+  calcKv,
 } from '../engine/seismicConstants.js'
 import { interpAmpFactor } from '../engine/seismicSegmented.js'
 
@@ -108,7 +109,7 @@ function calcDetail(inp) {
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
     hasSettle, deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
-    Pm, Kv, nu,
+    Pm, Kv, kvMethod, nu,
     heightMode, H_bedrock, fillGapAsLastLayer,
   } = inp
   const Z = SEISMIC_ZONE[zone].Z
@@ -128,6 +129,15 @@ function calcDetail(inp) {
     : (pipeType === 'segmented' ? E_default_seg : E_default_cont)
   // ※ E_use는 입력 모드에 따라 결정됨. 자동(auto) 모드면 기본값, 직접입력(manual)이면 E_steel/E_ductile 사용
 
+  // Kv 실효값 결정: kvMethod에 따라 자동 산정
+  // InputPage에서 "적용" 버튼을 누르지 않아도 계산에 반영되도록 함
+  const D_m_kv = D_out / 1000
+  let Kv_eff = Kv ?? 0
+  if (Pm > 0 && kvMethod !== 'manual') {
+    const r = calcKv(layers, hCover, soilType, kvMethod, D_m_kv)
+    if (r?.Kv > 0) Kv_eff = r.Kv
+  }
+
   let result
   if (pipeType === 'segmented') {
     result = evalSegmented({
@@ -138,7 +148,7 @@ function calcDetail(inp) {
       nu: nu ?? 0.26,
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
       E: E_use,
-      Pm: Pm ?? 0, Kv: Kv ?? 0,
+      Pm: Pm ?? 0, Kv: Kv_eff,
       // 부등침하: L_settle은 연약지반 전체 구간 길이, l_settle = L/2
       delta_settle: hasSettle ? (D_settle ?? 0) : 0,
       l_settle:     hasSettle ? (L_settle ?? 0) / 2 : 0,
@@ -155,7 +165,7 @@ function calcDetail(inp) {
       deltaT, D_settle, L_settle, strainCriterion,
       h_cover: hCover, z_pipe,
       E: E_use,
-      Pm: Pm ?? 0, Kv: Kv ?? 0,
+      Pm: Pm ?? 0, Kv: Kv_eff,
       heightMode: heightMode ?? 'sum',
       H_bedrock: H_bedrock ?? null,
       fillGapAsLastLayer: fillGapAsLastLayer !== false,
