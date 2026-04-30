@@ -51,6 +51,7 @@ const DEFAULT_DETAIL = {
   nu: 0.26,              // 포아송비 (주철관 기본 0.26, 범위 0.26~0.28)
   Lj: 6,
   isSeismicJoint: false,
+  hasSettle: false,      // 부등침하 고려 여부 (분절관)
   // 연속관
   deltaT: 20,
   D_settle: 0,
@@ -105,7 +106,7 @@ function calcDetail(inp) {
   const {
     pipeType, zone, seismicGrade, soilType,
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
-    deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
+    hasSettle, deltaT, D_settle, L_settle, strainCriterion, layers, Vbs,
     E_manual, E_steel, E_ductile,
     Pm, Kv, nu,
     heightMode, H_bedrock, fillGapAsLastLayer,
@@ -138,6 +139,9 @@ function calcDetail(inp) {
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv ?? 0,
+      // 부등침하: L_settle은 연약지반 전체 구간 길이, l_settle = L/2
+      delta_settle: hasSettle ? (D_settle ?? 0) : 0,
+      l_settle:     hasSettle ? (L_settle ?? 0) / 2 : 0,
       heightMode: heightMode ?? 'sum',
       H_bedrock: H_bedrock ?? null,
       fillGapAsLastLayer: fillGapAsLastLayer !== false,

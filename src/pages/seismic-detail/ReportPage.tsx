@@ -1279,9 +1279,19 @@ export default function SeismicDetailReportPage() {
             </ResultBlock>
 
             <div style={SUB_TITLE}>나. 차량하중에 의한 이음새 신축량 (e<Sub>o</Sub>)</div>
-            <ResultBlock>
-              <FormulaRow>e<Sub>o</Sub> = 0 (분절관 — 차량하중 축응력 = 0)</FormulaRow>
-            </ResultBlock>
+            {e_o_val > 0 ? (
+              <ResultBlock ok>
+                <FormulaRow>
+                  e<Sub>o</Sub> =&nbsp;
+                  <Frac top={<>{G.sigma}<Sub>o</Sub> {G.times} L<Sub>j</Sub></>} bot="E" />
+                  &nbsp;= <strong>{e_o_val.toFixed(6)} m</strong>
+                </FormulaRow>
+              </ResultBlock>
+            ) : (
+              <ResultBlock>
+                <FormulaRow>e<Sub>o</Sub> = 0 (차량하중 미고려)</FormulaRow>
+              </ResultBlock>
+            )}
 
             <div style={SUB_TITLE}>다. 온도변화에 의한 이음새 신축량 (e<Sub>t</Sub>)</div>
             <FormulaBlock>
@@ -1297,7 +1307,31 @@ export default function SeismicDetailReportPage() {
               </FormulaRow>
             </ResultBlock>
 
-            <div style={SUB_TITLE}>라. 지진시의 이음새 신축량 (|u<Sub>J</Sub>|)</div>
+            <div style={SUB_TITLE}>라. 부등침하에 의한 이음새 신축량 (e<Sub>d</Sub>)</div>
+            {inp.hasSettle && inp.D_settle > 0 && inp.L_settle > 0 ? (
+              <>
+                <FormulaBlock>
+                  <FormulaRow>
+                    e<Sub>d</Sub> = {G.Delta}l = &radic;(l² + {G.delta}²) − l,&nbsp;&nbsp;
+                    l = L/2 = {inp.L_settle}/2 = {(inp.L_settle/2).toFixed(1)} m
+                  </FormulaRow>
+                  <FormulaRow>
+                    여기서, L = {inp.L_settle} m (연약지반 전체 구간 길이), {G.delta} = {inp.D_settle} m (중앙부 침하량)
+                  </FormulaRow>
+                </FormulaBlock>
+                <ResultBlock ok>
+                  <FormulaRow>
+                    e<Sub>d</Sub> = &radic;({(inp.L_settle/2).toFixed(1)}² + {inp.D_settle}²) − {(inp.L_settle/2).toFixed(1)} = <strong>{e_d_val.toFixed(6)} m</strong>
+                  </FormulaRow>
+                </ResultBlock>
+              </>
+            ) : (
+              <ResultBlock>
+                <FormulaRow>e<Sub>d</Sub> = 0 (부등침하 미고려)</FormulaRow>
+              </ResultBlock>
+            )}
+
+            <div style={SUB_TITLE}>마. 지진시의 이음새 신축량 (|u<Sub>J</Sub>|)</div>
             <FormulaBlock>
               <FormulaRow>
                 지침 해설식(5.3.28~5.3.35): |u<Sub>J</Sub>| = u<Sub>0</Sub> {G.times} ū<Sub>J</Sub>
@@ -1337,7 +1371,7 @@ export default function SeismicDetailReportPage() {
               </FormulaRow>
             </ResultBlock>
 
-            <div style={SUB_TITLE}>마. 이음부의 신축량에 의한 내진안전성 조사</div>
+            <div style={SUB_TITLE}>바. 이음부의 신축량에 의한 내진안전성 조사</div>
             <table style={TABLE}>
               <thead>
                 <tr>

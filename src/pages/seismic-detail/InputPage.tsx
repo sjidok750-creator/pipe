@@ -1058,6 +1058,84 @@ export default function SeismicDetailInputPage() {
                   onChange={v => set({ isSeismicJoint: v === 'seismic' })}
                 />
               </EngRow>
+
+              <EngDivider label="부등침하 조건"/>
+              <EngRow label="부등침하 고려" popover={
+                <EngPopover title="부등침하 고려 여부">
+                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>2025년 상수도설계기준해설편 §4.3.3(2)나④<br/>매설관로 내진성능평가 요령 부록 C §C.1.3 라</strong>
+                    </div>
+                    <div style={{ fontSize: 11 }}>
+                      연약지반·성토-절토 경계부 등 부등침하 발생 가능 구간에서<br/>
+                      이음부 신축량 합산에 추가로 고려하는 항목.<br/>
+                      해당 없으면 미고려(e<sub>d</sub> = 0) 선택.
+                    </div>
+                  </div>
+                </EngPopover>
+              }>
+                <EngRadio
+                  options={[
+                    { key: 'no',  label: '미고려 (eₙ = 0)' },
+                    { key: 'yes', label: '고려' },
+                  ]}
+                  value={inp.hasSettle ? 'yes' : 'no'}
+                  onChange={v => set({ hasSettle: v === 'yes', D_settle: v === 'yes' ? (inp.D_settle || 0.2) : 0, L_settle: v === 'yes' ? (inp.L_settle || 60) : 0 })}
+                />
+              </EngRow>
+
+              {inp.hasSettle && (
+                <>
+                  <EngRow label="부등침하량 δ" unit="m" popover={
+                    <EngPopover title="부등침하량 δ">
+                      <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                        <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                          <strong style={{ color: T.textOK }}>2025년 상수도설계기준해설편 §4.3.3(2)나④</strong>
+                        </div>
+                        <div style={{ fontSize: 11 }}>
+                          연약지반 구간 중앙부의 부등침하 예상량.<br/>
+                          지반조사 결과 또는 인근 구조물 침하 실측값 사용.
+                        </div>
+                        <div style={{ marginTop: 6, padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                          e_d = √(l² + δ²) − l&nbsp;&nbsp;(l = L/2)
+                        </div>
+                        <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                          부록C 예제: δ = 0.2 m → e_d = 0.00067 m
+                        </div>
+                      </div>
+                    </EngPopover>
+                  }>
+                    <EngInput value={inp.D_settle} onChange={v => set({ D_settle: parseFloat(v)||0 })} min={0} step={0.01} width={90}/>
+                  </EngRow>
+                  <EngRow label="연약지반 구간 길이 L" unit="m" popover={
+                    <EngPopover title="연약지반 구간 전체 길이 L">
+                      <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                        <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                          <strong style={{ color: T.textOK }}>2025년 상수도설계기준해설편 §4.3.3(2)나④<br/>그림 4.3.3-4 부등침하 가정도 참조</strong>
+                        </div>
+                        <div style={{ fontSize: 11, marginBottom: 6 }}>
+                          <strong>L = 연약지반 전체 구간의 길이</strong><br/>
+                          (침하가 발생하는 연약지반 구간의 양끝 간 거리)
+                        </div>
+                        <div style={{ padding: '6px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontSize: 11 }}>
+                          설계기준 가정도에서 연약지반 구간(L)을 좌우 대칭으로<br/>
+                          나눈 절반 길이 <strong>l = L/2</strong> 을 이용해 신축량을 계산.<br/>
+                          <br/>
+                          e_d = √(l² + δ²) − l,&nbsp;&nbsp; l = L/2<br/>
+                          <br/>
+                          ※ 부록C 예제: <strong>l = 30 m → L = 60 m</strong>
+                        </div>
+                        <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                          이 L은 지진파 파장 L과 무관한 별도 입력값.<br/>
+                          관 1본 길이(Lj = 6 m)와도 다름.
+                        </div>
+                      </div>
+                    </EngPopover>
+                  }>
+                    <EngInput value={inp.L_settle} onChange={v => set({ L_settle: parseFloat(v)||60 })} min={1} step={1} width={90}/>
+                  </EngRow>
+                </>
+              )}
             </>
           )}
 
