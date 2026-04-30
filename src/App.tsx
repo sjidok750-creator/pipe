@@ -15,10 +15,11 @@ import SeismicPrelimInputPage    from './pages/seismic-prelim/InputPage'
 import SeismicPrelimResultPage   from './pages/seismic-prelim/ResultPage'
 import SeismicPrelimReportPage   from './pages/seismic-prelim/ReportPage'
 
-import SeismicDetailOverviewPage from './pages/seismic-detail/OverviewPage'
-import SeismicDetailInputPage    from './pages/seismic-detail/InputPage'
-import SeismicDetailResultPage   from './pages/seismic-detail/ResultPage'
-import SeismicDetailReportPage   from './pages/seismic-detail/ReportPage'
+import SeismicDetailOverviewPage   from './pages/seismic-detail/OverviewPage'
+import SeismicDetailInputPage      from './pages/seismic-detail/InputPage'
+import SeismicDetailResultPage     from './pages/seismic-detail/ResultPage'
+import SeismicDetailReportPage     from './pages/seismic-detail/ReportPage'
+import SeismicDetailReferencePage  from './pages/seismic-detail/ReferencePage'
 
 export default function App() {
   return (
@@ -69,10 +70,11 @@ export default function App() {
         {/* 내진성능 상세평가 */}
         <Route path="seismic-detail">
           <Route index element={<Navigate to="overview" replace />} />
-          <Route path="overview" element={<SeismicDetailOverviewPage />} />
-          <Route path="input"    element={<SeismicDetailInputPage />} />
-          <Route path="result"   element={<SeismicDetailResultPage />} />
-          <Route path="report"   element={<SeismicDetailReportPage />} />
+          <Route path="overview"   element={<SeismicDetailOverviewPage />} />
+          <Route path="input"      element={<SeismicDetailInputPage />} />
+          <Route path="result"     element={<SeismicDetailResultPage />} />
+          <Route path="report"     element={<SeismicDetailReportPage />} />
+          <Route path="reference"  element={<SeismicDetailReferencePage />} />
         </Route>
 
         {/* 구 경로 호환 */}

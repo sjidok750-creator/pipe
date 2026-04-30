@@ -28,10 +28,11 @@ const SUBNAV_MAP: Record<string, { to: string; label: string }[]> = {
     { to: '/seismic-prelim/report',   label: '보고서' },
   ],
   'seismic-detail': [
-    { to: '/seismic-detail/overview', label: '검토개요' },
-    { to: '/seismic-detail/input',    label: '입력' },
-    { to: '/seismic-detail/result',   label: '결과' },
-    { to: '/seismic-detail/report',   label: '보고서' },
+    { to: '/seismic-detail/overview',   label: '검토개요' },
+    { to: '/seismic-detail/input',      label: '입력' },
+    { to: '/seismic-detail/result',     label: '결과' },
+    { to: '/seismic-detail/report',     label: '보고서' },
+    { to: '/seismic-detail/reference',  label: '기준자료' },
   ],
 }
 
