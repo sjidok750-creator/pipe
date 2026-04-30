@@ -450,9 +450,11 @@ export function evalSegmented(params) {
   const dispOK = e_total <= e_allow
 
   // ── Step 16: 이음부 굽힘각도 (θ_J) 검토 ──
-  // 해설식(5.3.36): θ_J = (π × Uh / L) × sin(π × l / L)
+  // 2025년 상수도설계기준해설편 §4.3.3(2)다: θ = 4π²·l·Uh / L²
+  // 물리적 의미: 정현파 지반변위의 최대 곡률(κ_max = Uh·(2π/L)²)에 이음부 길이(l)를 곱한 값
+  // 평가요령(2021)에는 동일 항목 없음(2025년 기준에서 추가된 검토 항목)
   // 허용 굽힘각도: DN < 300 → 3.5°, DN ≤ 600 → 2.5°, DN > 600 → 1.5°
-  const theta_J = (Math.PI * Uh / L) * Math.sin(Math.PI * l_joint / L)  // rad
+  const theta_J = 4 * Math.PI ** 2 * l_joint * Uh / L ** 2  // rad
   const theta_allow_deg = DN < 300 ? 3.5 : DN <= 600 ? 2.5 : 1.5
   const theta_allow = theta_allow_deg * Math.PI / 180  // rad
   const angleOK = Math.abs(theta_J) <= theta_allow

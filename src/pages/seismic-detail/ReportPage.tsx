@@ -1438,19 +1438,17 @@ export default function SeismicDetailReportPage() {
             <FormulaBlock>
               <FormulaRow>
                 {G.theta}<Sub>J</Sub> =&nbsp;
-                <Frac top={<>{G.pi} {G.times} U<Sub>h</Sub></>} bot="L" />
-                &nbsp;{G.times} sin&nbsp;
-                <Frac top={<>{G.pi} {G.times} L<Sub>j</Sub></>} bot="L" />
+                <Frac top={<>4{G.pi}<Sup>2</Sup> {G.times} L<Sub>j</Sub> {G.times} U<Sub>h</Sub></>} bot={<>L<Sup>2</Sup></>} />
+                &nbsp;(2025년 상수도설계기준해설편 §4.3.3)
               </FormulaRow>
               <FormulaRow>
-                = &nbsp;
-                <Frac top={<>{G.pi} {G.times} {rs.Uh?.toFixed(4)}</>} bot={rs.L?.toFixed(2)} />
-                &nbsp;{G.times} sin&nbsp;
-                <Frac top={<>{G.pi} {G.times} {inp.Lj}</>} bot={rs.L?.toFixed(2)} />
+                =&nbsp;
+                <Frac top={<>4 {G.times} {G.pi}<Sup>2</Sup> {G.times} {inp.Lj} {G.times} {rs.Uh?.toFixed(4)}</>} bot={<>{rs.L?.toFixed(2)}<Sup>2</Sup></>} />
               </FormulaRow>
               <FormulaRow>
                 허용 굽힘각 {G.theta}<Sub>allow</Sub>:&nbsp;
-                DN {inp.DN} → {inp.DN < 300 ? '3.5°' : inp.DN <= 600 ? '2.5°' : '1.5°'}
+                DN {inp.DN} → {inp.DN < 300 ? '3.5°' : inp.DN <= 600 ? '2.5°' : '1.5°'}&nbsp;&nbsp;
+                (제조사 이음부 허용기준 우선 적용)
               </FormulaRow>
             </FormulaBlock>
             <ResultBlock ok={rs.angleOK}>
