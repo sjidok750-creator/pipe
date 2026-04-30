@@ -1280,13 +1280,21 @@ export default function SeismicDetailReportPage() {
 
             <div style={SUB_TITLE}>나. 차량하중에 의한 이음새 신축량 (e<Sub>o</Sub>)</div>
             {e_o_val > 0 ? (
-              <ResultBlock ok>
-                <FormulaRow>
-                  e<Sub>o</Sub> =&nbsp;
-                  <Frac top={<>{G.sigma}<Sub>o</Sub> {G.times} L<Sub>j</Sub></>} bot="E" />
-                  &nbsp;= <strong>{e_o_val.toFixed(6)} m</strong>
-                </FormulaRow>
-              </ResultBlock>
+              <>
+                <FormulaBlock>
+                  <FormulaRow>
+                    e<Sub>o</Sub> =&nbsp;
+                    <Frac top={<>{G.sigma}<Sub>o</Sub> {G.times} L<Sub>j</Sub></>} bot="E" />
+                    &nbsp;=&nbsp;
+                    <Frac top={<>{rs.sigma_o?.toFixed(2)} {G.times} {inp.Lj}</>} bot={E_MPa.toLocaleString()} />
+                  </FormulaRow>
+                </FormulaBlock>
+                <ResultBlock ok>
+                  <FormulaRow>
+                    e<Sub>o</Sub> = <strong>{e_o_val.toFixed(6)} m</strong>
+                  </FormulaRow>
+                </ResultBlock>
+              </>
             ) : (
               <ResultBlock>
                 <FormulaRow>e<Sub>o</Sub> = 0 (차량하중 미고려)</FormulaRow>
