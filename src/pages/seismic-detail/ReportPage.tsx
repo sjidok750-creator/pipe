@@ -317,9 +317,15 @@ export default function SeismicDetailReportPage() {
                   <td style={TD}>{inp.deltaT} {G.deg}C</td>
                 </tr>
                 <tr>
-                  <td style={TDB}>부등침하량 {G.delta}</td>
-                  <td style={TD}>{inp.D_settle} m</td>
+                  <td style={TDB}>연약지반 구간 L</td>
+                  <td style={TD}>{inp.L_settle > 0 ? `${inp.L_settle} m` : '미적용'}</td>
                 </tr>
+                {inp.L_settle > 0 && (
+                  <tr style={{ background: '#f8f8f8' }}>
+                    <td style={TDB}>성토고 h″</td>
+                    <td style={TD}>{inp.h2_settle ?? 0} m</td>
+                  </tr>
+                )}
               </>
             )}
           </tbody>
@@ -391,7 +397,7 @@ export default function SeismicDetailReportPage() {
               <FormulaRow>
                 {G.epsilon}<Sub>i</Sub> = −{nu} {G.times}&nbsp;
                 <Frac top={rs.sigma_theta?.toFixed(2)} bot={E_MPa.toLocaleString()} />
-                &nbsp;=&nbsp;<strong>{rs.epsilon_i?.toExponential(4)}</strong>
+                &nbsp;=&nbsp;<strong>{rs.epsilon_i !== undefined ? Math.abs(rs.epsilon_i).toExponential(4) : '—'}</strong>&nbsp;(압축, 부호 −)
               </FormulaRow>
             </ResultBlock>
           </>
@@ -675,29 +681,64 @@ export default function SeismicDetailReportPage() {
             </ResultBlock>
 
             <div style={SUB_TITLE}>라. 부등침하에 의한 축변형률 ({G.epsilon}<Sub>d</Sub>)</div>
-            {inp.D_settle > 0 && inp.L_settle > 0 ? (
-              <>
-                <FormulaBlock>
-                  <FormulaRow>
-                    {G.epsilon}<Sub>d</Sub> =&nbsp;
-                    <Frac top={G.delta} bot={<>2 {G.times} L<Sub>settle</Sub></>} />
-                  </FormulaRow>
-                  <FormulaRow>
-                    여기서,&nbsp; {G.delta} = {inp.D_settle} m,&nbsp;
-                    L<Sub>settle</Sub> = {inp.L_settle} m
-                  </FormulaRow>
-                </FormulaBlock>
-                <ResultBlock ok>
-                  <FormulaRow>
-                    {G.epsilon}<Sub>d</Sub> =&nbsp;
-                    <Frac top={inp.D_settle} bot={<>2 {G.times} {inp.L_settle}</>} />
-                    &nbsp;=&nbsp;<strong>{rs.epsilon_d?.toExponential(4)}</strong>
-                  </FormulaRow>
-                </ResultBlock>
-              </>
-            ) : (
+            {inp.L_settle > 0 ? (() => {
+              const E_kN  = E_MPa * 1000
+              const I_m4  = Math.PI / 64 * (Math.pow(D_m, 4) - Math.pow(D_m - 2 * t_m, 4))
+              const gamma = inp.gammaSoil ?? 18
+              const h2    = inp.h2_settle ?? 0
+              const K2    = rs.K2 ?? 0
+              const Wd    = rs.settle_Wd   ?? gamma * (inp.hCover + h2) * D_m
+              const beta  = rs.settle_beta ?? 0
+              const M1    = rs.settle_M1   ?? 0
+              const M2    = rs.settle_M2   ?? 0
+              const M     = rs.settle_M    ?? 0
+              return (
+                <>
+                  <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
+                    탄성지반(Winkler) 위 보 모델을 적용하여 연약지반 위 관로에 작용하는 연직토하중 W<Sub>d</Sub>에 의한 최대 휨모멘트 M을 산정하고, 이로부터 축변형률을 계산한다.
+                  </div>
+                  <FormulaBlock>
+                    <FormulaRow>
+                      W<Sub>d</Sub> = {G.gamma}(h + h″)D =
+                      {gamma} {G.times} ({inp.hCover} + {h2}) {G.times} {D_m.toFixed(3)}
+                      &nbsp;=&nbsp;<strong>{Wd.toFixed(3)} kN/m</strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      I = {G.pi}/64 {G.times} (D<Sup>4</Sup> − (D−2t)<Sup>4</Sup>) =&nbsp;
+                      <strong>{I_m4.toExponential(3)} m<Sup>4</Sup></strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      {G.beta} = ⁴√(K<Sub>2</Sub> / (4EI)) = ⁴√(
+                        {K2.toFixed(1)} / (4 {G.times} {E_kN.toExponential(3)} {G.times} {I_m4.toExponential(3)})
+                      ) =&nbsp;<strong>{beta.toFixed(4)} m⁻¹</strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      M<Sub>1</Sub> = W<Sub>d</Sub>/(2{G.beta}²) {G.times} e<Sup>−{G.beta}L/2</Sup> {G.times} sin({G.beta}L/2)
+                      &nbsp;=&nbsp;<strong>{M1.toFixed(3)} kN·m</strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      M<Sub>2</Sub> = 0.3877 {G.times} W<Sub>d</Sub>/{G.beta}² {G.times} [0.2079 + e<Sup>−{G.beta}L</Sup>(sin{G.beta}L − cos{G.beta}L)]
+                      &nbsp;=&nbsp;<strong>{M2.toFixed(3)} kN·m</strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      M = max(M<Sub>1</Sub>, M<Sub>2</Sub>) =&nbsp;<strong>{M.toFixed(3)} kN·m</strong>
+                    </FormulaRow>
+                    <FormulaRow>
+                      {G.epsilon}<Sub>d</Sub> = M {G.times} D / (2EI) =
+                      {M.toFixed(3)} {G.times} {D_m.toFixed(3)} / (2 {G.times} {E_kN.toExponential(3)} {G.times} {I_m4.toExponential(3)})
+                    </FormulaRow>
+                  </FormulaBlock>
+                  <ResultBlock ok>
+                    <FormulaRow>
+                      {G.epsilon}<Sub>d</Sub>&nbsp;=&nbsp;
+                      <strong>{rs.epsilon_d?.toExponential(4)}</strong>
+                    </FormulaRow>
+                  </ResultBlock>
+                </>
+              )
+            })() : (
               <ResultBlock>
-                <FormulaRow>{G.epsilon}<Sub>d</Sub> = 0 (부등침하 없음 — {G.delta} = 0)</FormulaRow>
+                <FormulaRow>{G.epsilon}<Sub>d</Sub> = 0 (부등침하 없음 — L<Sub>settle</Sub> = 0)</FormulaRow>
               </ResultBlock>
             )}
           </>
