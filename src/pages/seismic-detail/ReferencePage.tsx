@@ -85,14 +85,39 @@ const KS_SOCKET: { dn: number; L2: number }[] = [
   { dn: 1200, L2: 120 },
 ]
 
-// ── 허용굽힘각도 ─────────────────────────────────────────────
-// 평가요령(2021) 및 설계기준(2025) 모두 수치 미규정
-// "제조사의 이음부 신축 관련 허용기준을 참조하여야 한다" (설계기준 2025 §4.3.3)
-// 아래 값은 일부 교재·실무 참고자료에서 인용되는 값으로 공식 기준 아님
-const THETA_ALLOW: { dn: string; normal: string; seismic: string; note: string }[] = [
-  { dn: '75~300',   normal: '~3°',  seismic: '~5° 이상', note: '제조사별 상이' },
-  { dn: '350~600',  normal: '~2°',  seismic: '~5° 이상', note: '제조사별 상이' },
-  { dn: '700~1200', normal: '~1°',  seismic: '~3° 이상', note: '제조사별 상이' },
+// ── 허용굽힘각도 — 제조사 카탈로그 기반 ─────────────────────
+// ① 한국주철관공업(KCIP) Tyton 접합 — 조인트부 굴곡허용각도
+//    출처: https://kcip.co.kr/sub/product_ductile_03.php
+// ② 한국주철관공업(KCIP) KP 메커니컬 접합 — 동 출처
+// ③ 한국주철관공업(KCIP) EZ-LOK 조인트(이탈방지형) — https://kcip.co.kr/sub/product_ductile_04.php
+// ④ 미국 American Cast Iron Pipe (ACIPCO) Fastite 이음
+//    출처: https://american-usa.com/products/ductile-iron-pipe-and-fittings/unrestrained-joint-pipe/fastite-joint-pipe/deflection-and-offset
+// ※ 평가요령(2021) 및 설계기준(2025) 모두 수치 미규정 — 제조사 기준 참고용
+const THETA_TYTON: { dn: string; deg: string }[] = [
+  { dn: '80 ~ 300',    deg: '5°' },
+  { dn: '350 ~ 400',   deg: '4°' },
+  { dn: '450 ~ 600',   deg: '3°' },
+  { dn: '700 ~ 900',   deg: '2.5°' },
+  { dn: '1000 ~ 1200', deg: '2°' },
+]
+const THETA_MECHANICAL: { dn: string; deg: string }[] = [
+  { dn: '80 ~ 150',    deg: '5°' },
+  { dn: '200 ~ 300',   deg: '4°' },
+  { dn: '350 ~ 500',   deg: '3°' },
+  { dn: '600 ~ 700',   deg: '2°' },
+  { dn: '800 ~ 1200',  deg: '1.5°' },
+]
+const THETA_EZLOK: { dn: string; deg: string }[] = [
+  { dn: '80 ~ 150',    deg: '5°' },
+  { dn: '200 ~ 400',   deg: '4°' },
+  { dn: '450 ~ 600',   deg: '3°' },
+  { dn: '700 ~ 900',   deg: '2.5°' },
+  { dn: '1000 ~ 1200', deg: '2°' },
+]
+const THETA_FASTITE: { dn: string; deg: string }[] = [
+  { dn: '100 ~ 750 (4"~30")',  deg: '5°' },
+  { dn: '900 (36")',           deg: '4°' },
+  { dn: '1050~1600 (42"~64")', deg: '3°' },
 ]
 
 // ── 지반 강성계수 K1, K2 산정식 ─────────────────────────────
@@ -333,64 +358,134 @@ export default function SeismicDetailReferencePage() {
         {/* ── 허용굽힘각 ── */}
         {tab === 'angle' && (
           <div>
-            <Section title="이음부 허용굽힘각 (θ_allow)">
+            <Section title="이음부 허용굽힘각 (θ_allow) — 기준 체계">
+              {/* 기준서 규정 현황 */}
               <div style={{
                 background: '#fff7ed', border: `1px solid #fed7aa`,
-                borderRadius: 6, padding: '10px 14px', marginBottom: 14,
-                fontSize: 12, fontFamily: C.sans, lineHeight: 1.8,
+                borderLeft: '4px solid #f97316',
+                borderRadius: 6, padding: '10px 14px', marginBottom: 16,
+                fontSize: 12, fontFamily: C.sans, lineHeight: 1.9,
               }}>
-                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>⚠ 주의 — 기준서 미규정 항목</div>
+                <div style={{ fontWeight: 700, color: '#92400e', marginBottom: 4 }}>기준서 규정 현황</div>
                 <div>
-                  <b>평가요령(2021) §5.3.2</b>: 허용굽힘각 수치 규정 없음 (굽힘각 검토 항목 자체 없음)<br/>
-                  <b>설계기준(2025) §4.3.3</b>: 굽힘각 공식은 있으나 허용값 미규정.<br/>
-                  "허용굽힘각도는 관경과 관접합구조에 따라 달라지므로 <b>제조사의 이음부 신축 관련 허용기준을 참조</b>하여야 한다"
-                </div>
-                <div style={{ marginTop: 8, color: '#92400e', fontSize: 11 }}>
-                  → 앱에 표시되는 참고 허용값(3.5°/2.5°/1.5°)은 공식 기준 근거 없음. 실무 적용 시 반드시 제조사 카탈로그 확인 필요.
+                  <b>평가요령(2021) §5.3.2</b>: 허용굽힘각 검토 항목 자체 없음 — 수치 미규정<br/>
+                  <b>설계기준(2025) §4.3.3(2)다</b>: 굽힘각 공식은 있으나 허용값 미규정.<br/>
+                  &nbsp;&nbsp;"허용굽힘각도는 관경과 관접합구조에 따라 달라지므로 <b>제조사의 이음부 신축 관련 허용기준을 참조</b>하여야 한다"<br/>
+                  → 아래 표는 제조사 카탈로그 실측값 기반. 앱 참고값으로 사용하되 실무 적용 시 해당 제조사 카탈로그 확인 필수.
                 </div>
               </div>
 
+              {/* 굽힘각 공식 */}
               <div style={{ fontWeight: 700, color: C.navy, fontSize: 12, marginBottom: 8, fontFamily: C.sans }}>
-                굽힘각 산정 공식 (설계기준 2025 §4.3.3(2)다)
+                굽힘각 산정 공식 <Src>설계기준(2025) §4.3.3(2)다</Src>
               </div>
               <div style={{
                 background: C.bg0, border: `1px solid ${C.border}`,
-                borderRadius: 6, padding: '10px 14px', marginBottom: 14,
+                borderRadius: 6, padding: '10px 14px', marginBottom: 20,
                 fontSize: 12, fontFamily: C.mono, lineHeight: 2,
               }}>
                 θ = 4π²·l·Uh / L²<br/>
                 <span style={{ fontFamily: C.sans, fontSize: 11, color: C.muted }}>
-                  θ: 이음부 굽힘각(radian), l: 이음부 간격=관 길이(m),<br/>
-                  Uh: 지표면에서 관 위치 심도에 따른 지반의 수평변위 진폭(m), L: 지진동의 파장(m)<br/>
-                  ※ "추가적으로 검토할 수 있다" — 선택 검토 항목, 최종 합격/불합격에 포함 안 됨
+                  θ: 이음부 굽힘각(rad), l: 관 1본 길이(m), Uh: 지반수평변위(m), L: 지진파 파장(m)<br/>
+                  ※ "추가적으로 검토할 수 있다" — 선택 검토 항목, 최종 합·불합격에 포함되지 않음
                 </span>
               </div>
+            </Section>
 
-              <div style={{ fontWeight: 700, color: C.navy, fontSize: 12, marginBottom: 8, fontFamily: C.sans }}>
-                제조사별 허용굽힘각 참고 (카탈로그 확인 필수)
+            {/* KCIP Tyton */}
+            <Section title="① KCIP Tyton 접합 허용굴곡각">
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: C.sans, marginBottom: 8 }}>
+                출처: 한국주철관공업(KCIP) 제품 카탈로그 — kcip.co.kr/sub/product_ductile_03.php<br/>
+                (조인트부 굴곡허용각도, 2024년 확인)
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr>
-                  <th style={TH}>관경 범위</th>
-                  <th style={THC}>일반형 이음 (참고)</th>
-                  <th style={THC}>내진형 이음 (참고)</th>
+                  <th style={THC}>DN (mm)</th>
+                  <th style={THC}>허용굴곡각</th>
                   <th style={TH}>비고</th>
                 </tr></thead>
                 <tbody>
-                  {THETA_ALLOW.map(({ dn, normal, seismic, note }, i) => (
+                  {THETA_TYTON.map(({ dn, deg }, i) => (
                     <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
-                      <td style={TDB}>DN {dn}</td>
-                      <td style={{ ...TDC, color: C.muted }}>{normal}</td>
-                      <td style={{ ...TDC, color: C.blue }}>{seismic}</td>
-                      <td style={{ ...TD, fontSize: 11, color: C.muted }}>{note}</td>
+                      <td style={{ ...TDB, fontFamily: C.mono }}>{dn}</td>
+                      <td style={{ ...TDC, fontWeight: 700, color: '#1d6a3a', fontSize: 14 }}>{deg}</td>
+                      <td style={{ ...TD, fontSize: 11, color: C.muted }}>Tyton 접합 (소켓형 고무링)</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Note>앱에서 허용굽힘각 참고값으로 이 데이터를 사용함 (DN≤300→5°, DN≤400→4°, DN≤600→3°, DN≤900→2.5°, DN&gt;900→2°)</Note>
+            </Section>
+
+            {/* KCIP KP 메커니컬 */}
+            <Section title="② KCIP KP 메커니컬 접합 허용굴곡각">
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: C.sans, marginBottom: 8 }}>
+                출처: 한국주철관공업(KCIP) 제품 카탈로그 — kcip.co.kr/sub/product_ductile_03.php
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={THC}>DN (mm)</th>
+                  <th style={THC}>허용굴곡각</th>
+                </tr></thead>
+                <tbody>
+                  {THETA_MECHANICAL.map(({ dn, deg }, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
+                      <td style={{ ...TDB, fontFamily: C.mono }}>{dn}</td>
+                      <td style={{ ...TDC, fontWeight: 700, color: '#1d6a3a', fontSize: 14 }}>{deg}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+
+            {/* KCIP EZ-LOK (이탈방지형) */}
+            <Section title="③ KCIP EZ-LOK 조인트 허용굴곡각 (이탈방지형)">
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: C.sans, marginBottom: 8 }}>
+                출처: 한국주철관공업(KCIP) 제품 카탈로그 — kcip.co.kr/sub/product_ductile_04.php<br/>
+                EZ-LOK: 이탈방지 구조 + 소켓형 이음. 내진 대응 목적으로 사용.
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={THC}>DN (mm)</th>
+                  <th style={THC}>허용굴곡각</th>
+                  <th style={TH}>비고</th>
+                </tr></thead>
+                <tbody>
+                  {THETA_EZLOK.map(({ dn, deg }, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
+                      <td style={{ ...TDB, fontFamily: C.mono }}>{dn}</td>
+                      <td style={{ ...TDC, fontWeight: 700, color: C.blue, fontSize: 14 }}>{deg}</td>
+                      <td style={{ ...TD, fontSize: 11, color: C.muted }}>이탈방지형 — Tyton과 유사</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <Note>EZ-LOK의 내진 성능 우위는 굴곡각이 아닌 이탈방지(restraint) 성능에 있음</Note>
+            </Section>
+
+            {/* 미국 ACIPCO Fastite */}
+            <Section title="④ ACIPCO Fastite 이음 허용굴곡각 (미국 기준 참고)">
+              <div style={{ fontSize: 11, color: C.muted, fontFamily: C.sans, marginBottom: 8 }}>
+                출처: American Cast Iron Pipe Company (ACIPCO) — american-usa.com/products/ductile-iron-pipe-and-fittings/unrestrained-joint-pipe/fastite-joint-pipe/deflection-and-offset<br/>
+                미국 AWWA C151 기준. 국내 적용 시 참고용.
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr>
+                  <th style={THC}>관경 (mm 환산)</th>
+                  <th style={THC}>허용굴곡각</th>
+                </tr></thead>
+                <tbody>
+                  {THETA_FASTITE.map(({ dn, deg }, i) => (
+                    <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
+                      <td style={{ ...TDB, fontFamily: C.mono }}>{dn}</td>
+                      <td style={{ ...TDC, fontWeight: 700, color: C.muted, fontSize: 14 }}>{deg}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <Note>
-                내진형(NS이음·SII이음 등)의 허용굽힘각은 제조사별로 상이.<br/>
-                한국주철관·현대주철·경동주철 등 각사 카탈로그 또는 KS D 4311 부록 참조.<br/>
-                위 참고값은 공식 기준이 아니며 실무 적용 불가.
+                미국 Tyton·Fastite 이음은 DN750(30") 이하 전 규격에서 5° 허용.<br/>
+                국내 KCIP Tyton은 DN300 이하에서 5°, 이상은 단계적으로 감소.
               </Note>
             </Section>
           </div>

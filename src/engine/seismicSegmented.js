@@ -453,11 +453,16 @@ export function evalSegmented(params) {
   // 2025년 상수도설계기준해설편 §4.3.3(2)다: θ = 4π²·l·Uh / L²
   // 물리적 의미: 정현파 지반변위의 최대 곡률(κ_max = Uh·(2π/L)²)에 이음부 길이(l)를 곱한 값
   // ※ "추가적으로 검토할 수 있다" — 선택 항목, 최종 합격/불합격에 포함하지 않음
-  // ※ 허용굽힘각: 평가요령(2021) 및 설계기준(2025) 모두 수치 미규정
-  //   "제조사의 이음부 신축 관련 허용기준을 참조하여야 한다" (설계기준 2025 §4.3.3)
-  //   아래 참고값은 출처 불명확 — 제조사 카탈로그 확인 필요
+  // ※ 허용굽힘각 출처: 한국주철관공업(KCIP) Tyton 접합 카탈로그
+  //   (https://kcip.co.kr/sub/product_ductile_03.php 조인트부 굴곡허용각도)
+  //   평가요령(2021) 및 설계기준(2025) 모두 수치 미규정 — 제조사 기준 참고용
   const theta_J = 4 * Math.PI ** 2 * l_joint * Uh / L ** 2  // rad
-  const theta_allow_deg = DN < 300 ? 3.5 : DN <= 600 ? 2.5 : 1.5  // 참고값(출처 불명확)
+  // KCIP Tyton 기준: DN≤300→5°, DN≤400→4°, DN≤600→3°, DN≤900→2.5°, DN>900→2°
+  const theta_allow_deg =
+    DN <= 300 ? 5.0 :
+    DN <= 400 ? 4.0 :
+    DN <= 600 ? 3.0 :
+    DN <= 900 ? 2.5 : 2.0
   const theta_allow = theta_allow_deg * Math.PI / 180  // rad
   const angleOK = Math.abs(theta_J) <= theta_allow     // 참고용
 

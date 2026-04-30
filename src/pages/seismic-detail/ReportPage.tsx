@@ -1448,9 +1448,12 @@ export default function SeismicDetailReportPage() {
                 <Frac top={<>4 {G.times} {G.pi}<Sup>2</Sup> {G.times} {inp.Lj} {G.times} {rs.Uh?.toFixed(4)}</>} bot={<>{rs.L?.toFixed(2)}<Sup>2</Sup></>} />
               </FormulaRow>
               <FormulaRow>
-                허용 굽힘각 {G.theta}<Sub>allow</Sub>:&nbsp;
-                <strong>평가요령(2021) 및 설계기준(2025) 모두 수치 미규정</strong>&nbsp;—&nbsp;
-                제조사 카탈로그 기준 적용 필요
+                허용 굽힘각 {G.theta}<Sub>allow</Sub> (참고):&nbsp;
+                DN {inp.DN} → <strong>{inp.DN <= 300 ? '5°' : inp.DN <= 400 ? '4°' : inp.DN <= 600 ? '3°' : inp.DN <= 900 ? '2.5°' : '2°'}</strong>
+                &nbsp;
+                <span style={{ fontSize: 10.5, color: '#64748b' }}>
+                  [KCIP Tyton 접합 카탈로그 기준 — 평가요령(2021)·설계기준(2025) 미규정, 제조사 확인 필수]
+                </span>
               </FormulaRow>
             </FormulaBlock>
             <div style={{
