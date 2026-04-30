@@ -21,12 +21,32 @@ export function Frac({
 
 // ── 위첨자 ────────────────────────────────────────────────────
 export function Sup({ children }: { children: React.ReactNode }) {
-  return <sup style={{ fontSize: '0.72em', lineHeight: 0, verticalAlign: 'super' }}>{children}</sup>
+  return (
+    <sup style={{
+      fontSize: '0.72em',
+      lineHeight: 1,           // 0이면 부모 행 높이를 침범해 겹침 발생
+      verticalAlign: 'super',
+      position: 'relative',
+      top: '-0.1em',           // 미세 보정으로 줄과 겹치지 않게
+    }}>
+      {children}
+    </sup>
+  )
 }
 
 // ── 아래첨자 ──────────────────────────────────────────────────
 export function Sub({ children }: { children: React.ReactNode }) {
-  return <sub style={{ fontSize: '0.72em', lineHeight: 0, verticalAlign: 'sub' }}>{children}</sub>
+  return (
+    <sub style={{
+      fontSize: '0.72em',
+      lineHeight: 1,           // 0이면 부모 행 높이를 침범해 겹침 발생
+      verticalAlign: 'sub',
+      position: 'relative',
+      bottom: '-0.1em',        // 미세 보정
+    }}>
+      {children}
+    </sub>
+  )
 }
 
 // ── 제곱근 ────────────────────────────────────────────────────

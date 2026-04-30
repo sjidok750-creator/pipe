@@ -25,7 +25,8 @@ const SUB_TITLE: React.CSSProperties = {
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5, breakInside: 'avoid', pageBreakInside: 'avoid' }
+const TABLE_LONG: React.CSSProperties = { ...TABLE, breakInside: 'auto', pageBreakInside: 'auto' }
 const TH: React.CSSProperties = { background: WARM_DARK, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
 const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #C8C3BC', verticalAlign: 'middle', fontSize: 10 }
 const TDB: React.CSSProperties = { ...TD, fontWeight: 700 }
@@ -212,7 +213,7 @@ export default function SeismicDetailReportPage() {
           pipeDepth={inp.hCover + D_m / 2}
           title={isSegmented ? '<그림 C.1.1> 지반조건' : '<그림 C.2.1> 지반조건'}
         />
-        <table style={TABLE}>
+        <table style={inp.layers.length > 5 ? TABLE_LONG : TABLE}>
           <thead>
             <tr>
               <th style={{ ...TH, width: 24 }}>층번</th>

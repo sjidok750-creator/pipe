@@ -29,48 +29,91 @@ const DEFAULT_PRELIM = {
 }
 
 // ── 상세평가 기본값 (부록C 예제값) ──────────────────────────
-// 분절관: 부록C.1, 연속관: 부록C.2 기준
-const DEFAULT_DETAIL = {
-  pipeType: 'segmented',   // 'segmented' | 'continuous'
+// 분절관: 부록C.1 (덕타일 주철관 DN900), 연속관: 부록C.2 (강관 DN1000)
+
+// 공통 지반조건 (C.1·C.2 동일): 층1 H=30m Vs=89.4, 층2 H=5m Vs=172.9
+const DEFAULT_LAYERS = [
+  { name: '표층',   H: 30, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
+  { name: '중간층', H: 5,  N: null, Vs_manual: 172.9, isRock: false, Vs: 172.9 },
+]
+
+// 분절관(덕타일 주철관) 부록C.1 예제값
+const DEFAULT_SEGMENTED = {
+  pipeType: 'segmented',
   zone: 'I',
   seismicGrade: 'I',
-  soilType: 'S3',          // 부록C 예제: S3
-  DN: 900,                 // 부록C.1: DN900
-  thickness: 13.0,         // 부록C.1: t=13mm
-  D_out: 916,              // 부록C.1: D=0.9m → 916mm (DN900 덕타일)
-  P: 1.0,                  // 부록C: P=1MPa
-  hCover: 1.5,             // 부록C: h=1.5m
-  // 탄성계수 직접 입력
+  soilType: 'S3',
+  DN: 900,           // 부록C.1: DN900
+  thickness: 13.0,   // t₀=13mm (공칭), 계산시 t=t₀/1.1=11.818mm
+  D_out: 900,        // 부록C.1: D=0.9m (외경=내경 동일 사용)
+  P: 1.0,            // P=1MPa
+  hCover: 1.5,       // h=1.5m
   E_manual: false,
   E_steel: 206000,
   E_ductile: 170000,
-  // 차량하중 및 지반반력계수
-  gammaSoil: 18,
-  Pm: 100,                 // 부록C: Pm=100kN/輪
-  Kv: 10000,               // 부록C.2 연속관: Kv=10000 kN/m³
+  gammaSoil: 17,     // 부록C.1: γ=17 kN/m³
+  Pm: 100,           // Pm=100 kN/輪
+  Kv: 10000,         // Kv=10000 kN/m³
   kvMethod: 'manual',
-  // 분절관
-  nu: 0.28,                // 부록C.1: ν=0.28
-  Lj: 6,
+  nu: 0.28,          // ν=0.28
+  Lj: 6,             // l=6m
   isSeismicJoint: false,
   hasSettle: false,
-  // 연속관
-  deltaT: 15,              // 부록C.2: ΔT=15°C
   D_settle: 0,
   L_settle: 0,
   h2_settle: 0,
+  deltaT: 15,
   strainCriterion: 'buckling',
-  // 지반층: 부록C 예제 (분절관·연속관 동일)
-  // 층1: H=30m, Vs=89.4m/s / 층2: H=5m, Vs=172.9m/s
-  layers: [
-    { name: '표층',   H: 30, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
-    { name: '중간층', H: 5,  N: null, Vs_manual: 172.9, isRock: false, Vs: 172.9 },
-  ],
+  layers: DEFAULT_LAYERS.map(l => ({ ...l })),
   Vbs: 500,
   heightMode: 'sum',
   H_bedrock: null,
   fillGapAsLastLayer: true,
 }
+
+// 연속관(강관) 부록C.2 예제값
+const DEFAULT_CONTINUOUS = {
+  pipeType: 'continuous',
+  zone: 'I',
+  seismicGrade: 'I',
+  soilType: 'S3',
+  DN: 1000,          // 부록C.2: DN1000
+  thickness: 9.0,    // t=9mm (I=3.44×10⁻³ m⁴에서 역산)
+  D_out: 1000,       // 부록C.2: D=1.0m (외경=내경 동일 사용)
+  P: 1.0,            // P=1MPa
+  hCover: 1.5,       // h=1.5m
+  E_manual: true,    // 부록C.2: E=2.1×10⁸ kN/m²=210,000 MPa 직접 사용
+  E_steel: 210000,   // 부록C.2: E=2.1×10⁵ MPa
+  E_ductile: 170000,
+  gammaSoil: 17,     // 부록C.2: γ=17 kN/m³
+  Pm: 100,           // Pm=100 kN/輪
+  Kv: 10000,         // Kv=10000 kN/m³
+  kvMethod: 'manual',
+  nu: 0.30,
+  Lj: 6,
+  isSeismicJoint: false,
+  hasSettle: true,   // 부록C.2: 부등침하 고려
+  D_settle: 0,
+  L_settle: 15,      // 부록C.2: L=15m
+  h2_settle: 1.0,    // 부록C.2: h″=1.0m
+  deltaT: 15,        // 부록C.2: ΔT=15°C
+  strainCriterion: 'buckling',
+  layers: DEFAULT_LAYERS.map(l => ({ ...l })),
+  Vbs: 500,
+  heightMode: 'sum',
+  H_bedrock: null,
+  fillGapAsLastLayer: true,
+}
+
+// 현재 pipeType에 맞는 기본값 반환
+function getDefaultDetail(pipeType) {
+  return pipeType === 'continuous'
+    ? { ...DEFAULT_CONTINUOUS, layers: DEFAULT_LAYERS.map(l => ({ ...l })) }
+    : { ...DEFAULT_SEGMENTED, layers: DEFAULT_LAYERS.map(l => ({ ...l })) }
+}
+
+// touched 키 기본값 (빈 Set은 직렬화 불가 → 배열로 저장)
+const DEFAULT_TOUCHED = []
 
 // ── 예비평가 계산 ────────────────────────────────────────────
 function calcPrelim(inp) {
@@ -182,8 +225,12 @@ export const useSeismicStore = create((set, get) => ({
   prelimResult: null,
 
   // 상세평가
-  detailInputs: { ...DEFAULT_DETAIL },
+  detailInputs: getDefaultDetail('segmented'),
   detailResult: null,
+
+  // touched 키 목록 (배열 → Set으로 변환해 사용)
+  // 탭 이동해도 유지되도록 store에 보관
+  detailTouched: [...DEFAULT_TOUCHED],
 
   // 예비평가 입력 변경
   setPrelimInputs: (partial) => {
@@ -207,6 +254,23 @@ export const useSeismicStore = create((set, get) => ({
     set(state => ({ detailInputs: { ...state.detailInputs, ...partial }, detailResult: null }))
   },
 
+  // touched 키 추가
+  touchDetail: (key) => {
+    set(state => {
+      if (state.detailTouched.includes(key)) return state
+      return { detailTouched: [...state.detailTouched, key] }
+    })
+  },
+
+  // touched 여러 키 한번에 추가
+  touchDetailMany: (keys) => {
+    set(state => {
+      const next = [...state.detailTouched]
+      keys.forEach(k => { if (!next.includes(k)) next.push(k) })
+      return { detailTouched: next }
+    })
+  },
+
   // 지반 층 업데이트 (Vs 자동 도출 포함)
   setDetailLayers: (layers) => {
     const derived = layers.map(l => ({ ...l, Vs: deriveVs(l) }))
@@ -225,6 +289,19 @@ export const useSeismicStore = create((set, get) => ({
     }
   },
 
+  // 신규 프로젝트 시드: 관종에 맞는 기본값으로 완전 초기화 (touched도 리셋)
+  seedDetailDefaults: (pipeType) => {
+    set({
+      detailInputs: getDefaultDetail(pipeType ?? 'segmented'),
+      detailResult: null,
+      detailTouched: [...DEFAULT_TOUCHED],
+    })
+  },
+
   resetPrelim: () => set({ prelimInputs: { ...DEFAULT_PRELIM }, prelimResult: null }),
-  resetDetail: () => set({ detailInputs: { ...DEFAULT_DETAIL }, detailResult: null }),
+  resetDetail: () => set({
+    detailInputs: getDefaultDetail('segmented'),
+    detailResult: null,
+    detailTouched: [...DEFAULT_TOUCHED],
+  }),
 }))

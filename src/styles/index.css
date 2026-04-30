@@ -63,13 +63,13 @@ body {
   white-space: nowrap;
 }
 
-/* 수식 블록 */
+/* 수식 블록: sup/sub가 인접 행과 겹치지 않도록 충분한 line-height */
 .formula-line {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 2px 0;
-  line-height: 1.7;
+  line-height: 2.0;
 }
 
 /* ── 보고서 인쇄 스타일 ────────────────────────────────────── */
@@ -90,7 +90,7 @@ body {
     margin: 10mm 10mm 12mm 10mm;
   }
 
-  /* 앱 UI 전체 숨기기 (태그 + 클래스 모두) */
+  /* 앱 UI 전체 숨기기 */
   header, footer, nav, aside,
   .no-print, [data-noprint],
   button:not(.print-keep) {
@@ -115,12 +115,13 @@ body {
     box-shadow: none !important;
   }
 
-  /* 보고서 본문 */
+  /* 보고서 본문: 연속 흐름 — 하단 빈 공간 없도록 auto */
   .report-body {
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
     box-shadow: none !important;
+    break-inside: auto;
     page-break-inside: auto;
   }
 
@@ -129,28 +130,39 @@ body {
   .page-break-after  { page-break-after:  always !important; break-after:  page !important; }
   .keep-together     { page-break-inside: avoid !important; break-inside: avoid !important; }
 
-  /* 섹션·하위 제목 → 고아 방지 (제목만 이전 페이지에 남지 않도록) */
+  /* 섹션·하위 제목: 다음 내용과 함께 유지, 단독으로 페이지 끝에 남지 않도록 */
   .sec-title, .sub-title,
   .report-body [class*="sec-title"],
   .report-body [class*="sub-title"] {
-    page-break-after: avoid !important;
     break-after: avoid !important;
-    page-break-inside: avoid !important;
+    page-break-after: avoid !important;
     break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
-  /* 표 페이지 나누기 */
-  table { page-break-inside: auto; }
-  tr    { page-break-inside: avoid; break-inside: avoid; }
+  /* 표: 페이지 경계에서 행 단위로 나누기 허용하되 표 자체는 가능하면 묶기 */
+  table {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+  /* 표가 너무 길어 묶기 불가능한 경우 행 단위로 허용 */
+  table.allow-break {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+  table.allow-break tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
   thead { display: table-header-group; }
 
-  /* 수식 박스 — 짧은 것만 묶고 긴 것은 자연 분리 허용 */
+  /* 수식 박스 */
   .formula-box {
     background: #f8f9fb !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    page-break-inside: avoid;
-    break-inside: avoid;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   /* 결과 박스 */

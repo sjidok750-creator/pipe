@@ -171,11 +171,11 @@ type KvMode = 'N_E0' | 'Vs' | 'table' | 'manual'
 
 export default function SeismicDetailInputPage() {
   const navigate = useNavigate()
-  const { detailInputs: inp, setDetailInputs: set, setDetailLayers, calcDetail } = useSeismicStore()
+  const { detailInputs: inp, setDetailInputs: set, setDetailLayers, calcDetail, detailTouched, touchDetail, touchDetailMany } = useSeismicStore()
   const [kvMode, setKvMode] = useState<KvMode>('manual')
-  // touched: 사용자가 직접 입력한 필드 키 Set (파란색), 미입력=기본값(빨간색)
-  const [touched, setTouched] = useState<Set<string>>(new Set())
-  const touch = (key: string) => setTouched(prev => new Set(prev).add(key))
+  // touched: store에 보관 → 탭 이동해도 유지
+  const touched = new Set<string>(detailTouched)
+  const touch = (key: string) => touchDetail(key)
   const hl = (key: string): 'default' | 'touched' => touched.has(key) ? 'touched' : 'default'
 
   const Z = SEISMIC_ZONE[inp.zone as 'I'|'II'].Z
