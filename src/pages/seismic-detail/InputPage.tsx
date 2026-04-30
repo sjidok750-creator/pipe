@@ -1188,9 +1188,12 @@ export default function SeismicDetailInputPage() {
               </EngRow>
               <EngDivider label="부등침하 조건"/>
               <EngRow label="부등침하 고려">
-                <EngToggle
+                <EngRadio
+                  options={[
+                    { key: 'no',  label: '미고려 (ε_d = 0)' },
+                    { key: 'yes', label: '고려' },
+                  ]}
                   value={(inp as any).hasSettle ? 'yes' : 'no'}
-                  options={[{ value: 'no', label: '미고려' }, { value: 'yes', label: '고려' }]}
                   onChange={v => set({
                     hasSettle: v === 'yes',
                     L_settle: v === 'yes' ? ((inp.L_settle || 0) > 0 ? inp.L_settle : 15) : 0,
