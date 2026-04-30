@@ -1568,7 +1568,7 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TD}>차량하중 {G.epsilon}<Sub>o</Sub></td>
-                  <td style={TDR}>0.0000</td>
+                  <td style={TDR}>{(Math.abs(rs.epsilon_o ?? 0) * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
                   <td style={TD}>온도효과 ({G.Delta}T = {inp.deltaT}°C) {G.epsilon}<Sub>t</Sub></td>
