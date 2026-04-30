@@ -100,29 +100,83 @@ export function calcAxialStressTraffic(Wm, Z_m, E_kN, I_m, Kv, D_m) {
   return sigma_o_kN / 1000   // MPa
 }
 
-// ─── 보정계수 ξ1, ξ2 (분절관 지진 축응력) ───────────────────
-// 지침 해설그림 5.3.3, 5.3.4에서 ν', ν값에 따라 읽는 계수
-// ν' = l/L' = l/(2L),  ν = l/L
-// ξ1: ν'에 따른 축응력 보정계수 (그래프 근사)
-// ξ2: ν에 따른 휨응력 보정계수 (그래프 근사)
-// 그래프를 수식으로 근사 (0 ≤ ν', ν ≤ 1 범위)
-// 지침 예제(C11): ν'=0.022, ξ1=1.0 / ν=0.022, ξ2=1.0
-// → ν', ν가 작을 때(<<0.5) ξ ≈ 1.0, ν가 커지면 감소
-// 그래프 형태: sin 형태의 envelope — 피크 위치 약 ν=0.25 근방
-// 보수적 처리: ξ1=ξ2=1.0 (그래프 상단) — 추후 디지털화 데이터로 교체 가능
-export function calcXi1(nu_prime) {
-  // ν' = l/L'=l/(2L). 범위 0~1. 그래프 최대 1.0
-  // 피크 값 1.0은 ν' ≈ 0~0.25 구간, 이후 감소
-  if (nu_prime <= 0.25) return 1.0
-  if (nu_prime <= 0.5)  return 1.0 - 2 * (nu_prime - 0.25)  // 선형 감소 근사
-  return 0.5 - (nu_prime - 0.5)
+// ─── 보정계수 ξ1, ξ2 (분절관 지진 축응력·휨응력) ────────────
+// 근거: 기존시설물(상수도) 내진성능 평가요령 부록C 해설그림 C.1.4, C.1.5
+//       (= 상수도설계기준 해설 그림 4.3.3-2, 4.3.3-3)
+//
+// x축: λ1L' (ξ1), λ2L (ξ2) — 관-지반 상호작용 무차원 파라미터
+// 곡선 파라미터: ν' = l/L' = l/(2L) (ξ1),  ν = l/L (ξ2)
+// ξ1: λ1L'이 클수록, ν'가 클수록 1.0에 수렴 (단조 증가)
+// ξ2: 오버슈트 구간 있음 (ν=0.02~0.2에서 일시적으로 1.0 초과)
+//
+// 구현: 그래프 수치화 2D lookup table + 로그-선형 보간
+//   - ν' (또는 ν) 축: 로그 보간 (저 ν 구간에서 ν에 비례하는 성질 반영)
+//   - λ 축: 선형 보간
+//   - 범위 밖: 경계값 사용 (외삽 없음)
+
+// ξ1 lookup table — (λ1L', ξ1) 점열, 곡선 파라미터 ν'
+const _XI1_TABLE = {
+  0.01: [[0,0],[25,0.005],[50,0.010],[75,0.015],[90,0.0187],[100,0.020],[150,0.030],[200,0.040],[300,0.058],[400,0.075],[500,0.090]],
+  0.02: [[0,0],[25,0.006],[50,0.012],[75,0.018],[100,0.023],[150,0.040],[200,0.065],[300,0.115],[400,0.160],[500,0.200]],
+  0.04: [[0,0],[20,0.250],[30,0.420],[50,0.620],[75,0.820],[100,0.920],[125,0.970],[150,0.990],[200,0.998],[300,1.000],[500,1.000]],
+  0.06: [[0,0],[10,0.230],[20,0.480],[30,0.670],[50,0.870],[75,0.960],[100,0.990],[150,1.000],[500,1.000]],
+  0.10: [[0,0],[10,0.400],[20,0.680],[30,0.860],[40,0.940],[50,0.970],[70,0.992],[100,1.000],[500,1.000]],
+  0.20: [[0,0],[5,0.380],[10,0.650],[15,0.840],[20,0.930],[30,0.980],[40,0.995],[60,1.000],[500,1.000]],
 }
 
-export function calcXi2(nu_val) {
-  // ν = l/L. 범위 0~1. 그래프 최대 1.0
-  if (nu_val <= 0.25) return 1.0
-  if (nu_val <= 0.5)  return 1.0 - 2 * (nu_val - 0.25)
-  return 0.5 - (nu_val - 0.5)
+// ξ2 lookup table — (λ2L, ξ2) 점열, 곡선 파라미터 ν
+// 오버슈트 구간(ξ2>1.0)도 그대로 보존
+const _XI2_TABLE = {
+  0.01: [[0,0],[50,0.080],[100,0.170],[150,0.255],[200,0.330],[300,0.460],[400,0.565],[500,0.650]],
+  0.02: [[0,0],[25,0.090],[50,0.240],[75,0.510],[100,0.790],[125,0.990],[150,1.060],[175,1.075],[200,1.070],[250,1.040],[300,1.020],[400,1.005],[500,1.000]],
+  0.04: [[0,0],[10,0.130],[20,0.410],[30,0.710],[40,0.920],[50,1.030],[60,1.070],[75,1.080],[100,1.060],[125,1.030],[150,1.015],[200,1.005],[300,1.000],[500,1.000]],
+  0.06: [[0,0],[10,0.440],[20,0.840],[30,1.010],[40,1.060],[50,1.070],[60,1.060],[75,1.040],[100,1.015],[150,1.005],[200,1.000],[500,1.000]],
+  0.10: [[0,0],[5,0.350],[10,0.740],[15,0.960],[20,1.040],[25,1.060],[30,1.050],[40,1.025],[50,1.010],[75,1.002],[100,1.000],[500,1.000]],
+  0.20: [[0,0],[3,0.330],[5,0.630],[8,0.920],[10,1.020],[12,1.055],[15,1.060],[20,1.040],[30,1.015],[50,1.003],[100,1.000],[500,1.000]],
+}
+
+function _interp1D(pts, x) {
+  if (x <= pts[0][0]) return pts[0][1]
+  if (x >= pts[pts.length - 1][0]) return pts[pts.length - 1][1]
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (x >= pts[i][0] && x <= pts[i + 1][0]) {
+      const t = (x - pts[i][0]) / (pts[i + 1][0] - pts[i][0])
+      return pts[i][1] + t * (pts[i + 1][1] - pts[i][1])
+    }
+  }
+  return pts[pts.length - 1][1]
+}
+
+// 2D 보간: ν 축은 로그, λ 축은 선형
+function _interpXi(table, lam, nu) {
+  const nuKeys = Object.keys(table).map(Number).sort((a, b) => a - b)
+  const nuCl = Math.max(nuKeys[0], Math.min(nuKeys[nuKeys.length - 1], nu))
+  let lo = nuKeys[0], hi = nuKeys[nuKeys.length - 1]
+  for (let i = 0; i < nuKeys.length - 1; i++) {
+    if (nuCl >= nuKeys[i] && nuCl <= nuKeys[i + 1]) { lo = nuKeys[i]; hi = nuKeys[i + 1]; break }
+  }
+  const xi_lo = _interp1D(table[lo], lam)
+  if (lo === hi) return Math.max(0, xi_lo)
+  const xi_hi = _interp1D(table[hi], lam)
+  // ν 축 로그 보간
+  const t = (Math.log(nuCl) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))
+  // ξ 값이 양수일 때 로그 보간, 0 근처는 선형
+  if (xi_lo > 0 && xi_hi > 0) {
+    return Math.max(0, Math.exp(Math.log(xi_lo) + t * (Math.log(xi_hi) - Math.log(xi_lo))))
+  }
+  return Math.max(0, xi_lo + t * (xi_hi - xi_lo))
+}
+
+// ξ1: 축응력 보정계수
+// lam1Lp = λ1 × L' (= λ1 × 2L),  nu_prime = l / L' = l / (2L)
+export function calcXi1(lam1Lp, nu_prime) {
+  return Math.min(1.0, _interpXi(_XI1_TABLE, lam1Lp, nu_prime))
+}
+
+// ξ2: 휨응력 보정계수 (오버슈트 허용 — 최대 약 1.08)
+// lam2L = λ2 × L,  nu_val = l / L
+export function calcXi2(lam2L, nu_val) {
+  return Math.max(0, _interpXi(_XI2_TABLE, lam2L, nu_val))
 }
 
 // ─── 지진시의 축응력 (분절관) ───────────────────────────────
@@ -132,19 +186,22 @@ export function calcXi2(nu_val) {
 // 해설식(5.3.15): σ_L = a1 × (π×Uh/L) × E
 // 해설식(5.3.16): σ_B = a2 × (2π²×D×Uh/L²) × E
 // 단위: E [kN/m²], Uh [m], L [m], D [m] → σ [kN/m²]
-// l: 관 1본 길이(m)
-export function calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l) {
+// l: 관 1본 길이(m), lambda1/lambda2: 지반-관 강성 파라미터 (1/m)
+export function calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l, lambda1, lambda2) {
   const Lprime = 2 * L   // 해설식(5.3.21)
 
   // 지반변형률 기반 응력
   const sigma_L_kN = alpha1 * (Math.PI * Uh / L) * E_kN           // 해설식(5.3.15)
   const sigma_B_kN = alpha2 * (2 * Math.PI ** 2 * D_m * Uh / L ** 2) * E_kN  // 해설식(5.3.16)
 
-  // 보정계수
-  const nu_prime = l / Lprime   // 해설식(5.3.23)
-  const nu_val = l / L          // 해설식(5.3.22)
-  const xi1 = calcXi1(nu_prime)
-  const xi2 = calcXi2(nu_val)
+  // ξ1, ξ2 그래프 x축 파라미터 (해설그림 C.1.4, C.1.5)
+  const lam1Lp  = lambda1 * Lprime   // λ1 × L'
+  const lam2L   = lambda2 * L        // λ2 × L
+  const nu_prime = l / Lprime         // 해설식(5.3.23): ν' = l/L'
+  const nu_val   = l / L              // 해설식(5.3.22): ν  = l/L
+
+  const xi1 = calcXi1(lam1Lp, nu_prime)
+  const xi2 = calcXi2(lam2L,  nu_val)
 
   const sigma_L_prime_kN = xi1 * sigma_L_kN   // 해설식(5.3.13)
   const sigma_B_prime_kN = xi2 * sigma_B_kN   // 해설식(5.3.14)
@@ -159,7 +216,7 @@ export function calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l) {
     sigma_B: sigma_B_kN / 1000,  // MPa
     sigma_L_prime: sigma_L_prime_kN / 1000,  // MPa
     sigma_B_prime: sigma_B_prime_kN / 1000,  // MPa
-    xi1, xi2, nu_prime, nu_val,
+    xi1, xi2, nu_prime, nu_val, lam1Lp, lam2L,
   }
 }
 
@@ -362,7 +419,7 @@ export function evalSegmented(params) {
   }
 
   // ── Step 11: 지진시의 축응력 (해설식 5.3.12~5.3.21) ──
-  const seismicStress = calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l_joint)
+  const seismicStress = calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l_joint, lambda1, lambda2)
 
   // ── Step 12: 관체 응력 합산 및 검토 ──
   const sigma_total = sigma_i + sigma_o + seismicStress.sigma_x
