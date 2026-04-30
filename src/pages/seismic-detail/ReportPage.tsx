@@ -998,13 +998,76 @@ export default function SeismicDetailReportPage() {
               ⑤ 지진시 축응력 ({G.sigma}<sub>x</sub>) 계산
             </div>
             <FormulaBlock>
+              {/* K1, K2 산정과정 */}
+              {/* K1, K2 산정과정 */}
               <FormulaRow>
-                지반 강성계수: K<Sub>1</Sub> = {rs.K1?.toFixed(1)} kN/m<Sup>2</Sup>,&nbsp;
-                K<Sub>2</Sub> = {rs.K2?.toFixed(1)} kN/m<Sup>2</Sup>
+                K<Sub>1</Sub> = 1.5 &times;&nbsp;
+                <Frac top={<>{G.gamma}</>} bot="g" />
+                &nbsp;&times; V<Sub>DS</Sub><Sup>2</Sup>
+                &nbsp;= 1.5 &times;&nbsp;
+                <Frac top={String(inp.gammaSoil ?? '—')} bot="9.81" />
+                &nbsp;&times; {rs.Vds?.toFixed(2)}<Sup>2</Sup>
+                &nbsp;= <strong>{rs.K1?.toFixed(1)} kN/m<Sup>2</Sup></strong>
               </FormulaRow>
               <FormulaRow>
-                보정계수: {G.alpha}<Sub>1</Sub> = {rs.alpha1?.toFixed(4)},&nbsp;
-                {G.alpha}<Sub>2</Sub> = {rs.alpha2?.toFixed(4)}
+                K<Sub>2</Sub> = 3.0 &times;&nbsp;
+                <Frac top={<>{G.gamma}</>} bot="g" />
+                &nbsp;&times; V<Sub>DS</Sub><Sup>2</Sup>
+                &nbsp;= 3.0 &times;&nbsp;
+                <Frac top={String(inp.gammaSoil ?? '—')} bot="9.81" />
+                &nbsp;&times; {rs.Vds?.toFixed(2)}<Sup>2</Sup>
+                &nbsp;= <strong>{rs.K2?.toFixed(1)} kN/m<Sup>2</Sup></strong>
+              </FormulaRow>
+              {/* λ1, λ2 산정과정 */}
+              <FormulaRow>
+                {G.lambda}<Sub>1</Sub> =&nbsp;
+                <Sqrt>
+                  <Frac top={<>K<Sub>1</Sub></>} bot={<>E &times; A</>} />
+                </Sqrt>
+                &nbsp;=&nbsp;
+                <Sqrt>
+                  <Frac
+                    top={<>{rs.K1?.toFixed(1)}</>}
+                    bot={<>{(E_MPa * 1000).toExponential(3)} &times; {rs.A_m?.toExponential(4)}</>}
+                  />
+                </Sqrt>
+                &nbsp;= {rs.lambda1?.toFixed(4)} /m
+              </FormulaRow>
+              <FormulaRow>
+                {G.lambda}<Sub>2</Sub> =&nbsp;
+                &#8732;&nbsp;{/* 4제곱근 기호 */}
+                <Frac top={<>K<Sub>2</Sub></>} bot={<>E &times; I</>} />
+                &nbsp;= {rs.lambda2?.toFixed(4)} /m
+              </FormulaRow>
+              {/* α1, α2 산정과정 */}
+              <FormulaRow>
+                L' = 2L = 2 &times; {rs.L?.toFixed(2)} = {rs.L ? (2 * rs.L).toFixed(2) : '—'} m
+              </FormulaRow>
+              <FormulaRow>
+                {G.alpha}<Sub>1</Sub> =&nbsp;
+                <Frac
+                  top="1"
+                  bot={<>1 + (2{G.pi} / ({G.lambda}<Sub>1</Sub>L'))<Sup>2</Sup></>}
+                />
+                &nbsp;=&nbsp;
+                <Frac
+                  top="1"
+                  bot={<>1 + (2{G.pi} / ({rs.lambda1?.toFixed(4)} &times; {rs.L ? (2 * rs.L).toFixed(2) : '—'}))<Sup>2</Sup></>}
+                />
+                &nbsp;= <strong>{rs.alpha1?.toFixed(4)}</strong>
+              </FormulaRow>
+              <FormulaRow>
+                {G.alpha}<Sub>2</Sub> =&nbsp;
+                <Frac
+                  top="1"
+                  bot={<>1 + (2{G.pi} / ({G.lambda}<Sub>2</Sub>L))<Sup>4</Sup></>}
+                />
+                &nbsp;=&nbsp;
+                <Frac
+                  top="1"
+                  bot={<>1 + (2{G.pi} / ({rs.lambda2?.toFixed(4)} &times; {rs.L?.toFixed(2)}))<Sup>4</Sup></>}
+                />
+                &nbsp;= <strong>{rs.alpha2?.toFixed(4)}</strong>
               </FormulaRow>
               <FormulaRow>
                 {G.sigma}<Sub>L</Sub> = {G.alpha}<Sub>1</Sub> {G.times}&nbsp;
