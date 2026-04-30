@@ -302,12 +302,10 @@ export function calcLambda(K1, K2, E_kN, A, I) {
 // ── 보정계수 α1, α2 ──────────────────────────────────────────
 // 해설식(5.3.17)/(5.3.47): α1 = 1 / (1 + (2π/(λ1×L'))²)
 // 해설식(5.3.18)/(5.3.48): α2 = 1 / (1 + (2π/(λ2×L))⁴)
-// 분절관: L' = 2L   (해설식 5.3.21)
-// 연속관: L' = √2·L (해설식 5.3.51)
+// 분절관·연속관 공통: L' = √2·L
+// 근거: 상수도설계기준 해설 4.3.3절 및 내진성능평가요령 부록C 모두 L'=√2·L 명시
 export function calcAlpha(lambda1, lambda2, L, pipeType = 'segmented') {
-  const Lprime = pipeType === 'continuous'
-    ? Math.SQRT2 * L   // 해설식 5.3.51: L' = √2·L (연속관)
-    : 2 * L             // 해설식 5.3.21: L' = 2L   (분절관)
+  const Lprime = Math.SQRT2 * L   // L' = √2·L (분절관·연속관 공통)
   const alpha1 = 1 / (1 + Math.pow(2 * Math.PI / (lambda1 * Lprime), 2))
   const alpha2 = 1 / (1 + Math.pow(2 * Math.PI / (lambda2 * L), 4))
   return { alpha1, alpha2, Lprime }

@@ -188,7 +188,7 @@ export function calcXi2(lam2L, nu_val) {
 // 단위: E [kN/m²], Uh [m], L [m], D [m] → σ [kN/m²]
 // l: 관 1본 길이(m), lambda1/lambda2: 지반-관 강성 파라미터 (1/m)
 export function calcAxialStressSeismic(Uh, L, D_m, E_kN, alpha1, alpha2, l, lambda1, lambda2) {
-  const Lprime = 2 * L   // 해설식(5.3.21)
+  const Lprime = Math.SQRT2 * L   // L' = √2·L (기준서 공통)
 
   // 지반변형률 기반 응력
   const sigma_L_kN = alpha1 * (Math.PI * Uh / L) * E_kN           // 해설식(5.3.15)
