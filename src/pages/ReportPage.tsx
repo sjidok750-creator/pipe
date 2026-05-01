@@ -160,7 +160,7 @@ export default function ReportPage() {
         {/* ══════════════════════════════════════════════════════
             3. 계산 수식 및 과정
         ══════════════════════════════════════════════════════ */}
-        <div style={{ ...rh, marginTop: 16 }} className="page-break-before">3. 계산 수식 및 과정</div>
+        <div style={{ ...rh, marginTop: 16 }}>3. 계산 수식 및 과정</div>
 
         {/* ── 3.1 하중 산정 ── */}
         <div style={SUB}>3.1 하중 산정</div>
@@ -393,7 +393,7 @@ export default function ReportPage() {
         {/* ══════════════════════════════════════════════════════
             4. 구조안전성 검토 결과
         ══════════════════════════════════════════════════════ */}
-        <div style={rh} className="page-break-before">4. 구조안전성 검토 결과</div>
+        <div style={rh}>4. 구조안전성 검토 결과</div>
         <table style={{ ...TABLE, fontSize: 11 }}>
           <thead>
             <tr style={{ background: T.bgSection }}>

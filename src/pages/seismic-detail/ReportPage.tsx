@@ -208,11 +208,13 @@ export default function SeismicDetailReportPage() {
         <div style={SEC_TITLE}>{isSegmented ? 'C.1.1' : 'C.2.1'} 지반조건 및 관로 사양</div>
 
         <div style={SUB_TITLE}>가. 지반조건</div>
-        <SoilProfileFigure
-          layers={inp.layers}
-          pipeDepth={inp.hCover + D_m / 2}
-          title={isSegmented ? '<그림 C.1.1> 지반조건' : '<그림 C.2.1> 지반조건'}
-        />
+        <div className="keep-together">
+          <SoilProfileFigure
+            layers={inp.layers}
+            pipeDepth={inp.hCover + D_m / 2}
+            title={isSegmented ? '<그림 C.1.1> 지반조건' : '<그림 C.2.1> 지반조건'}
+          />
+        </div>
         <table style={inp.layers.length > 5 ? TABLE_LONG : TABLE}>
           <thead>
             <tr>
@@ -341,7 +343,7 @@ export default function SeismicDetailReportPage() {
         {/* ═══════════════════════════════════════════════ */}
         {/* C.x.2 상시하중에 의한 발생 응력/변형률          */}
         {/* ═══════════════════════════════════════════════ */}
-        <div style={SEC_TITLE} className="page-break-before">
+        <div style={SEC_TITLE}>
           {isSegmented ? 'C.1.2' : 'C.2.2'}&nbsp;
           {isSegmented ? '관체에 발생하는 응력' : '상시하중에 의한 관체에 발생하는 변형률'}
         </div>
@@ -1260,7 +1262,7 @@ export default function SeismicDetailReportPage() {
         {/* ═══════════════════════════════════════════════ */}
         {isSegmented ? (
           <>
-            <div style={SEC_TITLE} className="page-break-before">C.1.2 라. 관체응력에 의한 내진안전성의 조사</div>
+            <div style={SEC_TITLE}>C.1.2 라. 관체응력에 의한 내진안전성의 조사</div>
             <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 발생응력과 지진시의 발생응력을 합산하고 이것이 허용응력 이하인지 조사한다.
             </div>
@@ -1480,7 +1482,7 @@ export default function SeismicDetailReportPage() {
             </table>
 
             {/* C.1.4 이음부 굽힘각 */}
-            <div style={SEC_TITLE} className="page-break-before">C.1.4 이음부 굽힘각도 ({G.theta}<Sub>J</Sub>) — 참고 검토</div>
+            <div style={SEC_TITLE}>C.1.4 이음부 굽힘각도 ({G.theta}<Sub>J</Sub>) — 참고 검토</div>
             <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 6, fontFamily: 'inherit' }}>
               2025년 상수도설계기준해설편 §4.3.3(2)다: "추가적으로 아래 식으로 계산된 지진 시 이음부의 휨 각도를 설계 허용 휨각도와 비교하여 휨각도에 대한 안전성을 검토할 수 있다" — 선택 검토 항목으로 최종 합격 판정에 포함되지 않음.
             </div>
@@ -1520,7 +1522,7 @@ export default function SeismicDetailReportPage() {
         ) : (
           <>
             {/* 연속관: 축변형률 내진안전성 */}
-            <div style={SEC_TITLE} className="page-break-before">C.2.3 축변형률에 의한 내진안전성의 조사</div>
+            <div style={SEC_TITLE}>C.2.3 축변형률에 의한 내진안전성의 조사</div>
             <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 축변형률과 지진시의 축변형률을 합산하고 이것이 허용변형률 이하인지 조사한다.
             </div>
@@ -1608,7 +1610,7 @@ export default function SeismicDetailReportPage() {
         {/* ═══════════════════════════════════════════════ */}
         {/* 종합 판정                                       */}
         {/* ═══════════════════════════════════════════════ */}
-        <div style={SEC_TITLE} className="page-break-before">종합 내진안전성 판정</div>
+        <div style={SEC_TITLE}>종합 내진안전성 판정</div>
         <table style={TABLE}>
           <thead>
             <tr>
