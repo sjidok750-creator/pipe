@@ -554,7 +554,7 @@ export default function InputPage() {
             </div>
           </EngRow>
           {inputs.pipeType === 'steel' && (
-            <EngRow label="시멘트 모르타르 라이닝" popover={
+            <EngRow label="모르타르 라이닝" popover={
               <EngPopover title="시멘트 모르타르 라이닝 — KDS 57 10 00 §3.5 / AWWA M11">
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                   <strong>AWWA M11 — 라이닝에 따른 허용처짐 기준</strong><br/>

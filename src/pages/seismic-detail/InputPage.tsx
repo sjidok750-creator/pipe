@@ -739,9 +739,10 @@ export default function SeismicDetailInputPage() {
               <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>기본값 0.26 (범위 0.20~0.28)</span>
             </EngRow>
           )}
+        </EngPanel>
 
-          {/* 차량하중 및 지반반력계수 */}
-          <EngDivider label="차량하중 · 지반반력계수"/>
+        {/* 하중 · 이음부 조건 */}
+        <EngPanel title="③ 하중 · 이음부 조건">
           <EngRow label="흙 단위중량 γ" unit="kN/m³" popover={
             <EngPopover title="흙 단위중량 γ (Unit Weight of Soil)">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
@@ -1334,8 +1335,8 @@ export default function SeismicDetailInputPage() {
           )}
         </EngPanel>
 
-        {/* 지반 조건 */}
-        <EngPanel title="③ 표층지반 조건">
+        {/* 표층지반 조건 */}
+        <EngPanel title="④ 표층지반 조건">
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: T.space2, marginBottom: T.space2 }}>
               <EngDivider label="지반층 입력" />
