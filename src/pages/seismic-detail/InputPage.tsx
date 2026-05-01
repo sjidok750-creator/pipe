@@ -63,9 +63,13 @@ function LayerEditor({ layers, setLayers }: {
     setVsModes(prev => prev.filter((_, j) => j !== i))
   }
 
-  const cellStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 700, color: T.textMuted,
-    fontFamily: T.fontSans, textAlign: 'center' as const, padding: '0 2px',
+  // 컬럼: #(24) | 토층명(flex) | H(60) | N(52) | Vs직접(58) | Vs결과(68) | X(28)
+  const COLS = '24px 1fr 60px 52px 58px 68px 28px'
+  const cellH = T.inputH
+  const hStyle: React.CSSProperties = {
+    fontSize: T.fs.xs, fontWeight: T.fw.semibold, color: T.textMuted,
+    fontFamily: T.fontSans, textAlign: 'center', padding: '4px 3px',
+    background: T.bgSection, borderBottom: `1px solid ${T.border}`,
   }
 
   // 토글 버튼 스타일
@@ -78,90 +82,100 @@ function LayerEditor({ layers, setLayers }: {
   })
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      {/* 헤더 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '24px 100px 52px 70px 72px 62px 32px', gap: 3, marginBottom: 4 }}>
-        <span style={cellStyle}></span>
-        <span style={cellStyle}>토층명</span>
-        <span style={cellStyle}>H (m)</span>
-        <span style={cellStyle}>입력방식</span>
-        <span style={cellStyle}>입력값</span>
-        <span style={{ ...cellStyle, color: T.textAccent }}>Vs 결과</span>
-        <span></span>
+    <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusMd, overflow: 'hidden' }}>
+      {/* 헤더 행 */}
+      <div style={{ display: 'grid', gridTemplateColumns: COLS, gap: 0 }}>
+        <span style={hStyle}/>
+        <span style={{ ...hStyle, textAlign: 'left', paddingLeft: 8 }}>토층명</span>
+        <span style={hStyle}>H (m)</span>
+        <span style={hStyle}>N치</span>
+        <span style={hStyle}>Vs직접</span>
+        <span style={{ ...hStyle, color: T.textAccent }}>Vs 결과</span>
+        <span style={hStyle}/>
       </div>
 
+      {/* 데이터 행 */}
       {layers.map((l, i) => {
-        const mode = vsModes[i] ?? 'N'
-        const isRock = l.isRock || ROCK_LAYER_NAMES.includes(l.name)
-        const vsSource = isRock ? '암반' : mode === 'Vs' ? '직접' : l.N ? 'N치' : '—'
-        const vsColor = mode === 'Vs' ? T.textPrimary : T.textAccent
-
+        const vsAuto = calcVsFromN(l.N)
+        const vsSource = l.Vs_manual ? '직접' : l.isRock || ROCK_LAYER_NAMES.includes(l.name) ? '암반' : vsAuto ? 'N치' : '—'
+        const vsColor = l.Vs_manual ? T.textPrimary : T.textAccent
+        const rowBg = i % 2 === 0 ? T.bgPanel : T.bgRow
+        const inputStyle: React.CSSProperties = {
+          width: '100%', height: cellH, border: 'none', borderLeft: `1px solid ${T.borderLight}`,
+          padding: '0 5px', fontSize: T.fs.base, fontFamily: T.fontMono,
+          textAlign: 'right', background: rowBg, outline: 'none', touchAction: 'manipulation',
+          color: T.textPrimary,
+        }
         return (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px 100px 52px 70px 72px 62px 32px', gap: 3, marginBottom: 4, alignItems: 'center' }}>
-            <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>L{i+1}</span>
-
-            {/* 토층명 */}
+          <div key={i} style={{
+            display: 'grid', gridTemplateColumns: COLS, alignItems: 'center',
+            borderTop: `1px solid ${T.borderLight}`, background: rowBg,
+          }}>
+            <span style={{ fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontMono, textAlign: 'center' }}>
+              {i + 1}
+            </span>
             <select value={l.name} onChange={e => upd(i, { name: e.target.value })}
-              style={{ height: INPUT_H, fontSize: 11, fontFamily: T.fontSans, border: `1px solid ${T.border}`, padding: '0 4px', width: '100%', touchAction: 'manipulation' }}>
+              style={{
+                height: cellH, fontSize: T.fs.sm, fontFamily: T.fontSans,
+                border: 'none', borderLeft: `1px solid ${T.borderLight}`,
+                padding: '0 6px', width: '100%', background: rowBg, color: T.textPrimary,
+                touchAction: 'manipulation', outline: 'none',
+              }}>
               {LAYER_NAMES.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
-
-            {/* H */}
-            <input type="number" value={l.H} onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
-              min={0.1} step={0.5}
-              style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
-
-            {/* 입력방식 토글 — 암반층은 고정 */}
-            {isRock
-              ? <div style={{ textAlign: 'center', fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>암반 고정</div>
-              : <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
-                  <button style={toggleBtn(mode === 'N')} onClick={() => setMode(i, 'N')}>N치</button>
-                  <button style={toggleBtn(mode === 'Vs')} onClick={() => setMode(i, 'Vs')}>Vs</button>
-                </div>
-            }
-
-            {/* 입력값 */}
-            {isRock
-              ? <div style={{ textAlign: 'center', fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>—</div>
-              : mode === 'N'
-                ? <input type="number" value={l.N ?? ''} placeholder="N치 입력"
-                    onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
-                    min={1} max={300} step={1}
-                    style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.border}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation' }}/>
-                : <input type="number" value={l.Vs_manual ?? ''} placeholder="Vs (m/s)"
-                    onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
-                    min={50} step={10}
-                    style={{ width: '100%', height: INPUT_H, border: `1px solid ${T.textAccent}`, padding: '0 4px', fontSize: 12, fontFamily: T.fontMono, textAlign: 'right', touchAction: 'manipulation',
-                      background: '#f0f8ff' }}/>
-            }
-
-            {/* Vs 결과 */}
-            <div style={{ textAlign: 'center', fontSize: 12, fontFamily: T.fontMono, color: vsColor, fontWeight: 700 }}>
+            <input type="number" value={l.H}
+              onChange={e => upd(i, { H: parseFloat(e.target.value) || 0 })}
+              min={0.1} step={0.5} style={inputStyle}/>
+            <input type="number" value={l.N ?? ''} placeholder="—"
+              onChange={e => upd(i, { N: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+              min={1} max={300} step={1} style={inputStyle}/>
+            <input type="number" value={l.Vs_manual ?? ''} placeholder="자동"
+              onChange={e => upd(i, { Vs_manual: e.target.value === '' ? null : parseFloat(e.target.value) || null })}
+              min={50} step={10} style={inputStyle}/>
+            {/* Vs 결과 — 표시 전용 셀 */}
+            <div style={{
+              height: cellH, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderLeft: `1px solid ${T.borderLight}`,
+              fontSize: T.fs.sm, fontFamily: T.fontMono, fontWeight: T.fw.semibold,
+              color: vsColor, gap: 2,
+            }}>
               {l.Vs.toFixed(0)}
-              <span style={{ fontSize: 9, color: T.textMuted, marginLeft: 2 }}>({vsSource})</span>
+              <span style={{ fontSize: 9, color: T.textMuted, fontWeight: T.fw.regular }}>({vsSource})</span>
             </div>
-
-            {/* 삭제 */}
-            {layers.length > 1
-              ? <button onClick={() => rm(i)} style={{ fontSize: 13, padding: '4px 6px', minWidth: 32, minHeight: 32, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textMuted, touchAction: 'manipulation' }}>×</button>
-              : <span/>
-            }
+            {/* 삭제 버튼 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderLeft: `1px solid ${T.borderLight}`, height: cellH }}>
+              {layers.length > 1
+                ? <button onClick={() => rm(i)} style={{
+                    fontSize: 14, width: 22, height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', border: 'none', borderRadius: T.radiusSm,
+                    background: 'transparent', color: T.textMuted, touchAction: 'manipulation',
+                  }}>×</button>
+                : null
+              }
+            </div>
           </div>
         )
       })}
 
-      {/* 합계 및 추가 */}
-      <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
-        <button onClick={add} style={{ fontSize: 12, padding: '6px 14px', minHeight: 34, cursor: 'pointer', border: `1px solid ${T.border}`, background: T.bgPanel, color: T.textAccent, fontFamily: T.fontSans, touchAction: 'manipulation' }}>
+      {/* 하단 액션 행 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: T.space2, padding: '6px 10px',
+        borderTop: `1px solid ${T.border}`, background: T.bgPanelAlt,
+      }}>
+        <button onClick={add} style={{
+          fontSize: T.fs.xs, padding: '3px 12px', height: 26, cursor: 'pointer',
+          border: `1px solid ${T.border}`, borderRadius: T.radiusSm,
+          background: T.bgPanel, color: T.textAccent, fontFamily: T.fontSans,
+          fontWeight: T.fw.medium, touchAction: 'manipulation',
+        }}>
           + 층 추가
         </button>
-        <span style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono }}>
-          Σ H = {layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m
+        <span style={{ fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontMono }}>
+          Σ H = <strong>{layers.reduce((s, l) => s + l.H, 0).toFixed(1)} m</strong>
         </span>
-      </div>
-      <div style={{ marginTop: 5, fontSize: 9, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.6 }}>
-        * N치 모드: N값 입력 → Vs 자동계산 (65.64×N⁰·⁴⁰⁷)<br/>
-        * Vs 모드: Vs 직접입력 → N치 불필요 / 암반층: 760 m/s 고정
+        <span style={{ marginLeft: 'auto', fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
+          Vs 우선: 직접입력 › 암반(760) › N치 공식
+        </span>
       </div>
     </div>
   )
@@ -269,21 +283,21 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>방법</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>대상 관종</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>검토 항목</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>방법</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>대상 관종</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>검토 항목</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>분절관</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>덕타일 주철관, 고무링 이음</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>이음부 신축량 Δ, 굽힘각 θ 검토</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>분절관</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>덕타일 주철관, 고무링 이음</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>이음부 신축량 Δ, 굽힘각 θ 검토</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>연속관</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>강관 (용접이음), 플랜지 이음</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>관체 축변형률 ε 검토 (항복 또는 국부좌굴)</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>연속관</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>강관 (용접이음), 플랜지 이음</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>관체 축변형률 ε 검토 (항복 또는 국부좌굴)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -316,21 +330,21 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>구역</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Z값</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>해당 지역</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>구역</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>Z값</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>해당 지역</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅰ</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0.11</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>서울·인천·경기 일부, 강원·충청·경상·전라·제주 주요지역</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontWeight: 700 }}>Ⅰ</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>0.11</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>서울·인천·경기 일부, 강원·충청·경상·전라·제주 주요지역</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>0.07</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>위 이외 지역</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>0.07</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>위 이외 지역</td>
                     </tr>
                   </tbody>
                 </table>
@@ -359,24 +373,24 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>등급</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>붕괴방지</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>기능수행</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>위험도계수 I</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>등급</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>붕괴방지</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>기능수행</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>위험도계수 I</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅰ</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 1000년</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 100년</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>1.40 / 0.57</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontWeight: 700 }}>Ⅰ</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center' }}>재현 1000년</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center' }}>재현 100년</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>1.40 / 0.57</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 500년</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center' }}>재현 50년</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>1.00 / 0.40</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontWeight: 700 }}>Ⅱ</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center' }}>재현 500년</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center' }}>재현 50년</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>1.00 / 0.40</td>
                     </tr>
                   </tbody>
                 </table>
@@ -406,9 +420,9 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>분류</th>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>Vs,30 (m/s)</th>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>지반 특성</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>분류</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>Vs,30 (m/s)</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>지반 특성</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -421,9 +435,9 @@ export default function SeismicDetailInputPage() {
                       ['SF', '—', '부지 고유 특성평가 필요'],
                     ].map(([k, vs, desc], i) => (
                       <tr key={k} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '2px 5px', border: '1px solid #eee', fontWeight: 700, textAlign: 'center', fontFamily: T.fontMono }}>{k}</td>
-                        <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{vs}</td>
-                        <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>{desc}</td>
+                        <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, fontWeight: 700, textAlign: 'center', fontFamily: T.fontMono }}>{k}</td>
+                        <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>{vs}</td>
+                        <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}` }}>{desc}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -442,7 +456,7 @@ export default function SeismicDetailInputPage() {
               onChange={v => { set({ soilType: v }); touch('soilType') }}
             />
           </EngRow>
-          <div style={{ fontSize: 10, color: T.textMuted, marginLeft: 110, marginTop: 2, fontFamily: T.fontSans }}>
+          <div style={{ fontSize: T.fs.xs, color: T.textMuted, marginLeft: 116, marginTop: 2, fontFamily: T.fontSans }}>
             {SOIL_TYPE[inp.soilType as keyof typeof SOIL_TYPE]?.label}
             {ampEntry ? '' : '  ※ 부지 고유특성 평가 필요'}
           </div>
@@ -500,13 +514,12 @@ export default function SeismicDetailInputPage() {
                     근거 조항이 기준서에 명기되지 않음.
                   </div>
                 </div>
-
-                <div style={{ fontSize: 11, marginBottom: 6 }}>
-                  <b>입력 권장:</b>
-                  <ul style={{ margin: '4px 0 0 14px', padding: 0, lineHeight: 1.9 }}>
-                    <li>보수적 산정: <b>t = t₀ / 1.1</b> 입력 (부록C 예제 방식)</li>
-                    <li>기준서 본문 준수: <b>t = t₀</b> (공칭두께) 입력</li>
-                  </ul>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                  현재: t = {inp.thickness} mm, D_out = {inp.D_out} mm<br/>
+                  46·t/D = {(46 * inp.thickness / inp.D_out * 0.01).toFixed(4)} (소수)
+                </div>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                  구조안전성 검토 시 채택한 두께와 동일한 값 입력 권장
                 </div>
 
                 {inp.pipeType === 'continuous' && (
@@ -533,24 +546,24 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>관종</th>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>DN300</th>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>DN400</th>
-                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>DN600</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>관종</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>DN300</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>DN400</th>
+                      <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>DN600</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>덕타일 주철관</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>326</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>429</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>635</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}` }}>덕타일 주철관</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>326</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>429</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>635</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>강관 (KS D 3565)</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>318.5</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>406.4</td>
-                      <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>609.6</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}` }}>강관 (KS D 3565)</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>318.5</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>406.4</td>
+                      <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>609.6</td>
                     </tr>
                   </tbody>
                 </table>
@@ -615,21 +628,21 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>표준 E 값</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>근거</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>관종</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>표준 E 값</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>근거</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>강관 (연속관)</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>206,000 MPa</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 3565 / 지침 예제</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>강관 (연속관)</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>206,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>KS D 3565 / 지침 예제</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>덕타일 주철관 (분절관)</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>170,000 MPa</td>
-                      <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>KS D 4311 / 지침 예제</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>덕타일 주철관 (분절관)</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>170,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>KS D 4311 / 지침 예제</td>
                     </tr>
                   </tbody>
                 </table>
@@ -662,9 +675,9 @@ export default function SeismicDetailInputPage() {
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 6 }}>
                     <thead>
                       <tr style={{ background: T.bgInfo }}>
-                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>관종</th>
-                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (MPa)</th>
-                        <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>E (kN/m²)</th>
+                        <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>관종</th>
+                        <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>E (MPa)</th>
+                        <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>E (kN/m²)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -675,9 +688,9 @@ export default function SeismicDetailInputPage() {
                         ['주철관 (회주철)', '100,000~150,000', '—'],
                       ].map(([m, e, ek], i) => (
                         <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{m}</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{e}</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono, fontSize: 10 }}>{ek}</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>{m}</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>{e}</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono, fontSize: 10 }}>{ek}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -740,8 +753,8 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11, marginTop: 4 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>지반 종류</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>γ (kN/m³)</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>지반 종류</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>γ (kN/m³)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -752,8 +765,8 @@ export default function SeismicDetailInputPage() {
                       ['포화 점토 (수중)', '8 ~ 11 (부력 고려)'],
                     ].map(([g, v], i) => (
                       <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{g}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{v}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>{g}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>{v}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -803,9 +816,9 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>토피 h (m)</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>충격계수 i</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>의미</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>토피 h (m)</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>충격계수 i</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>의미</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -815,9 +828,9 @@ export default function SeismicDetailInputPage() {
                       ['h > 6.5',      '0.00', '깊은 매설 — 충격 무시'],
                     ].map(([h, i, m], idx) => (
                       <tr key={idx} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>{h}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{i}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>{m}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>{h}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>{i}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>{m}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -828,10 +841,10 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 6 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>설계차량</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>총중량</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>Pm (kN/輪)</th>
-                      <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>적용</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>설계차량</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>총중량</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>Pm (kN/輪)</th>
+                      <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>적용</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -841,16 +854,16 @@ export default function SeismicDetailInputPage() {
                       ['없음', '—', '0', '비도로·전용 부지'],
                     ].map(([v, w, pm, note], idx) => (
                       <tr key={idx} style={{ background: idx % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>{v}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>{w}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono, fontWeight: 700 }}>{pm}</td>
-                        <td style={{ padding: '3px 6px', border: '1px solid #eee', fontSize: 10 }}>{note}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>{v}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>{w}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono, fontWeight: 700 }}>{pm}</td>
+                        <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>{note}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
 
-                <div style={{ padding: '5px 8px', background: '#fee2e2', border: '1px solid #ef4444', borderRadius: 2, fontSize: 10 }}>
+                <div style={{ padding: '5px 8px', background: T.bgNG, border: `1px solid ${T.borderNG}`, borderRadius: T.radiusSm, fontSize: T.fs.xs }}>
                   <strong>⚠ 주의:</strong> 도로 하 매설 구간에서 Pm = 0 입력 시 σ_o = 0으로 처리되어<br/>
                   응력 합산이 <b>과소 평가(불안전 측)</b>됩니다. Kv와 함께 반드시 입력하십시오.
                 </div>
@@ -862,7 +875,7 @@ export default function SeismicDetailInputPage() {
               {(inp.Pm ?? 0) === 0 ? '차량 없음' : `DB 하중 적용`}
             </span>
           </EngRow>
-          <EngRow label="지반반력계수 Kv" popover={
+          <EngRow label="Kv 산정방법" popover={
             <EngPopover title="연직방향 지반반력계수 Kv — 산정 방법 3가지" width={440}>
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 8 }}>
@@ -890,9 +903,9 @@ export default function SeismicDetailInputPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 8 }}>
                   <thead>
                     <tr style={{ background: T.bgInfo }}>
-                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>N값 범위</th>
-                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>Kv (kN/m³)</th>
-                      <th style={{ padding: '3px 5px', border: '1px solid #ccc' }}>지반 상태</th>
+                      <th style={{ padding: '3px 5px', border: `1px solid ${T.border}` }}>N값 범위</th>
+                      <th style={{ padding: '3px 5px', border: `1px solid ${T.border}` }}>Kv (kN/m³)</th>
+                      <th style={{ padding: '3px 5px', border: `1px solid ${T.border}` }}>지반 상태</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -904,9 +917,9 @@ export default function SeismicDetailInputPage() {
                       ['N ≥ 30',      '7,700', '매우 단단'],
                     ].map(([n, kv, desc], i) => (
                       <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                        <td style={{ padding: '3px 5px', border: '1px solid #eee', fontFamily: T.fontMono }}>{n}</td>
-                        <td style={{ padding: '3px 5px', border: '1px solid #eee', textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{kv}</td>
-                        <td style={{ padding: '3px 5px', border: '1px solid #eee' }}>{desc}</td>
+                        <td style={{ padding: '3px 5px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>{n}</td>
+                        <td style={{ padding: '3px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{kv}</td>
+                        <td style={{ padding: '3px 5px', border: `1px solid ${T.borderLight}` }}>{desc}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -918,98 +931,66 @@ export default function SeismicDetailInputPage() {
               </div>
             </EngPopover>
           }>
-            {/* ── Kv 산정 모드 선택 + 입력 영역 ── */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
-              {/* 모드 선택 버튼 4개 */}
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                {([['N_E0', 'N값(E₀법)'], ['Vs', 'Vs법'], ['table', 'N값(표)'], ['manual', '직접입력']] as [KvMode, string][]).map(([m, lbl]) => (
-                  <button key={m} onClick={() => setKvMode(m)}
-                    style={{
-                      padding: '3px 9px', fontSize: 10.5, cursor: 'pointer', borderRadius: 3,
-                      border: `1px solid ${kvMode === m ? T.bgActive : T.border}`,
-                      background: kvMode === m ? T.bgActive : T.bgPanelAlt,
-                      color: kvMode === m ? 'white' : T.textMuted,
-                      fontFamily: T.fontSans, fontWeight: kvMode === m ? 700 : 400,
-                      transition: 'background 120ms, color 120ms',
-                    }}>
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-
-              {/* 모드별 결과 영역 */}
-              {kvMode === 'manual' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0, kvMethod: 'manual' } as any)} min={0} step={100} width={100}/>
-                  <span style={{ fontSize: 10.5, color: T.textMuted }}>kN/m³</span>
-                </div>
-              ) : (() => {
-                const res = kvMode === 'N_E0' ? kvByNE0 : kvMode === 'Vs' ? kvByVs : kvByTable
-                const subLabel = (() => {
-                  if (kvMode === 'N_E0' && res?.N != null) {
-                    const r = res as any
-                    return `N=${r.N}, E₀=${r.E0?.toLocaleString()} kN/m², Kv₀=${r.Kv0?.toFixed(0)} kN/m³`
-                  }
-                  if (kvMode === 'Vs' && res?.Vs != null) return `Vs=${res.Vs} m/s`
-                  if (kvMode === 'table' && res?.N != null) return `N=${res.N}`
-                  return '—'
-                })()
-                const autoKv = res?.Kv ?? null
-                const isApplied = autoKv != null && Math.abs((inp.Kv ?? 0) - autoKv) < 1
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {autoKv != null ? (
-                      <>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: 13, fontFamily: T.fontMono, color: T.textAccent, fontWeight: 700 }}>
-                            {autoKv.toLocaleString()} kN/m³
-                          </span>
-                          <button
-                            onClick={() => set({ Kv: autoKv, kvMethod: kvMode } as any)}
-                            style={{
-                              padding: '2px 10px', fontSize: 10.5, cursor: 'pointer', borderRadius: 3,
-                              border: `1px solid ${isApplied ? T.borderOK : T.bgActive}`,
-                              background: isApplied ? T.bgOK : T.bgActive,
-                              color: isApplied ? T.textOK : 'white',
-                              fontFamily: T.fontSans, fontWeight: 700,
-                            }}>
-                            {isApplied ? '✓ 적용됨' : '적용'}
-                          </button>
-                        </div>
-                        <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono }}>
-                          {res.layerName ?? '—'} / {subLabel}
-                        </div>
-                      </>
-                    ) : (
-                      <span style={{ fontSize: 10.5, color: '#ef4444', fontFamily: T.fontSans }}>
-                        {res?.error ?? 'N값 없음'} — 다른 방법으로 전환하거나 직접입력 사용
-                      </span>
-                    )}
-                    {/* 자동계산 외에 직접 수정도 가능 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontSize: 10, color: T.textMuted }}>직접 수정:</span>
-                      <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0, kvMethod: kvMode } as any)} min={0} step={100} width={90}/>
-                      <span style={{ fontSize: 10, color: T.textMuted }}>kN/m³</span>
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* 현재 적용값 + Pm 경고 */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 2 }}>
-                <span style={{ fontSize: 10.5, color: T.textMuted, fontFamily: T.fontMono }}>
-                  현재 적용값: <strong style={{ color: (inp.Kv ?? 0) > 0 ? T.textAccent : '#ef4444' }}>
-                    {(inp.Kv ?? 0) > 0 ? `${(inp.Kv ?? 0).toLocaleString()} kN/m³` : '미적용 (0)'}
-                  </strong>
-                </span>
-                {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
-                  <span style={{ fontSize: 10, color: '#ef4444', fontFamily: T.fontSans }}>
-                    ⚠ Pm &gt; 0이므로 Kv 입력 필요 — σ_o = 0으로 처리됨
-                  </span>
-                )}
-              </div>
-            </div>
+            <EngSegment
+              options={[
+                { key: 'N_E0',   label: 'N값 E₀법' },
+                { key: 'Vs',     label: 'Vs법' },
+                { key: 'table',  label: 'N값 표' },
+                { key: 'manual', label: '직접입력' },
+              ]}
+              value={kvMode}
+              onChange={v => setKvMode(v as KvMode)}
+            />
           </EngRow>
+          <EngRow label="Kv 적용값" unit="kN/m³">
+            {kvMode === 'manual' ? (
+              <EngInput value={inp.Kv ?? 0} onChange={v => set({ Kv: parseFloat(v)||0, kvMethod: 'manual' } as any)} min={0} step={100} width={100}/>
+            ) : (() => {
+              const res = kvMode === 'N_E0' ? kvByNE0 : kvMode === 'Vs' ? kvByVs : kvByTable
+              const subLabel = (() => {
+                if (kvMode === 'N_E0' && res?.N != null) {
+                  const r = res as any
+                  return `N=${r.N}, E₀=${r.E0?.toLocaleString()} kN/m², Kv₀=${r.Kv0?.toFixed(0)} kN/m³`
+                }
+                if (kvMode === 'Vs' && res?.Vs != null) return `Vs=${res.Vs} m/s`
+                if (kvMode === 'table' && res?.N != null) return `N=${res.N}`
+                return '—'
+              })()
+              return res?.Kv ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 13, fontFamily: T.fontMono, color: T.textAccent, fontWeight: 700 }}>
+                      {res.Kv.toLocaleString()}
+                    </span>
+                    <button
+                      onClick={() => set({ Kv: res.Kv!, kvMethod: kvMode } as any)}
+                      style={{
+                        padding: '2px 12px', fontSize: T.fs.sm, cursor: 'pointer',
+                        borderRadius: T.radiusSm, border: `1px solid ${T.bgActive}`,
+                        background: T.bgActive, color: T.textOnDark, fontFamily: T.fontSans,
+                      }}>
+                      적용
+                    </button>
+                    <span style={{ fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontMono }}>
+                      현재: {(inp.Kv ?? 0) > 0 ? `${(inp.Kv ?? 0).toLocaleString()} kN/m³` : '미적용'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontMono }}>
+                    {res.layerName ?? '—'} / {subLabel}
+                  </div>
+                </div>
+              ) : (
+                <span style={{ fontSize: T.fs.sm, color: T.textNG, fontFamily: T.fontSans }}>
+                  {res?.error ?? 'N값 없음'} — 다른 방법 선택 또는 직접입력
+                </span>
+              )
+            })()}
+          </EngRow>
+          {(inp.Pm ?? 0) > 0 && (inp.Kv ?? 0) === 0 && (
+            <div style={{ marginLeft: 116, fontSize: T.fs.xs, color: T.textNG, fontFamily: T.fontSans, marginBottom: 4 }}>
+              ※ Pm &gt; 0이면 Kv 적용 필요
+            </div>
+          )}
 
           {/* 분절관 추가 입력 */}
           {inp.pipeType === 'segmented' && (
@@ -1022,7 +1003,7 @@ export default function SeismicDetailInputPage() {
                       <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.2</strong><br/>
                       이음부 1개소당 신축량·굽힘각 계산의 핵심 입력값
                     </div>
-                    <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                    <div style={{ padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
                       이음부 신축량 Δ = ε_L × Lj<br/>
                       굽힘각 θ = (π²·D / L²) × U_h × Lj
                     </div>
@@ -1031,14 +1012,14 @@ export default function SeismicDetailInputPage() {
                       <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 3 }}>
                         <thead>
                           <tr style={{ background: T.bgInfo }}>
-                            <th style={{ padding: '2px 4px', border: '1px solid #ccc' }}>관종</th>
-                            <th style={{ padding: '2px 4px', border: '1px solid #ccc' }}>표준 길이</th>
+                            <th style={{ padding: '2px 4px', border: `1px solid ${T.border}` }}>관종</th>
+                            <th style={{ padding: '2px 4px', border: `1px solid ${T.border}` }}>표준 길이</th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr>
-                            <td style={{ padding: '2px 4px', border: '1px solid #eee' }}>덕타일 주철관 (KS D 4311)</td>
-                            <td style={{ padding: '2px 4px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>6 m</td>
+                            <td style={{ padding: '2px 4px', border: `1px solid ${T.borderLight}` }}>덕타일 주철관 (KS D 4311)</td>
+                            <td style={{ padding: '2px 4px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>6 m</td>
                           </tr>
                         </tbody>
                       </table>
@@ -1062,21 +1043,21 @@ export default function SeismicDetailInputPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                       <thead>
                         <tr style={{ background: T.bgInfo }}>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>이음 종류</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>허용 신축량</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>허용 굽힘각</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>이음 종류</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>허용 신축량</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>허용 굽힘각</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>일반형</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>소 (약 10~20 mm)</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>소 (약 2°)</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>일반형</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>소 (약 10~20 mm)</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>소 (약 2°)</td>
                         </tr>
                         <tr style={{ background: T.bgPanelAlt }}>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>내진형</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>대 (약 50~100 mm)</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>대 (약 5°)</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>내진형</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>대 (약 50~100 mm)</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>대 (약 5°)</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1189,7 +1170,7 @@ export default function SeismicDetailInputPage() {
                       <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong><br/>
                       관로 시공 온도와 운용 온도 차이에 의한 열변형률 산정
                     </div>
-                    <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                    <div style={{ padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
                       ε_T = α × ΔT<br/>
                       α (강관 열팽창계수) = 1.2 × 10⁻⁵ /°C
                     </div>
@@ -1202,20 +1183,43 @@ export default function SeismicDetailInputPage() {
               }>
                 <EngInput value={inp.deltaT} onChange={v => set({ deltaT: parseFloat(v)||20 })} step={1} width={90}/>
               </EngRow>
-              <EngDivider label="부등침하 조건"/>
-              <EngRow label="부등침하 고려">
-                <EngRadio
-                  options={[
-                    { key: 'no',  label: '미고려 (ε_d = 0)' },
-                    { key: 'yes', label: '고려' },
-                  ]}
-                  value={(inp as any).hasSettle ? 'yes' : 'no'}
-                  onChange={v => set({
-                    hasSettle: v === 'yes',
-                    L_settle: v === 'yes' ? ((inp.L_settle || 0) > 0 ? inp.L_settle : 15) : 0,
-                    h2_settle: v === 'yes' ? ((inp as any).h2_settle ?? 0) : 0,
-                  } as any)}
-                />
+              <EngRow label="부등침하량 δ" unit="m" popover={
+                <EngPopover title="부등침하량 δ">
+                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                    </div>
+                    <div style={{ fontSize: 11 }}>
+                      지반 부등침하 또는 지진에 의한 국부 침하 예상량.<br/>
+                      지반조사 결과 또는 인근 구조물 침하 실측값 사용.<br/>
+                      연약 지반 구간, 성토-절토 경계부에서 특히 중요.
+                    </div>
+                    <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
+                      부등침하가 없는 경우 δ = 0 입력.
+                    </div>
+                  </div>
+                </EngPopover>
+              }>
+                <EngInput value={inp.D_settle} onChange={v => set({ D_settle: parseFloat(v)||0 })} min={0} step={0.01} width={90}/>
+              </EngRow>
+              <EngRow label="침하구간 길이" unit="m" popover={
+                <EngPopover title="침하구간 길이 L_settle">
+                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                    <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.3</strong>
+                    </div>
+                    <div style={{ padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                      굽힘변형률 ε_B = π² · D_out / (2 · L²) · δ
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 11 }}>
+                      부등침하 δ가 발생하는 구간의 길이 L.<br/>
+                      L이 짧을수록 굽힘변형률이 급격히 증가하므로<br/>
+                      실측 또는 지반조사 결과를 기반으로 보수적 추정 권장.
+                    </div>
+                  </div>
+                </EngPopover>
+              }>
+                <EngInput value={inp.L_settle} onChange={v => set({ L_settle: parseFloat(v)||0 })} min={0} step={1} width={90}/>
               </EngRow>
               {(inp as any).hasSettle && (
                 <>
@@ -1279,21 +1283,21 @@ export default function SeismicDetailInputPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
                       <thead>
                         <tr style={{ background: T.bgInfo }}>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>기준</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>식</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>특성</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>기준</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>식</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>특성</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>σ_y / E</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>fy / Es</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>항복점 변형률<br/>SS400: 235/206000 = 0.114%<br/>보수적 기준</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>σ_y / E</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>fy / Es</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>항복점 변형률<br/>SS400: 235/206000 = 0.114%<br/>보수적 기준</td>
                         </tr>
                         <tr style={{ background: T.bgPanelAlt }}>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>46·t / D</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>46 × t / D</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>국부좌굴 한계<br/>ASCE / KDS 해설<br/>σ_y/E 대비 약 3배 이상 크며<br/>실무에서 널리 사용</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>46·t / D</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>46 × t / D</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>국부좌굴 한계<br/>ASCE / KDS 해설<br/>σ_y/E 대비 약 3배 이상 크며<br/>실무에서 널리 사용</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1313,7 +1317,7 @@ export default function SeismicDetailInputPage() {
                   onChange={v => set({ strainCriterion: v })}
                 />
               </EngRow>
-              <div style={{ marginLeft: 110, marginTop: 2, padding: '4px 8px', background: '#f8f9fa', border: `1px solid ${T.border}`, borderRadius: 2, fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.7 }}>
+              <div style={{ marginLeft: 116, marginTop: 2, padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontSans, lineHeight: T.lh.relaxed }}>
                 {(inp.strainCriterion ?? 'yield') === 'yield'
                   ? <>
                       <strong>σ_y/E</strong> — 지침 부록C 표 C.2.3 (항복점 변형률 = 국부좌굴 개시변형률)<br/>
@@ -1332,9 +1336,9 @@ export default function SeismicDetailInputPage() {
 
         {/* 지반 조건 */}
         <EngPanel title="③ 표층지반 조건">
-          <div style={{ marginBottom: 6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontSans }}>지반층 입력</span>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: T.space2, marginBottom: T.space2 }}>
+              <EngDivider label="지반층 입력" />
               <EngPopover title="지반층 H / Vs 입력">
                 <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                   <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
@@ -1345,15 +1349,15 @@ export default function SeismicDetailInputPage() {
                     각 지반층의 두께(H)와 전단파 속도(Vs)를 상부층부터 입력.<br/>
                     지반조사 시험(PS 검층, SPT 상관식) 결과 사용.
                   </div>
-                  <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
+                  <div style={{ padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11, marginTop: 6 }}>
                     TG = 4 × Σ(Hi / Vsi)  (고유주기)<br/>
                     Vds = Σ(Hi) / Σ(Hi/Vsi)  (평균 전단파 속도)
                   </div>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 6 }}>
                     <thead>
                       <tr style={{ background: T.bgInfo }}>
-                        <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>지반 상태</th>
-                        <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>Vs 범위 (m/s)</th>
+                        <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>지반 상태</th>
+                        <th style={{ padding: '2px 5px', border: `1px solid ${T.border}` }}>Vs 범위 (m/s)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1365,8 +1369,8 @@ export default function SeismicDetailInputPage() {
                         ['연암 / 풍화암', '300 ~ 700'],
                       ].map(([d, vs], i) => (
                         <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
-                          <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>{d}</td>
-                          <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{vs}</td>
+                          <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}` }}>{d}</td>
+                          <td style={{ padding: '2px 5px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>{vs}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1381,11 +1385,9 @@ export default function SeismicDetailInputPage() {
             <LayerEditor layers={inp.layers} setLayers={setDetailLayers}/>
 
             {/* ── 기반암 깊이 입력 모드 ── */}
-            <div style={{ marginTop: 10, padding: '8px 10px', background: '#f5f7fa', border: `1px solid ${T.border}`, borderRadius: 3 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontSans }}>
-                  기반암까지의 깊이 (H)
-                </span>
+            <div style={{ marginTop: T.space3, padding: '8px 10px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: T.radiusMd }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: T.space2, marginBottom: T.space2 }}>
+                <EngDivider label="기반암까지의 깊이 (H)" />
                 <EngPopover title="기반암까지의 깊이 입력 방식">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                     <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
@@ -1396,21 +1398,21 @@ export default function SeismicDetailInputPage() {
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 6 }}>
                       <thead>
                         <tr style={{ background: T.bgInfo }}>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>모드</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>H 결정 방식</th>
-                          <th style={{ padding: '3px 6px', border: '1px solid #ccc' }}>적합한 경우</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>모드</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>H 결정 방식</th>
+                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>적합한 경우</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>층 두께 합산</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = Σ layer.H</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반층이 기반암까지 완전히 입력된 경우</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>층 두께 합산</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>H = Σ layer.H</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>지반층이 기반암까지 완전히 입력된 경우</td>
                         </tr>
                         <tr style={{ background: T.bgPanelAlt }}>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontWeight: 700 }}>직접 입력</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee', fontFamily: T.fontMono }}>H = 입력값</td>
-                          <td style={{ padding: '3px 6px', border: '1px solid #eee' }}>지반조사 보고서의 기반암 심도를 직접 알고 있는 경우</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>직접 입력</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>H = 입력값</td>
+                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>지반조사 보고서의 기반암 심도를 직접 알고 있는 경우</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1461,13 +1463,13 @@ export default function SeismicDetailInputPage() {
                   H (계산 적용값) = {H_effective.toFixed(1)} m
                 </span>
                 {hMode === 'explicit' && hGap > 0.1 && (
-                  <span style={{ marginLeft: 8, color: '#2e7d32' }}>
+                  <span style={{ marginLeft: 8, color: T.textOK }}>
                     ※ 공백 {hGap.toFixed(1)} m → 최하층 Vs={inp.layers[inp.layers.length - 1]?.Vs?.toFixed(0)} m/s 자동 보정
                   </span>
                 )}
               </div>
               {hWarnings.map((w, i) => (
-                <div key={i} style={{ marginTop: 4, padding: '4px 8px', background: '#fff3cd', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10, color: '#7a5c00', fontFamily: T.fontSans, lineHeight: 1.6 }}>
+                <div key={i} style={{ marginTop: 4, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10, color: T.textWarn, fontFamily: T.fontSans, lineHeight: 1.6 }}>
                   ⚠ {w}
                 </div>
               ))}
@@ -1481,7 +1483,7 @@ export default function SeismicDetailInputPage() {
                   <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C §C.2.1</strong><br/>
                   지반 전파속도 보정계수 ε 결정에 사용
                 </div>
-                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                <div style={{ padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
                   Vbs ≥ 300 m/s → ε = 1.0<br/>
                   Vbs &lt; 300 m/s → ε = 0.85
                 </div>
@@ -1543,7 +1545,7 @@ export default function SeismicDetailInputPage() {
           {/* 파라미터 요약 */}
           <div style={{
             marginTop: 6, padding: '6px 10px',
-            background: T.bgInfo, border: '1px solid #c8d8e8',
+            background: T.bgInfo, border: `1px solid ${T.border}`,
             borderRadius: 3, fontSize: 10,
             fontFamily: T.fontMono, lineHeight: 1.9, color: T.textPrimary,
           }}>
@@ -1555,11 +1557,11 @@ export default function SeismicDetailInputPage() {
             <div>
               Sv(붕괴방지, ξ=20%) = <strong style={{ color: T.bgActive }}>{svCalc.Sv_collapse.toFixed(4)} m/s</strong>
               &nbsp;|&nbsp;
-              Sv(기능수행, ξ=10%) = <strong style={{ color: '#2e7d32' }}>{svCalc.Sv_func.toFixed(4)} m/s</strong>
+              Sv(기능수행, ξ=10%) = <strong style={{ color: T.textOK }}>{svCalc.Sv_func.toFixed(4)} m/s</strong>
             </div>
             <div>Vds(등가전단속도) = {svCalc.Vds.toFixed(1)} m/s &nbsp;|&nbsp; L(파장) = {svCalc.L.toFixed(1)} m</div>
             <div>Uh(지반변위, 붕괴방지) ≈ <strong style={{ color: '#c0392b' }}>{(svCalc.Uh * 1000).toFixed(2)} mm</strong></div>
-            <div style={{ marginTop: 4, padding: '3px 6px', background: '#fff3cd', border: '1px solid #f0c040', borderRadius: 2, color: '#7a5c00', fontSize: 9.5, fontFamily: T.fontSans }}>
+            <div style={{ marginTop: 4, padding: '3px 6px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, color: T.textWarn, fontSize: 9.5, fontFamily: T.fontSans }}>
               ※ 암반 기반면 스펙트럼(Fa=Fv=1.0) + 감쇠보정 η=√(10/(5+ξ)) 적용 — 평가요령 해설식 5.3.6<br/>
               붉은 수직선(Ts)에서의 Sv값이 실제 계산에 사용되는 설계속도입니다.
             </div>
