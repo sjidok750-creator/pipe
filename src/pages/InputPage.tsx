@@ -16,6 +16,7 @@ import { T } from '../components/eng/tokens'
 import CrossSectionSVG from '../components/diagrams/CrossSectionSVG'
 import BeddingConditionSVG from '../components/diagrams/BeddingConditionSVG'
 import EValueChartSVG from '../components/diagrams/EValueChartSVG'
+import { VehicleLoadSVG } from '../components/eng/diagrams/VehicleLoadSVG'
 
 const SOIL_CLASSES = [
   { key: 'SC1',   label: 'SC1',   sub: '자갈·모래' },
@@ -487,18 +488,34 @@ export default function InputPage() {
 
           <EngDivider label="부가 하중 조건" />
           <EngRow label="차량하중" popover={
-            <EngPopover title="차량하중 산정 방식 — KDS 24 12 20 / 내진성능 평가요령 부록C">
+            <EngPopover title="차량하중 산정 방식 — KDS 24 12 20 / 내진성능 평가요령 부록C" width={450}>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>방식 A — DB-24 Boussinesq (기본)</strong><br/>
                 KDS 24 12 20 / KDS 57 10 00 §3.3<br/>
                 매설깊이별 등가 수직압력 테이블 보간 후 충격계수 적용.<br/>
                 WL = PL × IF × Do [kN/m]
               </div>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 6, borderRadius: T.radiusSm }}>
                 <strong>방식 B — Wm 직접계산</strong><br/>
                 내진성능 평가요령 부록C 해설식(5.3.3)<br/>
-                Wm = 2·Pm·Do / (C·(a+2h·tanθ)) × (1+i) [kN/m]<br/>
-                충격계수 i: h&lt;1.5→0.5, 1.5≤h≤6.5→0.65-0.1h, h&gt;6.5→0
+                <span style={{ fontFamily: T.fontMono, fontSize: 11 }}>
+                  Wm = 2·Pm·D / (C·(a+2h·tanθ)) × (1+i) [kN/m]
+                </span><br/>
+                <span style={{ fontSize: 10, color: T.textMuted }}>
+                  충격계수 i: h&lt;1.5 → 0.5 / 1.5≤h≤6.5 → (0.65−0.1h) / h&gt;6.5 → 0
+                </span>
+              </div>
+              {/* 하중분포 개념도 */}
+              <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusMd, overflow: 'hidden', marginBottom: 8 }}>
+                <VehicleLoadSVG width={420} height={215} />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, marginBottom: 8, paddingLeft: 4 }}>
+                <span><strong style={{ color: T.textLabel }}>Pm</strong> — 후륜 1륜당 하중 (kN)</span>
+                <span><strong style={{ color: T.textLabel }}>a</strong> — 타이어 접지폭 (m)</span>
+                <span><strong style={{ color: T.textLabel }}>h</strong> — 관정 토피 깊이 (m)</span>
+                <span><strong style={{ color: T.textLabel }}>C</strong> — 차량 점유폭 (m, 관축방향)</span>
+                <span><strong style={{ color: T.textLabel }}>θ</strong> — 하중분포각 (°, 통상 45°)</span>
+                <span><strong style={{ color: T.textLabel }}>D</strong> — 관 외경 (m)</span>
               </div>
               <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
                 도로 하부: 적용 (H &lt; 3.0m 구간은 반드시)<br/>
