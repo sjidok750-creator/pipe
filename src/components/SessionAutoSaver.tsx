@@ -18,7 +18,7 @@ export default function SessionAutoSaver() {
   const detailInputs = useSeismicStore(s => s.detailInputs)
   const detailResult = useSeismicStore(s => s.detailResult)
 
-  const { projectId, projectName, enabledModules, markDirty } = useProjectStore()
+  const { projectId, projectName, enabledModules, activeFacilityId, markDirty } = useProjectStore()
 
   const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRender = useRef(true)
@@ -35,7 +35,8 @@ export default function SessionAutoSaver() {
         projectId,
         projectName,
         enabledModules,
-        structural:   { inputs, result },
+        activeFacilityId,
+        structural:    { inputs, result },
         seismicPrelim: { inputs: prelimInputs, result: prelimResult },
         seismicDetail: { inputs: detailInputs, result: detailResult },
         savedAt: new Date().toISOString(),
@@ -44,7 +45,7 @@ export default function SessionAutoSaver() {
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputs, result, prelimInputs, prelimResult, detailInputs, detailResult, projectId, projectName, enabledModules])
+  }, [inputs, result, prelimInputs, prelimResult, detailInputs, detailResult, projectId, projectName, enabledModules, activeFacilityId])
 
   return null
 }

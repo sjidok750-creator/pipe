@@ -41,7 +41,7 @@ export default function Layout() {
   const activeModule = MODULE_TABS.find(t => pathname.startsWith(t.matchBase))
   const subNav = activeModule ? SUBNAV_MAP[activeModule.id] : null
 
-  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules, fileName, saveToFile, projectId } = useProjectStore()
+  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules, activeFacilityName, saveFacilityToFile, projectId } = useProjectStore()
   const hasProject = projectName.length > 0
 
   // 비활성 모듈 탭 숨김
@@ -67,6 +67,7 @@ export default function Layout() {
     : null
 
   const supportsFilePicker = typeof window !== 'undefined' && 'showSaveFilePicker' in window
+  // fileName은 store에서 제거됨 — projectRepo에서 직접 읽지 않고 activeFacilityName으로 표시
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: T.bgApp, fontFamily: T.fontSans }}>
@@ -142,10 +143,10 @@ export default function Layout() {
                       touchAction: 'manipulation',
                     }}
                   />
-                  {/* 파일명 표시 */}
-                  {fileName && supportsFilePicker && (
-                    <span style={{ fontSize: 9, color: 'rgba(250,247,241,0.35)', fontFamily: T.fontMono, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      📄 {fileName}
+                  {/* 시설물명 표시 */}
+                  {activeFacilityName && (
+                    <span style={{ fontSize: 9, color: 'rgba(250,247,241,0.4)', fontFamily: T.fontMono, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {activeFacilityName}
                     </span>
                   )}
                 </div>
@@ -197,10 +198,10 @@ export default function Layout() {
                 </span>
               ) : null}
 
-              {/* 파일 저장 버튼 (파일 미바인딩 + picker 지원 시) */}
-              {supportsFilePicker && hasProject && !fileName && !isDirty && savedTimeLabel && (
+              {/* 파일 저장 버튼 */}
+              {supportsFilePicker && hasProject && !isDirty && savedTimeLabel && (
                 <button
-                  onClick={() => saveToFile(projectId ?? undefined)}
+                  onClick={() => saveFacilityToFile()}
                   style={{
                     background: 'rgba(255,255,255,0.08)',
                     border: '1px solid rgba(255,255,255,0.18)',

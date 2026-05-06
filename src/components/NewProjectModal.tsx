@@ -16,7 +16,8 @@ export default function NewProjectModal() {
   const navigate = useNavigate()
 
   const [selected, setSelected] = useState<ModuleId[]>(['structural'])
-  const [name, setName] = useState('')
+  const [projectName, setProjectName] = useState('')
+  const [facilityName, setFacilityName] = useState('')
 
   if (!isNewModalOpen) return null
 
@@ -27,8 +28,7 @@ export default function NewProjectModal() {
 
   const handleStart = async () => {
     if (selected.length === 0) return
-    await startNew(selected, name.trim())
-    // Navigate to first selected module
+    await startNew(selected, projectName.trim(), facilityName.trim())
     const first = MODULE_OPTIONS.find(m => selected.includes(m.id))
     navigate(first!.path)
   }
@@ -102,24 +102,42 @@ export default function NewProjectModal() {
         </div>
 
         {/* Project name */}
-        <div style={{ marginBottom: 22 }}>
+        <div style={{ marginBottom: 12 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>
-            프로젝트 이름 <span style={{ fontWeight: 400, color: '#aaa' }}>(선택)</span>
+            프로젝트명 <span style={{ fontWeight: 400, color: '#aaa' }}>(선택)</span>
           </label>
           <input
             type="text"
             placeholder="예: 수지 1공구 하수관 매설"
-            value={name}
-            onChange={e => setName(e.target.value)}
+            value={projectName}
+            onChange={e => setProjectName(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '10px 12px', borderRadius: 8,
+              border: '1.5px solid #ccc', fontSize: 13,
+              fontFamily: T.fontSans, outline: 'none',
+              minHeight: 42, touchAction: 'manipulation',
+            }}
+          />
+        </div>
+
+        {/* Facility name */}
+        <div style={{ marginBottom: 22 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>
+            첫 번째 시설물명 <span style={{ fontWeight: 400, color: '#aaa' }}>(선택)</span>
+          </label>
+          <input
+            type="text"
+            placeholder="예: 0001 관로 (기본값: 시설물 001)"
+            value={facilityName}
+            onChange={e => setFacilityName(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleStart() }}
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '10px 12px', borderRadius: 8,
               border: '1.5px solid #ccc', fontSize: 13,
-              fontFamily: T.fontSans,
-              outline: 'none',
-              minHeight: 42,
-              touchAction: 'manipulation',
+              fontFamily: T.fontSans, outline: 'none',
+              minHeight: 42, touchAction: 'manipulation',
             }}
           />
         </div>

@@ -7,17 +7,13 @@ export interface ModuleSnapshot {
   result?: Record<string, unknown> | null
 }
 
-export interface ProjectMeta {
+// ── 시설물 (관로 구간 1개) ────────────────────────────────────
+export interface Facility {
   id: string
   name: string
-  createdAt: string  // ISO 8601
+  createdAt: string
   updatedAt: string
-  enabledModules: ModuleId[]
-  fileName?: string | null  // 바인딩된 파일명 (표시용)
-}
-
-export interface Project {
-  meta: ProjectMeta
+  fileName?: string | null
   modules: {
     structural?: ModuleSnapshot
     seismicPrelim?: ModuleSnapshot
@@ -25,11 +21,43 @@ export interface Project {
   }
 }
 
+// ── 프로젝트 ─────────────────────────────────────────────────
+export interface ProjectMeta {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+  enabledModules: ModuleId[]
+}
+
+export interface Project {
+  meta: ProjectMeta
+  facilities: Facility[]
+}
+
+// ── 파일 포맷 (시설물 단독 저장) ─────────────────────────────
+export interface FacilityFile {
+  app: 'PIPER'
+  fileVersion: 2
+  exportedAt: string
+  projectName: string
+  facility: Facility
+  enabledModules: ModuleId[]
+}
+
+// ── 레거시 포맷 (v1 호환) ─────────────────────────────────────
 export interface ProjectFile {
   app: 'PIPER' | 'STEP-PIPE'
   fileVersion: 1
   exportedAt: string
-  project: Project
+  project: {
+    meta: ProjectMeta & { fileName?: string | null }
+    modules: {
+      structural?: ModuleSnapshot
+      seismicPrelim?: ModuleSnapshot
+      seismicDetail?: ModuleSnapshot
+    }
+  }
 }
 
 const INDEX_KEY = 'projects:index'
