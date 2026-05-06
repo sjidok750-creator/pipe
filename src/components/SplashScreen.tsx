@@ -1,238 +1,120 @@
-import React, { useEffect, useState } from 'react'
-
-const PIXEL_FONT = "'Press Start 2P', monospace"
-
-const SCANLINE_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  inset: 0,
-  background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)',
-  pointerEvents: 'none',
-  zIndex: 1,
-}
-
-const STARS = Array.from({ length: 60 }, (_, i) => ({
-  id: i,
-  left: `${Math.random() * 100}%`,
-  top: `${Math.random() * 70}%`,
-  size: Math.random() * 2 + 1,
-  opacity: Math.random() * 0.6 + 0.2,
-  animDelay: `${Math.random() * 3}s`,
-}))
+import React from 'react'
 
 interface Props {
   onContinue: () => void
 }
 
-export default function SplashScreen({ onContinue }: Props) {
-  const [blink, setBlink] = useState(true)
-  const [scanY, setScanY] = useState(0)
-
-  useEffect(() => {
-    const t = setInterval(() => setBlink(v => !v), 600)
-    return () => clearInterval(t)
-  }, [])
-
-  useEffect(() => {
-    let raf: number
-    let y = 0
-    const tick = () => {
-      y = (y + 0.4) % 100
-      setScanY(y)
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [])
-
+function PiperIcon({ size = 90 }: { size?: number }) {
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0,
-        background: '#05082a',
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden', userSelect: 'none',
-      }}
-    >
-      {/* 배경 스타 */}
-      {STARS.map(s => (
-        <div key={s.id} style={{
-          position: 'absolute',
-          left: s.left, top: s.top,
-          width: s.size, height: s.size,
-          borderRadius: '50%',
-          background: 'white',
-          opacity: s.opacity,
-          animation: `twinkle 2s ${s.animDelay} infinite alternate`,
-        }} />
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"
+      style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.18))' }}>
+      <rect width="100" height="100" rx="22" fill="#f5f0e8"/>
+      {/* 격자 */}
+      {[20,40,60,80].map(v => (
+        <React.Fragment key={v}>
+          <line x1="0" y1={v} x2="100" y2={v} stroke="#e0d8cc" strokeWidth="0.8"/>
+          <line x1={v} y1="0" x2={v} y2="100" stroke="#e0d8cc" strokeWidth="0.8"/>
+        </React.Fragment>
       ))}
+      {/* 외곽 원 (점선) */}
+      <circle cx="50" cy="50" r="36" stroke="#1a1a1a" strokeWidth="2.2" strokeDasharray="3,3"/>
+      {/* 중간 원 */}
+      <circle cx="50" cy="50" r="24" stroke="#1a1a1a" strokeWidth="2"/>
+      {/* 수평선 */}
+      <line x1="10" y1="50" x2="90" y2="50" stroke="#e05a3a" strokeWidth="2.5"/>
+      {/* 심박수 파형 */}
+      <polyline points="18,50 28,50 33,38 37,62 41,38 46,50 54,50 58,42 63,50 82,50"
+        stroke="#e05a3a" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
+      {/* 중앙 점 */}
+      <circle cx="50" cy="50" r="3.5" fill="#1a1a1a"/>
+      {/* 상하 조준선 */}
+      <line x1="50" y1="10" x2="50" y2="22" stroke="#1a1a1a" strokeWidth="2"/>
+      <line x1="50" y1="78" x2="50" y2="90" stroke="#1a1a1a" strokeWidth="2"/>
+    </svg>
+  )
+}
 
-      {/* 스캔라인 글로우 */}
+export default function SplashScreen({ onContinue }: Props) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: '#f0ebe0',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {/* 카드 */}
       <div style={{
-        position: 'absolute', inset: 0,
-        background: `linear-gradient(180deg, transparent ${scanY - 2}%, rgba(100,200,255,0.04) ${scanY}%, transparent ${scanY + 2}%)`,
-        pointerEvents: 'none', zIndex: 1,
-        transition: 'background 0.016s linear',
-      }} />
-
-      {/* 스캔라인 */}
-      <div style={SCANLINE_STYLE} />
-
-      {/* 메인 컨텐츠 */}
-      <div style={{ position: 'relative', zIndex: 2, textAlign: 'center', padding: '0 24px' }}>
-
-        {/* 상단 장식 */}
-        <div style={{ fontFamily: PIXEL_FONT, fontSize: 9, color: '#4af', letterSpacing: 3, marginBottom: 24, opacity: 0.7 }}>
-          ★ KDS 57 00 00 : 2022 ★
+        background: '#faf7f2',
+        borderRadius: 24,
+        padding: '48px 40px 36px',
+        width: 300,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+      }}>
+        {/* 아이콘 */}
+        <div style={{ marginBottom: 24 }}>
+          <PiperIcon size={90} />
         </div>
 
-        {/* 파이프 아이콘 픽셀 */}
-        <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}>
-          <svg width="80" height="40" viewBox="0 0 80 40" style={{ imageRendering: 'pixelated' }}>
-            {/* 파이프 외곽 */}
-            <rect x="0" y="10" width="80" height="20" fill="#1a3a6a" />
-            <rect x="0" y="10" width="80" height="4" fill="#3a6aaa" />
-            <rect x="0" y="26" width="80" height="4" fill="#0a1a3a" />
-            {/* 파이프 내부 */}
-            <rect x="4" y="14" width="72" height="12" fill="#0d2040" />
-            {/* 연결부 */}
-            <rect x="30" y="6" width="20" height="28" fill="#2a4a7a" />
-            <rect x="30" y="6" width="20" height="4" fill="#4a7aaa" />
-            <rect x="30" y="30" width="20" height="4" fill="#0a1a3a" />
-            {/* 반짝임 */}
-            <rect x="4" y="14" width="72" height="2" fill="rgba(100,180,255,0.15)" />
-            {/* 픽셀 하이라이트 */}
-            <rect x="36" y="8" width="2" height="2" fill="#6af" opacity="0.5" />
-            <rect x="42" y="8" width="2" height="2" fill="#6af" opacity="0.5" />
-          </svg>
-        </div>
-
-        {/* STEP-PIPE 메인 타이틀 */}
-        <div style={{ position: 'relative', marginBottom: 8 }}>
-          {/* 그림자 레이어 (파란색) */}
-          <div style={{
-            fontFamily: PIXEL_FONT,
-            fontSize: 'clamp(24px, 6vw, 42px)',
-            color: '#1a4aff',
-            position: 'absolute',
-            top: 5, left: 5,
-            width: '100%',
-            letterSpacing: 4,
-            whiteSpace: 'nowrap',
-          }}>
-            STEP-PIPE
-          </div>
-          {/* 그림자 레이어 (빨간색) */}
-          <div style={{
-            fontFamily: PIXEL_FONT,
-            fontSize: 'clamp(24px, 6vw, 42px)',
-            color: '#ff1a2a',
-            position: 'absolute',
-            top: -3, left: -3,
-            width: '100%',
-            letterSpacing: 4,
-            whiteSpace: 'nowrap',
-          }}>
-            STEP-PIPE
-          </div>
-          {/* 메인 텍스트 (노란색) */}
-          <div style={{
-            fontFamily: PIXEL_FONT,
-            fontSize: 'clamp(24px, 6vw, 42px)',
-            color: '#ffe600',
-            position: 'relative',
-            letterSpacing: 4,
-            whiteSpace: 'nowrap',
-            textShadow: '0 0 20px rgba(255,230,0,0.5), 0 0 40px rgba(255,230,0,0.2)',
-          }}>
-            STEP-PIPE
-          </div>
-        </div>
-
-        {/* 서브 타이틀 */}
+        {/* PIPER */}
         <div style={{
-          fontFamily: PIXEL_FONT,
-          fontSize: 'clamp(6px, 1.5vw, 9px)',
-          color: '#7ac',
+          fontFamily: "'Georgia', 'Times New Roman', serif",
+          fontSize: 40,
+          fontWeight: 900,
+          color: '#1a1a1a',
+          letterSpacing: 6,
+          marginBottom: 8,
+        }}>
+          PIPER
+        </div>
+
+        {/* 서브타이틀 */}
+        <div style={{
+          fontSize: 9,
+          color: '#888',
           letterSpacing: 2,
-          marginBottom: 12,
-          lineHeight: 2,
+          textAlign: 'center',
+          lineHeight: 1.8,
+          fontFamily: 'sans-serif',
+          marginBottom: 36,
+          textTransform: 'uppercase',
         }}>
-          SEISMIC &amp; STRUCTURAL<br />PIPE EVALUATION TOOL
+          Pipeline Inspection &amp;<br />Performance Evaluation Reviewer
         </div>
 
-        {/* 구분선 픽셀 */}
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 36,
-        }}>
-          {Array.from({ length: 24 }).map((_, i) => (
-            <div key={i} style={{
-              width: 6, height: 4,
-              background: i % 3 === 0 ? '#ffe600' : i % 3 === 1 ? '#ff1a2a' : '#1a4aff',
-              opacity: 0.8,
-            }} />
-          ))}
-        </div>
-
-        {/* 모듈 미리보기 */}
-        <div style={{
-          display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 40, flexWrap: 'wrap',
-        }}>
-          {[
-            { label: 'MODULE 1', sub: '구조안전성', color: '#4af' },
-            { label: 'MODULE 2', sub: '예비평가', color: '#fa4' },
-            { label: 'MODULE 3', sub: '상세평가', color: '#f4a' },
-          ].map(m => (
-            <div key={m.label} style={{
-              fontFamily: PIXEL_FONT,
-              fontSize: 7,
-              color: m.color,
-              border: `1px solid ${m.color}`,
-              padding: '6px 10px',
-              lineHeight: 1.8,
-              opacity: 0.75,
-            }}>
-              {m.label}<br />
-              <span style={{ color: 'white', opacity: 0.6 }}>{m.sub}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CONTINUE 버튼 */}
-        <div
+        {/* 시작 버튼 */}
+        <button
           onClick={onContinue}
           style={{
-            fontFamily: PIXEL_FONT,
-            fontSize: 'clamp(10px, 2.5vw, 14px)',
-            color: blink ? '#ffe600' : 'transparent',
-            letterSpacing: 3,
+            width: '100%',
+            padding: '15px 0',
+            background: '#1a1a1a',
+            color: 'white',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 16,
+            fontWeight: 700,
+            fontFamily: 'sans-serif',
             cursor: 'pointer',
-            transition: 'color 0.05s',
-            textShadow: blink ? '0 0 16px rgba(255,230,0,0.8)' : 'none',
-            padding: '10px 0',
+            letterSpacing: 2,
+            marginBottom: 20,
+            transition: 'opacity 0.15s',
           }}
+          onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+          onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
         >
-          ▶ CONTINUE ◀
-        </div>
+          시작하기
+        </button>
 
-        {/* 하단 버전 */}
+        {/* 버전 */}
         <div style={{
-          fontFamily: PIXEL_FONT,
-          fontSize: 6,
-          color: 'rgba(100,150,200,0.4)',
-          marginTop: 32,
-          letterSpacing: 2,
+          fontSize: 11,
+          color: '#bbb',
+          fontFamily: 'sans-serif',
+          letterSpacing: 1,
         }}>
-          VER 1.0.0 &nbsp;·&nbsp; © 2025
+          v1.0 · 한국수자원공사
         </div>
       </div>
-
-      <style>{`
-        @keyframes twinkle {
-          from { opacity: 0.1; transform: scale(0.8); }
-          to   { opacity: 0.9; transform: scale(1.2); }
-        }
-      `}</style>
     </div>
   )
 }

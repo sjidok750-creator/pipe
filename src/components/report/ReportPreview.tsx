@@ -93,35 +93,76 @@ export default function ReportPreview({ result, inputs }: Props) {
       fontFamily: "'Noto Sans KR', sans-serif",
       background: 'white', color: '#1a1a2e'
     }}>
-      {/* ── 표지 ── */}
+      {/* ── 표지 (PIPER 스타일) ── */}
       <div style={{
-        background: '#003366', color: 'white',
-        padding: '60px 50px', minHeight: 280,
-        display: 'flex', flexDirection: 'column', justifyContent: 'center'
+        background: '#f5f0e8',
+        minHeight: 360,
+        padding: '44px 50px 40px',
+        display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-between',
+        position: 'relative',
+        borderBottom: '1px solid #d8d0c0',
       }}>
-        <div style={{ fontSize: 12, opacity: 0.7, marginBottom: 8 }}>
-          KDS 57 00 00 : 2022 상수도설계기준
-        </div>
-        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>
-          매설관로 구조안전성 검토 보고서
-        </div>
-        <div style={{ fontSize: 14, opacity: 0.85, marginBottom: 30 }}>
-          PipeCheck KDS — Pipe Structural Safety Report
+        {/* 상단 행: 아이콘 + 우상단 메타 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          {/* PIPER 아이콘 소형 */}
+          <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
+            <rect width="100" height="100" rx="20" fill="#f0ebe0"/>
+            {[20,40,60,80].map((v: number) => (
+              <React.Fragment key={v}>
+                <line x1="0" y1={v} x2="100" y2={v} stroke="#ddd3c0" strokeWidth="1"/>
+                <line x1={v} y1="0" x2={v} y2="100" stroke="#ddd3c0" strokeWidth="1"/>
+              </React.Fragment>
+            ))}
+            <circle cx="50" cy="50" r="35" stroke="#1a1a1a" strokeWidth="2.5" strokeDasharray="3,3"/>
+            <circle cx="50" cy="50" r="23" stroke="#1a1a1a" strokeWidth="2"/>
+            <line x1="12" y1="50" x2="88" y2="50" stroke="#e05a3a" strokeWidth="2.5"/>
+            <polyline points="18,50 28,50 33,38 37,62 41,38 46,50 54,50 58,42 63,50 82,50"
+              stroke="#e05a3a" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
+            <circle cx="50" cy="50" r="3.5" fill="#1a1a1a"/>
+            <line x1="50" y1="11" x2="50" y2="23" stroke="#1a1a1a" strokeWidth="2"/>
+            <line x1="50" y1="77" x2="50" y2="89" stroke="#1a1a1a" strokeWidth="2"/>
+          </svg>
+          {/* 우상단 메타 */}
+          <div style={{ textAlign: 'right', fontSize: 10, color: '#888', fontFamily: 'sans-serif', lineHeight: 1.8, letterSpacing: 1 }}>
+            <div style={{ fontWeight: 700, color: '#555' }}>REPORT — {new Date().getFullYear()}</div>
+            <div>PIPER v1.0</div>
+          </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 11 }}>
-          <div>관종: <strong>{pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}</strong></div>
-          <div>호칭경: <strong>DN {DN}</strong></div>
-          <div>설계압력: <strong>Pd = {inputs.Pd} MPa</strong></div>
-          <div>매설깊이: <strong>H = {inputs.H} m</strong></div>
-          <div>채택두께: <strong>{tAdopt} mm ({pipeType === 'steel' ? pnGrade : selectedGrade})</strong></div>
-          <div>종합판정: <strong style={{ color: verdict.overallOK ? '#7dff9e' : '#ff7d7d' }}>
-            {verdict.overallOK ? '✓ OK' : '✗ NG'}
-          </strong></div>
+        {/* 중앙 본문 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 0 24px' }}>
+          <div style={{ fontSize: 10, color: '#888', letterSpacing: 3, fontFamily: 'sans-serif', marginBottom: 14, textTransform: 'uppercase' }}>
+            Structural Safety Report
+          </div>
+          <div style={{
+            fontSize: 34, fontWeight: 900,
+            color: '#1a1a1a', lineHeight: 1.25,
+            fontFamily: "'Noto Sans KR', sans-serif",
+            marginBottom: 20,
+          }}>
+            상수도관로<br />구조안전성<br />검토 보고서
+          </div>
+          {/* 프로젝트 정보 */}
+          <div style={{ fontSize: 11, color: '#555', fontFamily: 'sans-serif', lineHeight: 2 }}>
+            <div>관종: <strong style={{ color: '#1a1a1a' }}>{pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}</strong></div>
+            <div>DN {DN} · Pd = {inputs.Pd} MPa · H = {inputs.H} m · t = {tAdopt} mm</div>
+            <div style={{ marginTop: 4 }}>
+              종합판정: <strong style={{ color: verdict.overallOK ? '#2d8659' : '#b8392f', fontSize: 13 }}>
+                {verdict.overallOK ? '✓ O.K.' : '✗ N.G.'}
+              </strong>
+            </div>
+          </div>
         </div>
 
-        <div style={{ marginTop: 30, fontSize: 10, opacity: 0.5 }}>
-          작성일: {today} | KDS 57 00 00 : 2022 / KS D 3565 / KS D 4311 / AWWA M11
+        {/* 하단 구분선 + 하단 텍스트 */}
+        <div style={{ borderTop: '1px solid #c8bfb0', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div style={{ fontSize: 9, color: '#999', letterSpacing: 1.5, fontFamily: 'sans-serif', textTransform: 'uppercase' }}>
+            Pipeline Inspection &amp; Perf. Eval. Reviewer
+          </div>
+          <div style={{ fontSize: 9, color: '#999', fontFamily: 'sans-serif' }}>
+            작성일: {today}
+          </div>
         </div>
       </div>
 
