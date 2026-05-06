@@ -126,7 +126,10 @@ function SessionCard() {
         <button
           onClick={() => {
             const id = save()
-            if (id) navigate(firstPath)
+            if (id) {
+              const { exportJSON } = useProjectStore.getState()
+              exportJSON(id)
+            }
           }}
           style={{
             padding: '7px 14px', borderRadius: 7,
