@@ -10,10 +10,10 @@ const MODULE_LABEL: Record<string, string> = {
   seismicPrelim: '예비',
   seismicDetail: '상세',
 }
-const MODULE_COLOR: Record<string, { bg: string; text: string; border: string }> = {
-  structural:    { bg: '#EEF3FF', text: '#1B3A66', border: '#C4D6EE' },
-  seismicPrelim: { bg: '#FFF4E0', text: '#7A4800', border: '#F5CC80' },
-  seismicDetail: { bg: '#EDFAF3', text: '#1A5C35', border: '#86EFAC' },
+const MODULE_COLOR: Record<string, { color: string }> = {
+  structural:    { color: '#3D6096' },   // 슬레이트 블루 — 구조공학
+  seismicPrelim: { color: '#8C5F1A' },   // 웜 앰버 — 내진 예비
+  seismicDetail: { color: '#2E6E4A' },   // 포레스트 그린 — 내진 상세
 }
 const MODULE_PATH: Record<string, string> = {
   structural:    '/structural/input',
@@ -35,12 +35,20 @@ function PiperIcon({ size = 64 }: { size?: number }) {
 }
 
 function ModuleBadge({ id }: { id: string }) {
-  const c = MODULE_COLOR[id] ?? { bg: '#F5F5F5', text: '#555', border: '#DDD' }
+  const c = MODULE_COLOR[id] ?? { color: '#6B6560' }
   return (
     <span style={{
-      fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
-      background: c.bg, color: c.text, border: `1px solid ${c.border}`,
-      whiteSpace: 'nowrap', fontFamily: T.fontSans, letterSpacing: '0.1px',
+      fontSize: 10,
+      padding: '2px 9px',
+      borderRadius: 4,
+      fontWeight: 600,
+      background: 'transparent',
+      color: c.color,
+      border: `1.5px solid ${c.color}`,
+      opacity: 0.85,
+      whiteSpace: 'nowrap',
+      fontFamily: T.fontSans,
+      letterSpacing: '0.3px',
     }}>
       {MODULE_LABEL[id] ?? id}
     </span>
