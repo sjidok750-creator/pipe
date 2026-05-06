@@ -16,7 +16,6 @@ import { T } from '../components/eng/tokens'
 import CrossSectionSVG from '../components/diagrams/CrossSectionSVG'
 import BeddingConditionSVG from '../components/diagrams/BeddingConditionSVG'
 import EValueChartSVG from '../components/diagrams/EValueChartSVG'
-import { VehicleLoadSVG } from '../components/eng/diagrams/VehicleLoadSVG'
 
 const SOIL_CLASSES = [
   { key: 'SC1',   label: 'SC1',   sub: '자갈·모래' },
@@ -507,7 +506,7 @@ export default function InputPage() {
               </div>
               {/* 하중분포 개념도 */}
               <div style={{ border: `1px solid ${T.border}`, borderRadius: T.radiusMd, overflow: 'hidden', marginBottom: 8 }}>
-                <VehicleLoadSVG width={420} height={215} />
+                <img src="/pipe/vl.png" alt="차량하중 분포도" style={{ width: '100%', display: 'block' }} />
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 12px', fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, marginBottom: 8, paddingLeft: 4 }}>
                 <span><strong style={{ color: T.textLabel }}>Pm</strong> — 후륜 1륜당 하중 (kN)</span>
