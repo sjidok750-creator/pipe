@@ -54,7 +54,7 @@ function ModuleBadge({ id }: { id: string }) {
 // ── 진행 중인 세션 카드 ──────────────────────────────────────
 function SessionCard() {
   const navigate = useNavigate()
-  const { projectName, enabledModules, discardSession, save } = useProjectStore()
+  const { projectName, enabledModules, discardSession, saveToFile } = useProjectStore()
   const hasStructural = useStore(s => !!s.result)
   const hasPrelim = useSeismicStore(s => !!s.prelimResult)
   const hasDetail = useSeismicStore(s => !!s.detailResult)
@@ -124,13 +124,7 @@ function SessionCard() {
           계속하기 →
         </button>
         <button
-          onClick={() => {
-            const id = save()
-            if (id) {
-              const { exportJSON } = useProjectStore.getState()
-              exportJSON(id)
-            }
-          }}
+          onClick={() => saveToFile(undefined)}
           style={{
             padding: '7px 14px', borderRadius: 7,
             background: 'white', color: T.bgActive,
@@ -141,7 +135,7 @@ function SessionCard() {
             fontFamily: T.fontSans,
           }}
         >
-          프로젝트로 저장
+          📄 프로젝트로 저장
         </button>
       </div>
 
@@ -201,7 +195,10 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, marginBottom: 3 }}>
           {meta.enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
         </div>
-        <div style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontMono }}>{date}</div>
+        <div style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontMono }}>
+          저장됨 {date}
+          {meta.fileName && <span style={{ marginLeft: 6, color: T.textDisabled }}>· 📄 {meta.fileName}</span>}
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>

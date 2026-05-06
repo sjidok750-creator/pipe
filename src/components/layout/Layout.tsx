@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
 import { T } from '../eng/tokens'
 import { useProjectStore } from '../../store/useProjectStore.js'
 import NewProjectModal from '../NewProjectModal'
-// WIcon 제거 — PIPER 아이콘 인라인 사용
 
 const PIXEL_FONT = T.fontBrand
 
@@ -42,10 +41,10 @@ export default function Layout() {
   const activeModule = MODULE_TABS.find(t => pathname.startsWith(t.matchBase))
   const subNav = activeModule ? SUBNAV_MAP[activeModule.id] : null
 
-  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules } = useProjectStore()
+  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules, fileName, saveToFile, projectId } = useProjectStore()
   const hasProject = projectName.length > 0
 
-  // 비활성 모듈 탭 숨김: 홈이거나 enabledModules 미설정이면 전체 표시
+  // 비활성 모듈 탭 숨김
   const MODULE_ID_MAP: Record<string, string> = {
     structural: 'structural',
     'seismic-prelim': 'seismicPrelim',
@@ -55,9 +54,19 @@ export default function Layout() {
     ? MODULE_TABS
     : MODULE_TABS.filter(t => enabledModules.includes(MODULE_ID_MAP[t.id]))
 
+  // 초 단위 실시간 저장 시각 (저장됨 표시 시 tick)
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (!lastSavedAt || isDirty) return
+    const id = setInterval(() => setTick(t => t + 1), 10000)
+    return () => clearInterval(id)
+  }, [lastSavedAt, isDirty])
+
   const savedTimeLabel = lastSavedAt
-    ? new Date(lastSavedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
+    ? new Date(lastSavedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : null
+
+  const supportsFilePicker = typeof window !== 'undefined' && 'showSaveFilePicker' in window
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: T.bgApp, fontFamily: T.fontSans }}>
@@ -115,23 +124,31 @@ export default function Layout() {
           {pathname !== '/' && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
               {hasProject ? (
-                <input
-                  value={projectName}
-                  onChange={e => setProjectName(e.target.value)}
-                  placeholder="프로젝트명"
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    borderRadius: T.radiusSm,
-                    color: T.textOnDark,
-                    fontSize: T.fs.sm,
-                    padding: '4px 10px',
-                    fontFamily: T.fontSans,
-                    maxWidth: 180, outline: 'none',
-                    height: 28,
-                    touchAction: 'manipulation',
-                  }}
-                />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1 }}>
+                  <input
+                    value={projectName}
+                    onChange={e => setProjectName(e.target.value)}
+                    placeholder="프로젝트명"
+                    style={{
+                      background: 'rgba(255,255,255,0.08)',
+                      border: '1px solid rgba(255,255,255,0.18)',
+                      borderRadius: T.radiusSm,
+                      color: T.textOnDark,
+                      fontSize: T.fs.sm,
+                      padding: '4px 10px',
+                      fontFamily: T.fontSans,
+                      maxWidth: 180, outline: 'none',
+                      height: 26,
+                      touchAction: 'manipulation',
+                    }}
+                  />
+                  {/* 파일명 표시 */}
+                  {fileName && supportsFilePicker && (
+                    <span style={{ fontSize: 9, color: 'rgba(250,247,241,0.35)', fontFamily: T.fontMono, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      📄 {fileName}
+                    </span>
+                  )}
+                </div>
               ) : (
                 <button
                   onClick={openNewModal}
@@ -171,7 +188,7 @@ export default function Layout() {
                   ● 저장
                 </button>
               ) : savedTimeLabel ? (
-                <span style={{ fontSize: T.fs.xs, color: 'rgba(250,247,241,0.5)', fontFamily: T.fontMono }}>
+                <span style={{ fontSize: T.fs.xs, color: 'rgba(250,247,241,0.5)', fontFamily: T.fontMono, whiteSpace: 'nowrap' }}>
                   저장됨 {savedTimeLabel}
                 </span>
               ) : hasProject ? (
@@ -179,6 +196,28 @@ export default function Layout() {
                   임시저장본
                 </span>
               ) : null}
+
+              {/* 파일 저장 버튼 (파일 미바인딩 + picker 지원 시) */}
+              {supportsFilePicker && hasProject && !fileName && !isDirty && savedTimeLabel && (
+                <button
+                  onClick={() => saveToFile(projectId ?? undefined)}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.18)',
+                    borderRadius: T.radiusSm,
+                    color: 'rgba(250,247,241,0.6)',
+                    fontSize: T.fs.xs,
+                    padding: '4px 10px',
+                    height: 28,
+                    cursor: 'pointer',
+                    fontFamily: T.fontSans,
+                    touchAction: 'manipulation',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  📄 파일 저장
+                </button>
+              )}
             </div>
           )}
         </div>

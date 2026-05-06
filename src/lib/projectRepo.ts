@@ -13,6 +13,7 @@ export interface ProjectMeta {
   createdAt: string  // ISO 8601
   updatedAt: string
   enabledModules: ModuleId[]
+  fileName?: string | null  // 바인딩된 파일명 (표시용)
 }
 
 export interface Project {
