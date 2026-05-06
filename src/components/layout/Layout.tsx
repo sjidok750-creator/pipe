@@ -3,7 +3,7 @@ import { Outlet, NavLink, useLocation, Link } from 'react-router-dom'
 import { T } from '../eng/tokens'
 import { useProjectStore } from '../../store/useProjectStore.js'
 import NewProjectModal from '../NewProjectModal'
-import WIcon from '../WIcon'
+// WIcon 제거 — PIPER 아이콘 인라인 사용
 
 const PIXEL_FONT = T.fontBrand
 
@@ -66,11 +66,35 @@ export default function Layout() {
             ☰
           </button>
 
-          {/* 로고 */}
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 7, textDecoration: 'none', flexShrink: 0 }}>
-            <WIcon size={24} id="nav" />
-            <span style={{ fontFamily: PIXEL_FONT, fontSize: 10, color: '#FFE600', letterSpacing: 1 }}>STEP-</span>
-            <span style={{ fontFamily: PIXEL_FONT, fontSize: 10, color: '#44AAFF', letterSpacing: 1 }}>PIPE</span>
+          {/* 로고 — 이미지 20 스타일 */}
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
+            {/* PIPER 아이콘 (원본 SVG) */}
+            <svg width="26" height="26" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block' }}>
+              <rect width="100" height="100" rx="16" fill="#F4EFE6"/>
+              <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+              <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+              <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+                fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
+            </svg>
+            {/* PIPER 텍스트 — 이미지 20: 굵은 세리프 + 서브타이틀 */}
+            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+              <span style={{
+                fontFamily: 'Fraunces, serif',
+                fontSize: 16,
+                fontWeight: 700,
+                color: '#FAF7F1',
+                letterSpacing: '-0.3px',
+              }}>PIPER</span>
+              <span style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 7,
+                fontWeight: 400,
+                color: 'rgba(250,247,241,0.38)',
+                letterSpacing: '0.2px',
+                whiteSpace: 'nowrap',
+              }}>Pipeline Inspection &amp; Performance Evaluation Reviewer</span>
+            </div>
           </Link>
 
           <span style={{ fontSize: T.fs.xs, color: T.textOnDarkMuted, fontFamily: T.fontMono, flexShrink: 0 }}>
