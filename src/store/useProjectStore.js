@@ -179,8 +179,12 @@ export const useProjectStore = create((set, get) => ({
     const project = projectRepo.get(id)
     if (!project) return
 
+    const moduleCode = project.meta.enabledModules
+      .map(m => m === 'structural' ? 'S' : m === 'seismicPrelim' ? 'P' : 'D')
+      .join('')
+
     const file = {
-      app: 'STEP-PIPE',
+      app: 'PIPER',
       fileVersion: 1,
       exportedAt: new Date().toISOString(),
       project,
@@ -191,7 +195,7 @@ export const useProjectStore = create((set, get) => ({
     const a = document.createElement('a')
     a.href = url
     const safeName = project.meta.name.replace(/[^\w가-힣\-]/g, '_')
-    a.download = `${safeName}.steppipe.json`
+    a.download = `${safeName}_${moduleCode}.piper.json`
     a.click()
     URL.revokeObjectURL(url)
   },
@@ -203,8 +207,8 @@ export const useProjectStore = create((set, get) => ({
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result)
-        if (data.app !== 'STEP-PIPE' || !data.project) {
-          throw new Error('올바른 STEP-PIPE 파일이 아닙니다.')
+        if (!['PIPER', 'STEP-PIPE'].includes(data.app) || !data.project) {
+          throw new Error('올바른 PIPER 파일이 아닙니다.')
         }
         const project = data.project
         project.meta.id = crypto.randomUUID()

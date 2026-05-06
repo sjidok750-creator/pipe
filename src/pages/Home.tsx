@@ -54,7 +54,7 @@ function ModuleBadge({ id }: { id: string }) {
 // ── 진행 중인 세션 카드 ──────────────────────────────────────
 function SessionCard() {
   const navigate = useNavigate()
-  const { projectName, enabledModules, discardSession } = useProjectStore()
+  const { projectName, enabledModules, discardSession, save } = useProjectStore()
   const hasStructural = useStore(s => !!s.result)
   const hasPrelim = useSeismicStore(s => !!s.prelimResult)
   const hasDetail = useSeismicStore(s => !!s.detailResult)
@@ -96,7 +96,7 @@ function SessionCard() {
 
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 10, color: T.bgActive, fontWeight: 700, marginBottom: 3, letterSpacing: 0.3 }}>
-          ● 진행 중인 작업
+          ● 임시 작업본
         </div>
         <div style={{
           fontSize: 13, fontWeight: 700, color: T.textPrimary,
@@ -109,19 +109,38 @@ function SessionCard() {
         </div>
       </div>
 
-      <button
-        onClick={() => navigate(firstPath)}
-        style={{
-          padding: '9px 18px', borderRadius: 7,
-          background: T.bgActive, color: 'white',
-          border: 'none', fontSize: 12, fontWeight: 700,
-          cursor: 'pointer', whiteSpace: 'nowrap',
-          minHeight: 40, touchAction: 'manipulation',
-          fontFamily: T.fontSans,
-        }}
-      >
-        계속하기 →
-      </button>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flexShrink: 0 }}>
+        <button
+          onClick={() => navigate(firstPath)}
+          style={{
+            padding: '7px 14px', borderRadius: 7,
+            background: T.bgActive, color: 'white',
+            border: 'none', fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            minHeight: 34, touchAction: 'manipulation',
+            fontFamily: T.fontSans,
+          }}
+        >
+          계속하기 →
+        </button>
+        <button
+          onClick={() => {
+            const id = save()
+            if (id) navigate(firstPath)
+          }}
+          style={{
+            padding: '7px 14px', borderRadius: 7,
+            background: 'white', color: T.bgActive,
+            border: `1.5px solid ${T.bgActive}`,
+            fontSize: 11, fontWeight: 700,
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            minHeight: 32, touchAction: 'manipulation',
+            fontFamily: T.fontSans,
+          }}
+        >
+          프로젝트로 저장
+        </button>
+      </div>
 
       {/* 세션 삭제 버튼 */}
       <button
@@ -365,13 +384,13 @@ export default function Home() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".json,.steppipe.json"
+          accept=".json,.steppipe.json,.piper.json"
           style={{ display: 'none' }}
           onChange={handleImport}
         />
 
         <span style={{ marginLeft: 'auto', fontSize: 10, color: T.textDisabled, fontFamily: T.fontSans }}>
-          .steppipe.json
+          .piper.json
         </span>
       </div>
 

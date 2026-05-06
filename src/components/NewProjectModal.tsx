@@ -56,7 +56,7 @@ export default function NewProjectModal() {
           새 평가 시작
         </div>
         <div style={{ fontSize: 12, color: '#666', marginBottom: 22 }}>
-          수행할 검토 모듈을 선택하세요. 선택한 항목만 저장·불러오기 대상이 됩니다.
+          수행할 검토 모듈을 선택하세요. 선택하지 않은 모듈은 이 프로젝트에서 비활성화됩니다.
         </div>
 
         {/* Module toggles */}

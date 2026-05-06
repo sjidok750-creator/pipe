@@ -25,7 +25,7 @@ export interface Project {
 }
 
 export interface ProjectFile {
-  app: 'STEP-PIPE'
+  app: 'PIPER' | 'STEP-PIPE'
   fileVersion: 1
   exportedAt: string
   project: Project

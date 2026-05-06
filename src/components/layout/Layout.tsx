@@ -42,8 +42,18 @@ export default function Layout() {
   const activeModule = MODULE_TABS.find(t => pathname.startsWith(t.matchBase))
   const subNav = activeModule ? SUBNAV_MAP[activeModule.id] : null
 
-  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal } = useProjectStore()
+  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules } = useProjectStore()
   const hasProject = projectName.length > 0
+
+  // 비활성 모듈 탭 숨김: 홈이거나 enabledModules 미설정이면 전체 표시
+  const MODULE_ID_MAP: Record<string, string> = {
+    structural: 'structural',
+    'seismic-prelim': 'seismicPrelim',
+    'seismic-detail': 'seismicDetail',
+  }
+  const visibleTabs = pathname === '/' || enabledModules.length === 0
+    ? MODULE_TABS
+    : MODULE_TABS.filter(t => enabledModules.includes(MODULE_ID_MAP[t.id]))
 
   const savedTimeLabel = lastSavedAt
     ? new Date(lastSavedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -158,11 +168,15 @@ export default function Layout() {
                     touchAction: 'manipulation',
                   }}
                 >
-                  저장
+                  ● 저장
                 </button>
               ) : savedTimeLabel ? (
-                <span style={{ fontSize: T.fs.xs, color: T.textOnDarkMuted, fontFamily: T.fontSans }}>
+                <span style={{ fontSize: T.fs.xs, color: 'rgba(250,247,241,0.5)', fontFamily: T.fontMono }}>
                   저장됨 {savedTimeLabel}
+                </span>
+              ) : hasProject ? (
+                <span style={{ fontSize: T.fs.xs, color: 'rgba(250,247,241,0.3)', fontFamily: T.fontSans }}>
+                  임시저장본
                 </span>
               ) : null}
             </div>
@@ -173,7 +187,7 @@ export default function Layout() {
       {/* ── 모듈 탭바 ── */}
       <div className="no-print" style={{ background: T.bgHeaderDeep, borderBottom: `1px solid rgba(0,0,0,0.25)`, flexShrink: 0 }}>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px', display: 'flex' }}>
-          {MODULE_TABS.map(tab => {
+          {visibleTabs.map(tab => {
             const isActive = pathname !== '/' && pathname.startsWith(tab.matchBase)
             return (
               <Link
