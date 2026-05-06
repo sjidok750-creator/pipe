@@ -95,31 +95,9 @@ export default function InputPage() {
             </EngPopover>
           </EngRow>
           {inputs.pipeType === 'steel' && (
-            <EngRow label="강종 (fy)" popover={
-              <EngPopover>
-                <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
-                <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
-                  상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
-                  fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
-                </div>
-                <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>주요 강종 (KS D 3565)</strong><br/>
-                  SGP (KS D 3507): fy = 245 MPa — 일반 배관용<br/>
-                  SPS400 (KS D 3565): fy = 235 MPa — 상수도용 표준<br/>
-                  SPS490 (KS D 3565): fy = 315 MPa — 고강도 대구경용<br/>
-                  STPG38 (KS D 3562): fy = 215 MPa — 압력배관용
-                </div>
-                <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                  <strong>직접입력</strong><br/>
-                  제조사 밀시트(Mill Sheet) 또는 강도시험 결과값이 있는 경우 사용.<br/>
-                  KDS에서는 공인 시험값 사용 가능.
-                </div>
-              </EngPopover>
-            }>
-              {/* 강종 버튼 그룹 */}
-              <div style={{ display: 'flex', gap: 4, flex: 1 }}>
+            <EngRow label="강종 (fy)">
+              {/* 강종 버튼 그룹 + 설명 버튼 (같은 라인) */}
+              <div style={{ display: 'flex', gap: 4, flex: 1, alignItems: 'center' }}>
                 {STEEL_GRADES.map((g: any) => {
                   const active = inputs.steelGrade === g.key
                   return (
@@ -136,6 +114,27 @@ export default function InputPage() {
                     </button>
                   )
                 })}
+                <EngPopover>
+                  <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
+                  <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
+                    상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
+                    fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
+                  </div>
+                  <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
+                    <strong>주요 강종 (KS D 3565)</strong><br/>
+                    SGP (KS D 3507): fy = 245 MPa — 일반 배관용<br/>
+                    SPS400 (KS D 3565): fy = 235 MPa — 상수도용 표준<br/>
+                    SPS490 (KS D 3565): fy = 315 MPa — 고강도 대구경용<br/>
+                    STPG38 (KS D 3562): fy = 215 MPa — 압력배관용
+                  </div>
+                  <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
+                    <strong>직접입력</strong><br/>
+                    제조사 밀시트(Mill Sheet) 또는 강도시험 결과값이 있는 경우 사용.<br/>
+                    KDS에서는 공인 시험값 사용 가능.
+                  </div>
+                </EngPopover>
               </div>
               {/* 설명 줄 + 직접입력 토글 */}
               {(() => {

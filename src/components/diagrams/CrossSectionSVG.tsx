@@ -57,8 +57,8 @@ export default function CrossSectionSVG({
           <line x1="0" y1="4" x2="8" y2="4" stroke="#333" strokeWidth="0.5"/>
         </pattern>
         {/* 화살표 마커 */}
-        <marker id="arrowDown" markerWidth="6" markerHeight="6" refX="3" refY="6" orient="auto">
-          <path d="M0,0 L3,6 L6,0" fill="#e67e22"/>
+        <marker id="arrowDown" markerWidth="6" markerHeight="6" refX="3" refY="0" orient="auto">
+          <polygon points="0,0 6,0 3,6" fill="#e67e22"/>
         </marker>
         <marker id="arrowDimEnd" markerWidth="6" markerHeight="6" refX="0" refY="3" orient="auto">
           <path d="M0,3 L6,0 L6,6 Z" fill="#003366"/>
