@@ -55,6 +55,74 @@ function ModuleBadge({ id }: { id: string }) {
   )
 }
 
+// ── 인라인 이름 편집 ──────────────────────────────────────────
+function InlineEdit({ value, onSave, style }: {
+  value: string
+  onSave: (v: string) => void
+  style?: React.CSSProperties
+}) {
+  const [editing, setEditing] = React.useState(false)
+  const [draft, setDraft] = React.useState(value)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  const start = () => { setDraft(value); setEditing(true) }
+  const commit = () => {
+    setEditing(false)
+    if (draft.trim() && draft.trim() !== value) onSave(draft.trim())
+  }
+  const cancel = () => { setEditing(false); setDraft(value) }
+
+  React.useEffect(() => {
+    if (editing) { inputRef.current?.select() }
+  }, [editing])
+
+  if (editing) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={e => setDraft(e.target.value)}
+        onBlur={commit}
+        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel() }}
+        style={{
+          ...style,
+          background: 'transparent',
+          border: 'none',
+          borderBottom: '1.5px solid #CC6B3D',
+          outline: 'none',
+          padding: '0 2px',
+          margin: '0 -2px',
+          borderRadius: 0,
+          fontFamily: T.fontSans,
+          minWidth: 60,
+          width: Math.max(draft.length * 9, 80) + 'px',
+        }}
+        autoFocus
+      />
+    )
+  }
+
+  return (
+    <span
+      onDoubleClick={start}
+      title="더블클릭하여 이름 변경"
+      style={{
+        ...style,
+        cursor: 'text',
+        borderBottom: '1.5px solid transparent',
+        padding: '0 2px',
+        margin: '0 -2px',
+        borderRadius: 2,
+        transition: 'border-color 150ms',
+      }}
+      onMouseEnter={e => (e.currentTarget.style.borderBottomColor = '#E0DDD7')}
+      onMouseLeave={e => (e.currentTarget.style.borderBottomColor = 'transparent')}
+    >
+      {value}
+    </span>
+  )
+}
+
 // ── 프로젝트 열기 모달 ───────────────────────────────────────
 function OpenProjectModal({ onClose }: { onClose: () => void }) {
   const { projects, openProject } = useProjectStore()
@@ -151,12 +219,13 @@ function OpenProjectModal({ onClose }: { onClose: () => void }) {
 }
 
 // ── 시설물 행 ────────────────────────────────────────────────
-function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete, isFirst }: {
+function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete, onRename, isFirst }: {
   facility: Facility
   enabledModules: string[]
   onOpen: () => void
   onSave: () => void
   onDelete: () => void
+  onRename: (name: string) => void
   isFirst: boolean
 }) {
   const date = new Date(facility.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -168,8 +237,12 @@ function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete, isFir
     }}>
       {/* 시설물 이름 + 메타 */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, marginBottom: 5, fontFamily: T.fontSans }}>
-          {facility.name}
+        <div style={{ marginBottom: 5 }}>
+          <InlineEdit
+            value={facility.name}
+            onSave={onRename}
+            style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, fontFamily: T.fontSans }}
+          />
         </div>
         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
           {enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
@@ -223,7 +296,7 @@ function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete, isFir
 // ── 열린 프로젝트 카드 ───────────────────────────────────────
 function ProjectCard({ meta }: { meta: ProjectMeta }) {
   const navigate = useNavigate()
-  const { open, closeProject, addFacility, deleteFacility, saveFacilityToFile, projectId: activeProjectId } = useProjectStore()
+  const { open, closeProject, addFacility, deleteFacility, saveFacilityToFile, renameProject, renameFacility, projectId: activeProjectId } = useProjectStore()
   const [showAdd, setShowAdd] = useState(false)
   const [addingName, setAddingName] = useState('')
 
@@ -274,10 +347,13 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
           }} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{
-            fontSize: 14, fontWeight: 700, color: T.textPrimary,
-            marginBottom: 5, fontFamily: T.fontSans, lineHeight: 1.2,
-          }}>{meta.name}</div>
+          <div style={{ marginBottom: 5 }}>
+            <InlineEdit
+              value={meta.name}
+              onSave={name => renameProject(meta.id, name)}
+              style={{ fontSize: 14, fontWeight: 700, color: T.textPrimary, fontFamily: T.fontSans, lineHeight: 1.2 }}
+            />
+          </div>
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {meta.enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
             <span style={{
@@ -312,6 +388,7 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
             isFirst={i === 0}
             onOpen={() => handleOpenFacility(f.id)}
             onSave={() => handleSaveFacility(f.id)}
+            onRename={name => renameFacility(meta.id, f.id, name)}
             onDelete={() => {
               if (window.confirm(`"${f.name}" 시설물을 삭제하시겠습니까?`))
                 deleteFacility(meta.id, f.id)

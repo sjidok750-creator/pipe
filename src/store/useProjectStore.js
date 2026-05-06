@@ -493,6 +493,33 @@ export const useProjectStore = create((set, get) => ({
 
   setProjectName: (name) => set({ projectName: name, isDirty: true }),
 
+  renameProject: (projectId, newName) => {
+    const trimmed = newName.trim()
+    if (!trimmed) return
+    const project = projectRepo.get(projectId)
+    if (!project) return
+    project.meta.name = trimmed
+    project.meta.updatedAt = new Date().toISOString()
+    projectRepo.save(project)
+    set({ projects: sortedProjects() })
+    if (get().projectId === projectId) set({ projectName: trimmed })
+  },
+
+  renameFacility: (projectId, facilityId, newName) => {
+    const trimmed = newName.trim()
+    if (!trimmed) return
+    const project = projectRepo.get(projectId)
+    if (!project) return
+    const fi = project.facilities.findIndex(f => f.id === facilityId)
+    if (fi < 0) return
+    project.facilities[fi].name = trimmed
+    project.facilities[fi].updatedAt = new Date().toISOString()
+    project.meta.updatedAt = new Date().toISOString()
+    projectRepo.save(project)
+    set({ projects: sortedProjects() })
+    if (get().activeFacilityId === facilityId) set({ activeFacilityName: trimmed })
+  },
+
   markDirty: () => set({ isDirty: true }),
 
   // ── 시설물 삭제 ──────────────────────────────────────────────
