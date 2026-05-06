@@ -229,7 +229,7 @@ function FacilityRow({
 // ── 프로젝트 카드 (펼침/접힘) ────────────────────────────────
 function ProjectCard({ meta }: { meta: ProjectMeta }) {
   const navigate = useNavigate()
-  const { open, deleteProject, exportJSON, addFacility, saveProjectToFolder } = useProjectStore()
+  const { open, deleteProject, addFacility } = useProjectStore()
   const [expanded, setExpanded] = useState(true)
   const [addingName, setAddingName] = useState('')
   const [showAdd, setShowAdd] = useState(false)
@@ -290,16 +290,6 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
 
         {/* 프로젝트 액션 */}
         <div style={{ display: 'flex', gap: 5, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-          <button
-            onClick={() => saveProjectToFolder()}
-            title="프로젝트 전체 저장 (폴더)"
-            style={{
-              padding: '5px 10px', borderRadius: 6,
-              border: `1px solid ${T.borderLight}`, background: 'none',
-              fontSize: 11, color: T.textMuted, cursor: 'pointer',
-              minHeight: 30, touchAction: 'manipulation', fontFamily: T.fontSans,
-            }}
-          >📁 프로젝트 저장</button>
           <button
             onClick={() => { if (window.confirm(`"${meta.name}" 프로젝트를 삭제하시겠습니까?`)) deleteProject(meta.id) }}
             style={{
@@ -474,8 +464,6 @@ export default function Home() {
         <span style={{ marginLeft: 'auto', fontSize: 10, color: T.textDisabled, fontFamily: T.fontSans }}>.piper.json</span>
       </div>
 
-      {/* 임시 작업본 */}
-      <SessionCard />
 
       {/* 저장된 프로젝트 */}
       {projects.length > 0 && (
