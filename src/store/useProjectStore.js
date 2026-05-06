@@ -96,9 +96,22 @@ function snapshotModules(enabledModules) {
 
 // ── 스토어 ────────────────────────────────────────────────────
 
+// 최근 updatedAt 순 정렬
+function sortedProjects() {
+  return projectRepo.list().sort((a, b) =>
+    new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  )
+}
+
+// openedProjectIds persist
+const OPENED_KEY = 'openedProjectIds'
+
 export const useProjectStore = create((set, get) => ({
-  // 프로젝트 목록 (인덱스)
-  projects: projectRepo.list(),
+  // 프로젝트 목록 (인덱스, 최근순)
+  projects: sortedProjects(),
+
+  // 홈에 펼쳐진 프로젝트 ID 목록 (순서 유지)
+  openedProjectIds: storage.get(OPENED_KEY) ?? [],
 
   // 활성 프로젝트
   projectId: _session?.projectId ?? null,
@@ -114,9 +127,25 @@ export const useProjectStore = create((set, get) => ({
   lastSavedAt: _session?.savedAt ?? null,
   isNewModalOpen: false,
 
+  // ── opened 프로젝트 관리 ──────────────────────────────────────
+
+  openProject: (id) => {
+    const { openedProjectIds } = get()
+    if (openedProjectIds.includes(id)) return
+    const next = [...openedProjectIds, id]
+    storage.set(OPENED_KEY, next)
+    set({ openedProjectIds: next })
+  },
+
+  closeProject: (id) => {
+    const next = get().openedProjectIds.filter(pid => pid !== id)
+    storage.set(OPENED_KEY, next)
+    set({ openedProjectIds: next })
+  },
+
   // ── Library ─────────────────────────────────────────────────
 
-  refreshLibrary: () => set({ projects: projectRepo.list() }),
+  refreshLibrary: () => set({ projects: sortedProjects() }),
 
   openNewModal: () => set({ isNewModalOpen: true }),
   closeNewModal: () => set({ isNewModalOpen: false }),
@@ -144,12 +173,15 @@ export const useProjectStore = create((set, get) => ({
     storage.remove(SESSION_KEY)
 
     const facilityId = crypto.randomUUID()
+    // 새 평가 시작 시 열린 프로젝트 목록 초기화
+    storage.set(OPENED_KEY, [])
     set({
       projectId: null,
       projectName: projectName || '',
       enabledModules: modules,
       activeFacilityId: facilityId,
       activeFacilityName: facilityName || '시설물 001',
+      openedProjectIds: [],
       isDirty: false,
       lastSavedAt: null,
       isNewModalOpen: false,
@@ -168,12 +200,18 @@ export const useProjectStore = create((set, get) => ({
 
     loadFacilityToStores(facility, project.meta.enabledModules)
 
+    // 열린 프로젝트 목록에 추가
+    const opened = get().openedProjectIds
+    const nextOpened = opened.includes(id) ? opened : [...opened, id]
+    storage.set(OPENED_KEY, nextOpened)
+
     set({
       projectId: id,
       projectName: project.meta.name,
       enabledModules: project.meta.enabledModules,
       activeFacilityId: facility.id,
       activeFacilityName: facility.name,
+      openedProjectIds: nextOpened,
       isDirty: false,
       lastSavedAt: facility.updatedAt,
     })
@@ -239,7 +277,7 @@ export const useProjectStore = create((set, get) => ({
       activeFacilityName: name,
       isDirty: false,
       lastSavedAt: null,
-      projects: projectRepo.list(),
+      projects: sortedProjects(),
     })
 
     return facilityId
@@ -301,7 +339,7 @@ export const useProjectStore = create((set, get) => ({
       projectName: project.meta.name,
       isDirty: false,
       lastSavedAt: now,
-      projects: projectRepo.list(),
+      projects: sortedProjects(),
     })
 
     // 파일 핸들 있으면 자동으로 파일에도 저장
@@ -461,7 +499,9 @@ export const useProjectStore = create((set, get) => ({
       } catch { /* ignore */ }
     }
     projectRepo.delete(id)
-    set({ projects: projectRepo.list() })
+    const next = get().openedProjectIds.filter(pid => pid !== id)
+    storage.set(OPENED_KEY, next)
+    set({ projects: sortedProjects(), openedProjectIds: next })
   },
 
   // ── 파일에서 불러오기 ────────────────────────────────────────

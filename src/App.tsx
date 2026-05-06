@@ -20,6 +20,7 @@ import SeismicDetailInputPage      from './pages/seismic-detail/InputPage'
 import SeismicDetailResultPage     from './pages/seismic-detail/ResultPage'
 import SeismicDetailReportPage     from './pages/seismic-detail/ReportPage'
 import SeismicDetailReferencePage  from './pages/seismic-detail/ReferencePage'
+import AdminPage from './pages/AdminPage'
 
 export default function App() {
   return (
@@ -85,6 +86,7 @@ export default function App() {
         <Route path="seismic-prelim-old" element={<Navigate to="/seismic-prelim/overview" replace />} />
         <Route path="seismic-detail-old" element={<Navigate to="/seismic-detail/overview" replace />} />
 
+        <Route path="admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
