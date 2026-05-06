@@ -62,61 +62,78 @@ function InlineEdit({ value, onSave, style }: {
   style?: React.CSSProperties
 }) {
   const [editing, setEditing] = React.useState(false)
-  const [draft, setDraft] = React.useState(value)
-  const inputRef = React.useRef<HTMLInputElement>(null)
+  const [draft, setDraft] = React.useState('')
+  const [hovered, setHovered] = React.useState(false)
+  // Escape 취소 후 onBlur가 다시 저장하는 것을 막는 ref
+  const skipSaveRef = React.useRef(false)
 
-  const start = () => { setDraft(value); setEditing(true) }
-  const commit = () => {
-    setEditing(false)
-    if (draft.trim() && draft.trim() !== value) onSave(draft.trim())
+  function startEdit(e: React.MouseEvent) {
+    e.stopPropagation()
+    skipSaveRef.current = false
+    setDraft(value)
+    setEditing(true)
   }
-  const cancel = () => { setEditing(false); setDraft(value) }
 
-  React.useEffect(() => {
-    if (editing) { inputRef.current?.select() }
-  }, [editing])
+  function handleSave() {
+    if (skipSaveRef.current) return
+    setEditing(false)
+    const trimmed = draft.trim()
+    if (trimmed && trimmed !== value) onSave(trimmed)
+  }
+
+  function handleCancel() {
+    skipSaveRef.current = true
+    setEditing(false)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') { e.preventDefault(); handleSave() }
+    if (e.key === 'Escape') { e.preventDefault(); handleCancel() }
+  }
 
   if (editing) {
     return (
       <input
-        ref={inputRef}
+        autoFocus
         value={draft}
         onChange={e => setDraft(e.target.value)}
-        onBlur={commit}
-        onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel() }}
+        onBlur={handleSave}
+        onKeyDown={handleKeyDown}
+        onClick={e => e.stopPropagation()}
         style={{
           ...style,
-          background: 'transparent',
+          display: 'block',
+          width: '100%',
+          boxSizing: 'border-box',
+          background: 'rgba(204,107,61,0.06)',
           border: 'none',
-          borderBottom: '1.5px solid #CC6B3D',
+          borderBottom: '2px solid #CC6B3D',
+          borderRadius: '3px 3px 0 0',
           outline: 'none',
-          padding: '0 2px',
-          margin: '0 -2px',
-          borderRadius: 0,
-          fontFamily: T.fontSans,
-          minWidth: 60,
-          width: Math.max(draft.length * 9, 80) + 'px',
+          padding: '1px 4px',
+          margin: '-1px -4px',
+          lineHeight: 'inherit',
         }}
-        autoFocus
       />
     )
   }
 
   return (
     <span
-      onDoubleClick={start}
-      title="더블클릭하여 이름 변경"
+      onDoubleClick={startEdit}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title="더블클릭으로 이름 변경"
       style={{
         ...style,
         cursor: 'text',
-        borderBottom: '1.5px solid transparent',
-        padding: '0 2px',
-        margin: '0 -2px',
-        borderRadius: 2,
-        transition: 'border-color 150ms',
+        borderRadius: 3,
+        padding: '1px 4px',
+        margin: '-1px -4px',
+        background: hovered ? 'rgba(204,107,61,0.07)' : 'transparent',
+        transition: 'background 120ms',
+        display: 'inline-block',
       }}
-      onMouseEnter={e => (e.currentTarget.style.borderBottomColor = '#E0DDD7')}
-      onMouseLeave={e => (e.currentTarget.style.borderBottomColor = 'transparent')}
     >
       {value}
     </span>
