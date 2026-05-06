@@ -110,11 +110,7 @@ export default function SplashScreen({ onContinue }: Props) {
           </div>
           <div style={{ marginTop: 9, fontSize: 9, color: 'rgb(31,27,23)', opacity: 0.38, lineHeight: 1.7, letterSpacing: 0.15 }}>
             Results are for reference only. The user assumes<br />
-            full responsibility for all engineering decisions.<br />
-            <span style={{ opacity: 0.8 }}>
-              본 결과는 참고용이며, 모든 공학적 판단 및<br />
-              그 결과에 대한 법적 책임은 사용자에게 있습니다.
-            </span>
+            full responsibility for all engineering decisions.
           </div>
         </div>
       </div>
