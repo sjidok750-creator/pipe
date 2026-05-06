@@ -230,7 +230,8 @@ function FacilityRow({
 function ProjectCard({ meta }: { meta: ProjectMeta }) {
   const navigate = useNavigate()
   const { open, deleteProject, addFacility } = useProjectStore()
-  const [expanded, setExpanded] = useState(true)
+  const { projectId: activeProjectId } = useProjectStore()
+  const [expanded, setExpanded] = useState(meta.id === activeProjectId)
   const [addingName, setAddingName] = useState('')
   const [showAdd, setShowAdd] = useState(false)
 
