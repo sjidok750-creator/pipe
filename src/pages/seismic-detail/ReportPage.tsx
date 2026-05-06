@@ -5,7 +5,7 @@ import { SEISMIC_ZONE, SEISMIC_GRADE, calcKvFromN, getLayerAtDepth } from '../..
 import {
   Frac, Sub, Sup, Sqrt, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
 } from '../../components/report/MathElements'
-import WIcon from '../../components/WIcon'
+// WIcon → PiperIcon (인라인)
 
 // ── 스타일 상수 ─────────────────────────────────────────────────
 const WARM_DARK = '#2C2118'
@@ -175,7 +175,14 @@ export default function SeismicDetailReportPage() {
         {/* ── 표지 헤더 ── */}
         <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${CORAL}`, paddingBottom: 10, marginBottom: 12 }}>
           {/* W 아이콘 */}
-          <WIcon size={54} id="rpt-detail" radius={10} />
+          <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
+          </svg>
 
           {/* 제목부 */}
           <div style={{ flex: 1 }}>
@@ -194,8 +201,8 @@ export default function SeismicDetailReportPage() {
 
           {/* 우측 메타 */}
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: CORAL, letterSpacing: 1, marginBottom: 5 }}>
-              STEP-PIPE
+            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 10, color: CORAL, letterSpacing: 1, marginBottom: 5, fontWeight: 600 }}>
+              PIPER
             </div>
             <div style={{ fontSize: 9, color: '#999', fontFamily: F_MONO }}>작성일</div>
             <div style={{ fontSize: 9.5, color: '#555', fontFamily: F_MONO, fontWeight: 600 }}>{today}</div>

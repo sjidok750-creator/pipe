@@ -93,19 +93,17 @@ export default function ReportPreview({ result, inputs }: Props) {
       fontFamily: "'Noto Sans KR', sans-serif",
       background: 'white', color: '#1a1a2e'
     }}>
-      {/* ── 표지 (PIPER 스타일) ── */}
+      {/* ── 표지 — 원본 디자인 토큰 기반 ── */}
       <div style={{
-        background: '#f5f0e8',
-        minHeight: 360,
-        padding: '44px 50px 40px',
+        background: '#FAF7F1',   /* --paper */
+        minHeight: 400,
+        padding: '44px 50px 36px',
         display: 'flex', flexDirection: 'column',
         justifyContent: 'space-between',
-        position: 'relative',
-        borderBottom: '1px solid #d8d0c0',
+        borderBottom: '1px solid #D8CFBE',  /* --rule-soft */
       }}>
-        {/* 상단 행: 아이콘 + 우상단 메타 */}
+        {/* 상단: 아이콘 + 우상단 메타 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          {/* PIPER 아이콘 소형 — 원본 SVG */}
           <svg width="44" height="44" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
             <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
             <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
@@ -114,45 +112,80 @@ export default function ReportPreview({ result, inputs }: Props) {
               fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
             <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
           </svg>
-          {/* 우상단 메타 */}
-          <div style={{ textAlign: 'right', fontSize: 10, color: '#888', fontFamily: 'sans-serif', lineHeight: 1.8, letterSpacing: 1 }}>
-            <div style={{ fontWeight: 700, color: '#555' }}>REPORT — {new Date().getFullYear()}</div>
+          <div style={{
+            textAlign: 'right',
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            color: '#B8AE9D',   /* --rule */
+            lineHeight: 1.8,
+            letterSpacing: 0.5,
+          }}>
+            <div>REPORT — {new Date().getFullYear()}</div>
             <div>PIPER v1.0</div>
           </div>
         </div>
 
         {/* 중앙 본문 */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '32px 0 24px' }}>
-          <div style={{ fontSize: 10, color: '#888', letterSpacing: 3, fontFamily: 'sans-serif', marginBottom: 14, textTransform: 'uppercase' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '36px 0 28px' }}>
+          {/* STRUCTURAL SAFETY REPORT — JetBrains Mono, 넓은 자간 */}
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            fontWeight: 500,
+            color: '#B8AE9D',   /* --rule */
+            letterSpacing: 3,
+            textTransform: 'uppercase',
+            marginBottom: 20,
+          }}>
             Structural Safety Report
           </div>
+          {/* 대제목 — Fraunces 22px/600 */}
           <div style={{
-            fontSize: 34, fontWeight: 900,
-            color: '#1a1a1a', lineHeight: 1.25,
-            fontFamily: "'Noto Sans KR', sans-serif",
-            marginBottom: 20,
+            fontFamily: 'Fraunces, serif',
+            fontSize: 40,
+            fontWeight: 600,
+            color: '#1F1B17',   /* --ink */
+            lineHeight: 1.15,
+            letterSpacing: '-0.5px',
+            marginBottom: 24,
           }}>
             상수도관로<br />구조안전성<br />검토 보고서
           </div>
-          {/* 프로젝트 정보 */}
-          <div style={{ fontSize: 11, color: '#555', fontFamily: 'sans-serif', lineHeight: 2 }}>
-            <div>관종: <strong style={{ color: '#1a1a1a' }}>{pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}</strong></div>
+          {/* 프로젝트 정보 — Inter */}
+          <div style={{
+            fontFamily: 'Inter, sans-serif',
+            fontSize: 11,
+            color: '#3D3833',   /* --slate */
+            lineHeight: 1.9,
+          }}>
+            <div>{pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}</div>
             <div>DN {DN} · Pd = {inputs.Pd} MPa · H = {inputs.H} m · t = {tAdopt} mm</div>
-            <div style={{ marginTop: 4 }}>
-              종합판정: <strong style={{ color: verdict.overallOK ? '#2d8659' : '#b8392f', fontSize: 13 }}>
-                {verdict.overallOK ? '✓ O.K.' : '✗ N.G.'}
-              </strong>
-            </div>
           </div>
         </div>
 
-        {/* 하단 구분선 + 하단 텍스트 */}
-        <div style={{ borderTop: '1px solid #c8bfb0', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div style={{ fontSize: 9, color: '#999', letterSpacing: 1.5, fontFamily: 'sans-serif', textTransform: 'uppercase' }}>
-            Pipeline Inspection &amp; Perf. Eval. Reviewer
+        {/* 하단 구분선 */}
+        <div style={{
+          borderTop: '1px solid #D8CFBE',
+          paddingTop: 14,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 8,
+            color: '#B8AE9D',
+            letterSpacing: 1.5,
+            textTransform: 'uppercase',
+          }}>
+            Pipeline Inspection &amp; &nbsp; Perf. Eval. Reviewer
           </div>
-          <div style={{ fontSize: 9, color: '#999', fontFamily: 'sans-serif' }}>
-            작성일: {today}
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 8,
+            color: '#B8AE9D',
+          }}>
+            {today}
           </div>
         </div>
       </div>
@@ -363,13 +396,13 @@ export default function ReportPreview({ result, inputs }: Props) {
           background: '#fff8e8', borderLeft: '4px solid #f0a500',
           fontSize: 9, color: '#666'
         }}>
-          <strong>주의:</strong> 본 보고서는 PipeCheck KDS 앱을 이용하여 자동 계산한 결과입니다.
+          <strong>주의:</strong> 본 보고서는 PIPER 앱을 이용하여 자동 계산한 결과입니다.
           설계 최종 결정은 자격을 갖춘 전문 기술사의 검토 및 확인을 통해 이루어져야 합니다.
           적용 기준: KDS 57 00 00 : 2022 / KS D 3565 / KS D 4311 / AWWA M11 / DIPRA.
         </div>
 
         <div style={{ textAlign: 'center', color: '#aaa', fontSize: 8, marginTop: 16, paddingBottom: 20 }}>
-          PipeCheck KDS — Generated {today}
+          PIPER — Generated {today}
         </div>
       </div>
     </div>

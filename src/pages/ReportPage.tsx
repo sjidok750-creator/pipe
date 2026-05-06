@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { T } from '../components/eng/tokens'
 import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../components/report/MathElements'
-import WIcon from '../components/WIcon'
+// WIcon → PiperIcon (인라인)
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
@@ -91,7 +91,14 @@ export default function ReportPage() {
 
         {/* ── 표지 헤더 ── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
-          <WIcon size={54} id="rpt-struct" radius={10} />
+          <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
+          </svg>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
               KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
@@ -104,8 +111,8 @@ export default function ReportPage() {
             </div>
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: T.bgActive, letterSpacing: 1, marginBottom: 5 }}>
-              STEP-PIPE
+            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 10, color: T.bgActive, letterSpacing: 1, marginBottom: 5, fontWeight: 600 }}>
+              PIPER
             </div>
             <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
             <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>

@@ -5,7 +5,7 @@ import { useStore } from '../store/useStore.js'
 import { useSeismicStore } from '../store/useSeismicStore.js'
 import { getSession } from '../lib/startup.js'
 import { T } from '../components/eng/tokens'
-import WIcon from '../components/WIcon'
+// WIcon 제거 — PIPER 아이콘으로 대체
 import type { ProjectMeta } from '../lib/projectRepo.js'
 
 const MODULE_LABEL: Record<string, string> = {
@@ -24,7 +24,20 @@ const MODULE_PATH: Record<string, string> = {
   seismicDetail: '/seismic-detail/input',
 }
 
-// ── 앱 아이콘 — 관로 단면도 스타일 ─────────────────────────────
+// ── PIPER 아이콘 (원본 SVG 추출값) ──────────────────────────────
+function PiperIcon({ size = 64 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
+      <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+      <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+      <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+        fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
+    </svg>
+  )
+}
+
 function ModuleBadge({ id }: { id: string }) {
   const c = MODULE_COLOR[id] ?? { bg: '#F5F5F5', text: '#555', border: '#DDD' }
   return (
@@ -262,13 +275,12 @@ export default function Home() {
         display: 'flex', alignItems: 'center', gap: 18,
         border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <WIcon size={64} id="home" />
+        <PiperIcon size={64} />
         <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 0, marginBottom: 5 }}>
-            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 14, color: '#FFE600', letterSpacing: 2 }}>STEP-</span>
-            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 14, color: '#44AAFF', letterSpacing: 2 }}>PIPE</span>
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 600, color: '#FAF7F1', letterSpacing: '-0.44px' }}>PIPER</span>
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontFamily: T.fontSans, marginBottom: 6 }}>
+          <div style={{ fontSize: 10, color: 'rgba(250,247,241,0.5)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6, letterSpacing: 0.3 }}>
             KDS 57 00 00 : 2022 — 매설관로 구조·내진 안전성 자동 검토
           </div>
           {/* 기준 뱃지 */}
