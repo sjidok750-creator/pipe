@@ -11,9 +11,9 @@ const MODULE_LABEL: Record<string, string> = {
   seismicDetail: '상세',
 }
 const MODULE_COLOR: Record<string, { bg: string; text: string; border: string }> = {
-  structural:    { bg: '#EEF3FF', text: '#1B3A66', border: '#ADC6E5' },
-  seismicPrelim: { bg: '#FFF7E6', text: '#7A4800', border: '#F5CC80' },
-  seismicDetail: { bg: '#F0FDF4', text: '#1A5C35', border: '#86EFAC' },
+  structural:    { bg: '#EEF3FF', text: '#1B3A66', border: '#C4D6EE' },
+  seismicPrelim: { bg: '#FFF4E0', text: '#7A4800', border: '#F5CC80' },
+  seismicDetail: { bg: '#EDFAF3', text: '#1A5C35', border: '#86EFAC' },
 }
 const MODULE_PATH: Record<string, string> = {
   structural:    '/structural/input',
@@ -38,8 +38,9 @@ function ModuleBadge({ id }: { id: string }) {
   const c = MODULE_COLOR[id] ?? { bg: '#F5F5F5', text: '#555', border: '#DDD' }
   return (
     <span style={{
-      fontSize: 11, padding: '2px 9px', borderRadius: 20, fontWeight: 600,
-      background: c.bg, color: c.text, border: `1px solid ${c.border}`, whiteSpace: 'nowrap',
+      fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 600,
+      background: c.bg, color: c.text, border: `1px solid ${c.border}`,
+      whiteSpace: 'nowrap', fontFamily: T.fontSans, letterSpacing: '0.1px',
     }}>
       {MODULE_LABEL[id] ?? id}
     </span>
@@ -63,16 +64,15 @@ function OpenProjectModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={onClose}
     >
       <div
-        style={{ background: 'white', borderRadius: 14, padding: '24px 20px', maxWidth: 480, width: '100%', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' }}
+        style={{ background: 'white', borderRadius: 16, padding: '24px 22px', maxWidth: 480, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}
         onClick={e => e.stopPropagation()}
       >
-        <div style={{ fontSize: 16, fontWeight: 700, color: T.textPrimary, marginBottom: 14 }}>프로젝트 열기</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: T.textPrimary, marginBottom: 16, fontFamily: T.fontSans }}>프로젝트 열기</div>
 
-        {/* 검색 */}
         <input
           autoFocus
           placeholder="프로젝트명 검색..."
@@ -82,14 +82,14 @@ function OpenProjectModal({ onClose }: { onClose: () => void }) {
             width: '100%', boxSizing: 'border-box',
             padding: '9px 12px', borderRadius: 8,
             border: `1.5px solid ${T.border}`, fontSize: 13,
-            fontFamily: T.fontSans, outline: 'none', marginBottom: 12,
+            fontFamily: T.fontSans, outline: 'none', marginBottom: 10,
+            color: T.textPrimary,
           }}
         />
 
-        {/* 프로젝트 목록 */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 340, overflowY: 'auto' }}>
           {filtered.length === 0 && (
-            <div style={{ fontSize: 13, color: T.textMuted, textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ fontSize: 13, color: T.textMuted, textAlign: 'center', padding: '24px 0', fontFamily: T.fontSans }}>
               검색 결과 없음
             </div>
           )}
@@ -103,37 +103,36 @@ function OpenProjectModal({ onClose }: { onClose: () => void }) {
                 onClick={() => handleSelect(p.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 12px', borderRadius: 8, textAlign: 'left',
-                  border: `1.5px solid ${T.borderLight}`, background: T.bgPanel,
+                  padding: '10px 14px', borderRadius: 10, textAlign: 'left',
+                  border: `1px solid ${T.borderLight}`, background: T.bgPanel,
                   cursor: 'pointer', width: '100%',
-                  transition: 'border-color 120ms',
                 }}
               >
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: T.textPrimary, marginBottom: 3 }}>{p.name}</div>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, marginBottom: 4, fontFamily: T.fontSans }}>{p.name}</div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
                     {p.enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
-                    <span style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontMono, alignSelf: 'center', marginLeft: 2 }}>
+                    <span style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontSans, marginLeft: 2 }}>
                       {facilityCount}개 시설물 · {date}
                     </span>
                   </div>
                 </div>
-                <span style={{ fontSize: 12, color: T.bgActive, fontWeight: 700, flexShrink: 0 }}>열기 →</span>
+                <span style={{ fontSize: 12, color: T.bgActive, fontWeight: 700, flexShrink: 0, fontFamily: T.fontSans }}>열기 →</span>
               </button>
             )
           })}
         </div>
 
         {!query && projects.length > 5 && (
-          <div style={{ fontSize: 11, color: T.textDisabled, textAlign: 'center', marginTop: 10 }}>
-            최근 5개 표시 중 · 검색으로 더 찾기
+          <div style={{ fontSize: 11, color: T.textDisabled, textAlign: 'center', marginTop: 10, fontFamily: T.fontSans }}>
+            최근 5개 표시 · 검색으로 더 찾기
           </div>
         )}
 
         <button
           onClick={onClose}
           style={{
-            marginTop: 14, width: '100%', padding: '10px 0', borderRadius: 8,
+            marginTop: 12, width: '100%', padding: '10px 0', borderRadius: 8,
             border: `1px solid ${T.borderLight}`, background: 'none',
             fontSize: 13, color: T.textMuted, cursor: 'pointer', fontFamily: T.fontSans,
           }}
@@ -144,33 +143,70 @@ function OpenProjectModal({ onClose }: { onClose: () => void }) {
 }
 
 // ── 시설물 행 ────────────────────────────────────────────────
-function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete }: {
+function FacilityRow({ facility, enabledModules, onOpen, onSave, onDelete, isFirst }: {
   facility: Facility
   enabledModules: string[]
   onOpen: () => void
   onSave: () => void
   onDelete: () => void
+  isFirst: boolean
 }) {
   const date = new Date(facility.updatedAt).toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', gap: 10,
-      padding: '8px 12px 8px 24px',
-      borderLeft: `2px solid ${T.borderLight}`, marginLeft: 12,
+      display: 'flex', alignItems: 'center', gap: 12,
+      padding: '11px 16px',
+      borderTop: isFirst ? 'none' : '1px solid #F2EFE9',
     }}>
+      {/* 시설물 이름 + 메타 */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, marginBottom: 3 }}>{facility.name}</div>
-        <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginBottom: 2 }}>
-          {enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.textPrimary, marginBottom: 5, fontFamily: T.fontSans }}>
+          {facility.name}
         </div>
-        <div style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontMono }}>
-          저장됨 {date}{facility.fileName && <span style={{ marginLeft: 6 }}>· 📄 {facility.fileName}</span>}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+          {enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
+          <span style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontSans, marginLeft: 2 }}>
+            저장됨 {date}
+          </span>
+          {facility.fileName && (
+            <span style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontSans }}>· {facility.fileName}</span>
+          )}
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 5, flexShrink: 0 }}>
-        <button onClick={onOpen} style={{ padding: '5px 12px', borderRadius: 6, background: T.bgActive, color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', minHeight: 30, fontFamily: T.fontSans }}>열기</button>
-        <button onClick={onSave} style={{ padding: '5px 10px', borderRadius: 6, border: `1px solid ${T.borderLight}`, background: 'none', fontSize: 11, color: T.textMuted, cursor: 'pointer', minHeight: 30, fontFamily: T.fontSans }}>📄 저장</button>
-        <button onClick={onDelete} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid #fcc', background: 'none', fontSize: 11, color: '#c0392b', cursor: 'pointer', minHeight: 30, fontFamily: T.fontSans }}>삭제</button>
+
+      {/* 버튼 그룹 */}
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+        <button
+          onClick={onOpen}
+          style={{
+            padding: '6px 16px', borderRadius: 7,
+            background: T.bgActive, color: 'white',
+            border: 'none', fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', fontFamily: T.fontSans,
+            letterSpacing: '0.2px', minHeight: 32,
+          }}
+        >열기</button>
+        <button
+          onClick={onSave}
+          style={{
+            padding: '5px 10px', borderRadius: 7,
+            border: `1px solid ${T.border}`, background: 'none',
+            fontSize: 11, color: T.textMuted, cursor: 'pointer',
+            fontFamily: T.fontSans, minHeight: 32, display: 'flex', alignItems: 'center', gap: 3,
+          }}
+        >
+          <svg width="11" height="12" viewBox="0 0 12 14" fill="none"><path d="M2 1h6.5L11 3.5V13H2V1z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/><path d="M4 1v3.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/><path d="M4 8h4M4 10.5h2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+          저장
+        </button>
+        <button
+          onClick={onDelete}
+          style={{
+            padding: '5px 10px', borderRadius: 7,
+            border: '1px solid #EDCAC6', background: 'none',
+            fontSize: 11, color: '#B83B2B', cursor: 'pointer',
+            fontFamily: T.fontSans, minHeight: 32,
+          }}
+        >삭제</button>
       </div>
     </div>
   )
@@ -186,6 +222,7 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
   const project = projectRepo.get(meta.id)
   const facilities = project?.facilities ?? []
   const date = new Date(meta.updatedAt).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+  const isActive = meta.id === activeProjectId
 
   const handleOpenFacility = async (facilityId: string) => {
     await open(meta.id, facilityId)
@@ -206,48 +243,65 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
     navigate(first ? MODULE_PATH[first] ?? '/' : '/structural/input')
   }
 
-  const isActive = meta.id === activeProjectId
-
   return (
     <div style={{
-      background: T.bgPanel,
-      border: `1.5px solid ${isActive ? T.bgActive : T.borderLight}`,
-      borderRadius: 10, overflow: 'hidden',
+      background: '#FFFFFF',
+      border: isActive ? `1.5px solid #CC6B3D` : `1px solid #E6E2DB`,
+      borderRadius: 12,
+      boxShadow: isActive
+        ? '0 2px 16px rgba(204,107,61,0.10), 0 1px 3px rgba(26,21,18,0.05)'
+        : '0 1px 4px rgba(26,21,18,0.06)',
+      overflow: 'hidden',
     }}>
       {/* 프로젝트 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderBottom: `1px solid ${T.borderLight}` }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '13px 16px',
+        background: isActive ? '#FEF9F6' : 'white',
+      }}>
+        {isActive && (
+          <span style={{
+            width: 7, height: 7, borderRadius: '50%',
+            background: '#CC6B3D', flexShrink: 0, display: 'inline-block',
+          }} />
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-            {isActive && <span style={{ width: 7, height: 7, borderRadius: '50%', background: T.bgActive, flexShrink: 0, display: 'inline-block' }} />}
-            <span style={{ fontSize: 14, fontWeight: 700, color: T.textPrimary }}>{meta.name}</span>
-          </div>
-          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+          <div style={{
+            fontSize: 14, fontWeight: 700, color: T.textPrimary,
+            marginBottom: 5, fontFamily: T.fontSans, lineHeight: 1.2,
+          }}>{meta.name}</div>
+          <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
             {meta.enabledModules.map(m => <ModuleBadge key={m} id={m} />)}
-            <span style={{ fontSize: 10, color: T.textDisabled, fontFamily: T.fontMono, marginLeft: 4, alignSelf: 'center' }}>
+            <span style={{
+              fontSize: 10, color: T.textDisabled,
+              fontFamily: T.fontSans, marginLeft: 2,
+            }}>
               {facilities.length}개 시설물 · {date}
             </span>
           </div>
         </div>
-        {/* 닫기 버튼 */}
         <button
           onClick={() => closeProject(meta.id)}
-          title="닫기"
           style={{
             padding: '4px 12px', borderRadius: 6,
-            border: `1px solid ${T.borderLight}`, background: 'none',
+            border: `1px solid #E6E2DB`, background: 'none',
             fontSize: 11, color: T.textMuted, cursor: 'pointer',
-            fontFamily: T.fontSans, flexShrink: 0,
+            fontFamily: T.fontSans, flexShrink: 0, minHeight: 28,
           }}
         >닫기</button>
       </div>
 
+      {/* 구분선 */}
+      <div style={{ height: 1, background: '#F0EDE7' }} />
+
       {/* 시설물 목록 */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1, padding: '6px 0' }}>
-        {facilities.map(f => (
+      <div style={{ padding: '4px 0' }}>
+        {facilities.map((f, i) => (
           <FacilityRow
             key={f.id}
             facility={f}
             enabledModules={meta.enabledModules}
+            isFirst={i === 0}
             onOpen={() => handleOpenFacility(f.id)}
             onSave={() => handleSaveFacility(f.id)}
             onDelete={() => {
@@ -258,7 +312,10 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
         ))}
 
         {/* 시설물 추가 */}
-        <div style={{ padding: '6px 12px 6px 24px', marginLeft: 12 }}>
+        <div style={{
+          padding: '8px 16px 10px',
+          borderTop: facilities.length > 0 ? '1px solid #F2EFE9' : 'none',
+        }}>
           {showAdd ? (
             <div style={{ display: 'flex', gap: 6 }}>
               <input
@@ -266,17 +323,47 @@ function ProjectCard({ meta }: { meta: ProjectMeta }) {
                 placeholder={`시설물 ${String(facilities.length + 1).padStart(3, '0')}`}
                 value={addingName}
                 onChange={e => setAddingName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') handleAddFacility(); if (e.key === 'Escape') setShowAdd(false) }}
-                style={{ flex: 1, padding: '6px 10px', borderRadius: 6, border: `1.5px solid ${T.bgActive}`, fontSize: 12, fontFamily: T.fontSans, outline: 'none' }}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleAddFacility()
+                  if (e.key === 'Escape') setShowAdd(false)
+                }}
+                style={{
+                  flex: 1, padding: '6px 10px', borderRadius: 7,
+                  border: `1.5px solid ${T.bgActive}`, fontSize: 12,
+                  fontFamily: T.fontSans, outline: 'none', color: T.textPrimary,
+                }}
               />
-              <button onClick={handleAddFacility} style={{ padding: '6px 12px', borderRadius: 6, background: T.bgActive, color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: T.fontSans }}>추가</button>
-              <button onClick={() => setShowAdd(false)} style={{ padding: '6px 10px', borderRadius: 6, border: `1px solid ${T.borderLight}`, background: 'none', fontSize: 12, color: T.textMuted, cursor: 'pointer', fontFamily: T.fontSans }}>취소</button>
+              <button
+                onClick={handleAddFacility}
+                style={{
+                  padding: '6px 14px', borderRadius: 7,
+                  background: T.bgActive, color: 'white',
+                  border: 'none', fontSize: 12, fontWeight: 700,
+                  cursor: 'pointer', fontFamily: T.fontSans,
+                }}
+              >추가</button>
+              <button
+                onClick={() => { setShowAdd(false); setAddingName('') }}
+                style={{
+                  padding: '6px 10px', borderRadius: 7,
+                  border: `1px solid ${T.border}`, background: 'none',
+                  fontSize: 12, color: T.textMuted, cursor: 'pointer',
+                  fontFamily: T.fontSans,
+                }}
+              >취소</button>
             </div>
           ) : (
             <button
               onClick={() => setShowAdd(true)}
-              style={{ padding: '5px 12px', borderRadius: 6, border: `1px dashed ${T.borderLight}`, background: 'none', fontSize: 11, color: T.textMuted, cursor: 'pointer', fontFamily: T.fontSans }}
-            >+ 시설물 추가</button>
+              style={{
+                padding: '5px 12px', borderRadius: 7,
+                border: `1px dashed #C8C3BC`, background: 'none',
+                fontSize: 11, color: T.textMuted, cursor: 'pointer',
+                fontFamily: T.fontSans, display: 'flex', alignItems: 'center', gap: 5,
+              }}
+            >
+              <span style={{ fontSize: 14, lineHeight: 1, marginTop: -1 }}>+</span> 시설물 추가
+            </button>
           )}
         </div>
       </div>
@@ -289,7 +376,6 @@ export default function Home() {
   const { projects, openedProjectIds, openNewModal } = useProjectStore()
   const [showOpenModal, setShowOpenModal] = useState(false)
 
-  // 열린 프로젝트 목록 (순서 유지)
   const openedProjects = useMemo(() =>
     openedProjectIds
       .map(id => projects.find(p => p.id === id))
@@ -298,7 +384,7 @@ export default function Home() {
   )
 
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
+    <div style={{ maxWidth: 700, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
       {/* 앱 헤더 */}
       <div style={{
@@ -328,45 +414,46 @@ export default function Home() {
 
       {/* 액션 툴바 */}
       <div style={{
-        display: 'flex', gap: 8, background: T.bgPanel,
-        border: `1px solid ${T.borderLight}`, borderRadius: 10, padding: '10px 14px',
+        display: 'flex', gap: 8, background: 'white',
+        border: `1px solid #E6E2DB`,
+        borderRadius: 12, padding: '10px 14px',
         alignItems: 'center',
+        boxShadow: '0 1px 3px rgba(26,21,18,0.05)',
       }}>
-        <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontSans, marginRight: 4 }}>평가 시작:</span>
-
         {/* 새 평가 */}
         <button
           onClick={openNewModal}
           style={{
             display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 16px', borderRadius: 7,
+            padding: '8px 18px', borderRadius: 8,
             background: T.bgActive, color: 'white',
-            border: 'none', fontSize: 12, fontWeight: 700,
-            cursor: 'pointer', minHeight: 36, fontFamily: T.fontSans, boxShadow: T.shadow1,
+            border: 'none', fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', minHeight: 38, fontFamily: T.fontSans,
+            boxShadow: '0 1px 4px rgba(204,107,61,0.25)',
+            letterSpacing: '0.1px',
           }}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="9" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><line x1="11" y1="5" x2="14" y2="5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="12.5" y1="3.5" x2="12.5" y2="6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
           새 평가
         </button>
 
-        <div style={{ width: 1, height: 24, background: T.borderLight, margin: '0 2px' }} />
+        <div style={{ width: 1, height: 22, background: '#E6E2DB', flexShrink: 0 }} />
 
         {/* 프로젝트 열기 */}
         <button
           onClick={() => setShowOpenModal(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 16px', borderRadius: 7,
-            background: T.bgPanelAlt, border: `1px solid ${T.border}`,
-            color: T.textLabel, fontSize: 12, fontWeight: 600,
-            cursor: 'pointer', minHeight: 36, fontFamily: T.fontSans,
+            padding: '8px 16px', borderRadius: 8,
+            background: 'white', border: `1px solid #E0DDD7`,
+            color: T.textLabel, fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', minHeight: 38, fontFamily: T.fontSans,
           }}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1.5 5.5C1.5 4.67 2.17 4 3 4H6.5L8 5.5H13C13.83 5.5 14.5 6.17 14.5 7V12C14.5 12.83 13.83 13.5 13 13.5H3C2.17 13.5 1.5 12.83 1.5 12V5.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
           프로젝트 열기
         </button>
 
-        {/* 관리자 모드 링크 */}
         <Link
           to="/admin"
           style={{
@@ -378,7 +465,7 @@ export default function Home() {
 
       {/* 열린 프로젝트 목록 */}
       {openedProjects.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {openedProjects.map(meta => (
             <ProjectCard key={meta.id} meta={meta} />
           ))}
@@ -387,14 +474,14 @@ export default function Home() {
 
       {openedProjects.length === 0 && (
         <div style={{
-          textAlign: 'center', padding: '32px 16px',
+          textAlign: 'center', padding: '40px 16px',
           color: T.textDisabled, fontSize: 13, fontFamily: T.fontSans,
+          lineHeight: 1.6,
         }}>
           새 평가를 시작하거나 프로젝트를 열어주세요
         </div>
       )}
 
-      {/* 프로젝트 열기 모달 */}
       {showOpenModal && <OpenProjectModal onClose={() => setShowOpenModal(false)} />}
     </div>
   )
