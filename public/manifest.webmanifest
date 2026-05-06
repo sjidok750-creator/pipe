@@ -1,0 +1,18 @@
+{
+  "name": "PIPER — Pipeline Inspection & Performance Evaluation Reviewer",
+  "short_name": "PIPER",
+  "description": "KDS 57 00 00 : 2022 매설관로 구조·내진 안전성 자동 검토",
+  "start_url": "/pipe/",
+  "scope": "/pipe/",
+  "display": "standalone",
+  "background_color": "#F4EFE6",
+  "theme_color": "#1F1B17",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/pipe/piper-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pipe/piper-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/pipe/piper-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "/pipe/piper-64.png",  "sizes": "64x64",   "type": "image/png" },
+    { "src": "/pipe/piper-32.png",  "sizes": "32x32",   "type": "image/png" }
+  ]
+}
