@@ -41,7 +41,7 @@ export default function Layout() {
   const activeModule = MODULE_TABS.find(t => pathname.startsWith(t.matchBase))
   const subNav = activeModule ? SUBNAV_MAP[activeModule.id] : null
 
-  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules, activeFacilityName, saveFacilityToFile, projectId } = useProjectStore()
+  const { projectName, isDirty, lastSavedAt, save, setProjectName, openNewModal, enabledModules, activeFacilityName, projectId } = useProjectStore()
   const hasProject = projectName.length > 0
 
   // 비활성 모듈 탭 숨김
@@ -66,7 +66,6 @@ export default function Layout() {
     ? new Date(lastSavedAt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     : null
 
-  const supportsFilePicker = typeof window !== 'undefined' && 'showSaveFilePicker' in window
   // fileName은 store에서 제거됨 — projectRepo에서 직접 읽지 않고 activeFacilityName으로 표시
 
   return (
@@ -198,27 +197,6 @@ export default function Layout() {
                 </span>
               ) : null}
 
-              {/* 파일 저장 버튼 */}
-              {supportsFilePicker && hasProject && !isDirty && savedTimeLabel && (
-                <button
-                  onClick={() => saveFacilityToFile()}
-                  style={{
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid rgba(255,255,255,0.18)',
-                    borderRadius: T.radiusSm,
-                    color: 'rgba(250,247,241,0.6)',
-                    fontSize: T.fs.xs,
-                    padding: '4px 10px',
-                    height: 28,
-                    cursor: 'pointer',
-                    fontFamily: T.fontSans,
-                    touchAction: 'manipulation',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  📄 파일 저장
-                </button>
-              )}
             </div>
           )}
         </div>
