@@ -172,18 +172,43 @@ export const useProjectStore = create((set, get) => ({
     useSeismicStore.getState().resetDetail()
     storage.remove(SESSION_KEY)
 
+    const now = new Date().toISOString()
+    const projectId = crypto.randomUUID()
     const facilityId = crypto.randomUUID()
-    // 새 평가 시작 시 열린 프로젝트 목록 초기화
-    storage.set(OPENED_KEY, [])
+    const resolvedProjectName = projectName || '새 프로젝트'
+    const resolvedFacilityName = facilityName || '시설물 001'
+
+    // 프로젝트명+시설물명 입력 즉시 projectRepo에 저장
+    projectRepo.save({
+      meta: {
+        id: projectId,
+        name: resolvedProjectName,
+        createdAt: now,
+        updatedAt: now,
+        enabledModules: modules,
+      },
+      facilities: [{
+        id: facilityId,
+        name: resolvedFacilityName,
+        createdAt: now,
+        updatedAt: now,
+        fileName: null,
+        modules: {},
+      }],
+    })
+
+    const nextOpened = [projectId]
+    storage.set(OPENED_KEY, nextOpened)
     set({
-      projectId: null,
-      projectName: projectName || '',
+      projectId,
+      projectName: resolvedProjectName,
       enabledModules: modules,
       activeFacilityId: facilityId,
-      activeFacilityName: facilityName || '시설물 001',
-      openedProjectIds: [],
+      activeFacilityName: resolvedFacilityName,
+      openedProjectIds: nextOpened,
+      projects: sortedProjects(),
       isDirty: false,
-      lastSavedAt: null,
+      lastSavedAt: now,
       isNewModalOpen: false,
     })
   },
