@@ -4,32 +4,21 @@ interface Props {
   onContinue: () => void
 }
 
+// 원본 HTML에서 추출한 정확한 SVG 요소
 function PiperIcon({ size = 90 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"
-      style={{ filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.18))' }}>
-      <rect width="100" height="100" rx="22" fill="#f5f0e8"/>
-      {/* 격자 */}
-      {[20,40,60,80].map(v => (
-        <React.Fragment key={v}>
-          <line x1="0" y1={v} x2="100" y2={v} stroke="#e0d8cc" strokeWidth="0.8"/>
-          <line x1={v} y1="0" x2={v} y2="100" stroke="#e0d8cc" strokeWidth="0.8"/>
-        </React.Fragment>
-      ))}
-      {/* 외곽 원 (점선) */}
-      <circle cx="50" cy="50" r="36" stroke="#1a1a1a" strokeWidth="2.2" strokeDasharray="3,3"/>
-      {/* 중간 원 */}
-      <circle cx="50" cy="50" r="24" stroke="#1a1a1a" strokeWidth="2"/>
-      {/* 수평선 */}
-      <line x1="10" y1="50" x2="90" y2="50" stroke="#e05a3a" strokeWidth="2.5"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.13))' }}>
+      <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+      {/* 큰 원 (실선) */}
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+      {/* 작은 원 (점선) */}
+      <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
       {/* 심박수 파형 */}
-      <polyline points="18,50 28,50 33,38 37,62 41,38 46,50 54,50 58,42 63,50 82,50"
-        stroke="#e05a3a" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
+      <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+        fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       {/* 중앙 점 */}
-      <circle cx="50" cy="50" r="3.5" fill="#1a1a1a"/>
-      {/* 상하 조준선 */}
-      <line x1="50" y1="10" x2="50" y2="22" stroke="#1a1a1a" strokeWidth="2"/>
-      <line x1="50" y1="78" x2="50" y2="90" stroke="#1a1a1a" strokeWidth="2"/>
+      <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
     </svg>
   )
 }
@@ -38,66 +27,70 @@ export default function SplashScreen({ onContinue }: Props) {
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      background: '#f0ebe0',
+      background: '#EDE6D6',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: 'Inter, sans-serif',
     }}>
-      {/* 카드 */}
       <div style={{
-        background: '#faf7f2',
+        background: '#FAF7F1',
         borderRadius: 24,
-        padding: '48px 40px 36px',
+        padding: '48px 44px 36px',
         width: 300,
         display: 'flex', flexDirection: 'column', alignItems: 'center',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07)',
+        boxShadow: '0 8px 48px rgba(31,27,23,0.12), 0 2px 8px rgba(31,27,23,0.06)',
       }}>
         {/* 아이콘 */}
-        <div style={{ marginBottom: 24 }}>
-          <PiperIcon size={90} />
+        <div style={{ marginBottom: 28 }}>
+          <PiperIcon size={92} />
         </div>
 
-        {/* PIPER */}
+        {/* PIPER — Fraunces 폰트, 원본 정확한 스타일 */}
         <div style={{
-          fontFamily: "'Georgia', 'Times New Roman', serif",
-          fontSize: 40,
-          fontWeight: 900,
-          color: '#1a1a1a',
-          letterSpacing: 6,
-          marginBottom: 8,
+          fontFamily: 'Fraunces, serif',
+          fontSize: 42,
+          fontWeight: 600,
+          color: 'rgb(31, 27, 23)',
+          letterSpacing: '-0.84px',
+          lineHeight: '44.1px',
+          marginBottom: 16,
         }}>
           PIPER
         </div>
 
-        {/* 서브타이틀 */}
+        {/* 서브타이틀 — JetBrains Mono */}
         <div style={{
-          fontSize: 9,
-          color: '#888',
-          letterSpacing: 2,
+          fontFamily: "'JetBrains Mono', monospace",
+          fontSize: 10,
+          fontWeight: 500,
+          color: 'rgb(31, 27, 23)',
+          letterSpacing: '0.28px',
+          lineHeight: 1.7,
           textAlign: 'center',
-          lineHeight: 1.8,
-          fontFamily: 'sans-serif',
-          marginBottom: 36,
+          opacity: 0.5,
           textTransform: 'uppercase',
+          marginBottom: 36,
         }}>
-          Pipeline Inspection &amp;<br />Performance Evaluation Reviewer
+          Pipeline Inspection &amp;<br />
+          Performance Evaluation<br />
+          Reviewer
         </div>
 
-        {/* 시작 버튼 */}
+        {/* 시작하기 버튼 */}
         <button
           onClick={onContinue}
           style={{
             width: '100%',
-            padding: '15px 0',
-            background: '#1a1a1a',
-            color: 'white',
+            padding: '16px 0',
+            background: 'rgb(31, 27, 23)',
+            color: 'rgb(250, 247, 241)',
             border: 'none',
             borderRadius: 12,
             fontSize: 16,
-            fontWeight: 700,
-            fontFamily: 'sans-serif',
+            fontWeight: 600,
+            fontFamily: 'Inter, sans-serif',
             cursor: 'pointer',
-            letterSpacing: 2,
+            letterSpacing: 1,
             marginBottom: 20,
-            transition: 'opacity 0.15s',
           }}
           onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
           onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -107,14 +100,20 @@ export default function SplashScreen({ onContinue }: Props) {
 
         {/* 버전 */}
         <div style={{
+          fontFamily: 'Inter, sans-serif',
           fontSize: 11,
-          color: '#bbb',
-          fontFamily: 'sans-serif',
-          letterSpacing: 1,
+          color: 'rgb(31, 27, 23)',
+          opacity: 0.35,
+          letterSpacing: 0.5,
         }}>
           v1.0 · 한국수자원공사
         </div>
       </div>
+
+      {/* Fraunces 폰트 로드 */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+      `}</style>
     </div>
   )
 }

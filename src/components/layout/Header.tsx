@@ -13,26 +13,17 @@ const NAV_ITEMS = [
   { to: '/reference', label: '기준자료' },
 ]
 
-// PIPER 아이콘 (인라인 SVG — 조준경+심박수)
+// 원본 HTML에서 추출한 정확한 SVG 요소
 function PiperIcon({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* 배경 */}
-      <rect width="100" height="100" rx="20" fill="#f5f0e8"/>
-      {/* 외곽 원 (점선) */}
-      <circle cx="50" cy="50" r="36" stroke="#1a1a1a" strokeWidth="2.2" strokeDasharray="3,3"/>
-      {/* 중간 원 */}
-      <circle cx="50" cy="50" r="24" stroke="#1a1a1a" strokeWidth="2"/>
-      {/* 수평선 */}
-      <line x1="10" y1="50" x2="90" y2="50" stroke="#e05a3a" strokeWidth="2.5"/>
-      {/* 심박수 파형 */}
-      <polyline points="18,50 28,50 33,38 37,62 41,38 46,50 54,50 58,42 63,50 82,50"
-        stroke="#e05a3a" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
-      {/* 중앙 점 */}
-      <circle cx="50" cy="50" r="3.5" fill="#1a1a1a"/>
-      {/* 상하 조준선 */}
-      <line x1="50" y1="10" x2="50" y2="22" stroke="#1a1a1a" strokeWidth="2"/>
-      <line x1="50" y1="78" x2="50" y2="90" stroke="#1a1a1a" strokeWidth="2"/>
+    <svg width={size} height={size} viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"
+      style={{ display: 'block', flexShrink: 0 }}>
+      <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+      <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+      <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+        fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
     </svg>
   )
 }
@@ -41,7 +32,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const { pathname } = useLocation()
 
   return (
-    <header style={{ background: '#1a1a1a' }} className="text-white shadow-lg">
+    <header style={{ background: '#1F1B17' }} className="text-white shadow-lg">
       <div className="max-w-screen-xl mx-auto px-4 h-14 flex items-center gap-4">
         {/* 모바일 햄버거 */}
         <button
@@ -58,20 +49,21 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
         {/* 로고 */}
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <PiperIcon size={32} />
-          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1 }}>
+          <PiperIcon size={30} />
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, gap: 1 }}>
             <span style={{
-              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontFamily: 'Fraunces, serif',
               fontSize: 20,
-              fontWeight: 900,
-              color: 'white',
-              letterSpacing: 3,
+              fontWeight: 600,
+              color: '#FAF7F1',
+              letterSpacing: '-0.4px',
             }}>PIPER</span>
             <span style={{
-              fontSize: 8,
-              color: 'rgba(255,255,255,0.45)',
-              letterSpacing: 1.2,
-              fontFamily: 'sans-serif',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 7.5,
+              fontWeight: 500,
+              color: 'rgba(250,247,241,0.40)',
+              letterSpacing: '0.3px',
               whiteSpace: 'nowrap',
             }}>Pipeline Inspection &amp; Performance Evaluation Reviewer</span>
           </div>
@@ -88,13 +80,15 @@ export default function Header({ onMenuClick }: HeaderProps) {
                   ? 'bg-white/20 text-white'
                   : 'text-white/70 hover:text-white hover:bg-white/10'
               }`}
+              style={{ fontFamily: 'Inter, sans-serif' }}
             >
               {label}
             </Link>
           ))}
         </nav>
 
-        <div className="ml-auto text-xs text-white/40 hidden md:block" style={{ fontFamily: 'sans-serif' }}>
+        <div className="ml-auto text-xs hidden md:block"
+          style={{ color: 'rgba(250,247,241,0.30)', fontFamily: "'JetBrains Mono', monospace" }}>
           KDS 57 00 00 : 2022
         </div>
       </div>

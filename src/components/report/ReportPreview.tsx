@@ -105,23 +105,14 @@ export default function ReportPreview({ result, inputs }: Props) {
       }}>
         {/* 상단 행: 아이콘 + 우상단 메타 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          {/* PIPER 아이콘 소형 */}
-          <svg width="44" height="44" viewBox="0 0 100 100" fill="none">
-            <rect width="100" height="100" rx="20" fill="#f0ebe0"/>
-            {[20,40,60,80].map((v: number) => (
-              <React.Fragment key={v}>
-                <line x1="0" y1={v} x2="100" y2={v} stroke="#ddd3c0" strokeWidth="1"/>
-                <line x1={v} y1="0" x2={v} y2="100" stroke="#ddd3c0" strokeWidth="1"/>
-              </React.Fragment>
-            ))}
-            <circle cx="50" cy="50" r="35" stroke="#1a1a1a" strokeWidth="2.5" strokeDasharray="3,3"/>
-            <circle cx="50" cy="50" r="23" stroke="#1a1a1a" strokeWidth="2"/>
-            <line x1="12" y1="50" x2="88" y2="50" stroke="#e05a3a" strokeWidth="2.5"/>
-            <polyline points="18,50 28,50 33,38 37,62 41,38 46,50 54,50 58,42 63,50 82,50"
-              stroke="#e05a3a" strokeWidth="2.8" strokeLinejoin="round" strokeLinecap="round"/>
-            <circle cx="50" cy="50" r="3.5" fill="#1a1a1a"/>
-            <line x1="50" y1="11" x2="50" y2="23" stroke="#1a1a1a" strokeWidth="2"/>
-            <line x1="50" y1="77" x2="50" y2="89" stroke="#1a1a1a" strokeWidth="2"/>
+          {/* PIPER 아이콘 소형 — 원본 SVG */}
+          <svg width="44" height="44" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
+            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
+            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
+              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
           </svg>
           {/* 우상단 메타 */}
           <div style={{ textAlign: 'right', fontSize: 10, color: '#888', fontFamily: 'sans-serif', lineHeight: 1.8, letterSpacing: 1 }}>
