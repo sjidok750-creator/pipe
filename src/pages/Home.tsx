@@ -275,12 +275,28 @@ export default function Home() {
         display: 'flex', alignItems: 'center', gap: 18,
         border: '1px solid rgba(255,255,255,0.07)',
       }}>
-        <PiperIcon size={64} />
+        <PiperIcon size={72} />
         <div style={{ flex: 1 }}>
-          <div style={{ marginBottom: 4 }}>
-            <span style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 600, color: '#FAF7F1', letterSpacing: '-0.44px' }}>PIPER</span>
+          <div style={{ marginBottom: 2 }}>
+            <span style={{
+              fontFamily: 'Fraunces, serif',
+              fontSize: 32,
+              fontWeight: 700,
+              color: '#FAF7F1',
+              letterSpacing: '-0.6px',
+              lineHeight: 1,
+            }}>PIPER</span>
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(250,247,241,0.5)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6, letterSpacing: 0.3 }}>
+          <div style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 9,
+            color: 'rgba(250,247,241,0.42)',
+            marginBottom: 8,
+            letterSpacing: 0.2,
+          }}>
+            Pipeline Inspection &amp; Performance Evaluation Reviewer
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(250,247,241,0.45)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6, letterSpacing: 0.2 }}>
             KDS 57 00 00 : 2022 — 매설관로 구조·내진 안전성 자동 검토
           </div>
           {/* 기준 뱃지 */}
