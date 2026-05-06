@@ -1,5 +1,5 @@
 // 공학 프로그램 스타일 공통 레이아웃 컴포넌트 — Design System v2
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { T } from './tokens'
 
@@ -600,13 +600,56 @@ export function EngPopover({ title, children, width = 360 }: {
     }
   }, [open])
 
+  // 패널이 열린 후 실제 크기를 측정해서 뷰포트 밖으로 나가지 않도록 재조정
+  useLayoutEffect(() => {
+    if (!open || !panelRef.current) return
+    const panel = panelRef.current
+    const pr = panel.getBoundingClientRect()
+    let { top, left, openUp } = pos
+    const margin = 8
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+
+    // 수평: 오른쪽 경계
+    if (left + pr.width > vw - margin) left = vw - pr.width - margin
+    // 수평: 왼쪽 경계
+    if (left < margin) left = margin
+
+    // 수직: 아래 방향일 때 하단 잘림
+    if (!openUp && top + pr.height > vh - margin) {
+      // 위로 올릴 수 있으면 올림
+      if (btnRef.current) {
+        const br = btnRef.current.getBoundingClientRect()
+        const topIfUp = br.top - 6 - pr.height
+        if (topIfUp >= margin) {
+          top = topIfUp
+          openUp = true
+        } else {
+          // 공간이 없으면 최대한 위로
+          top = Math.max(margin, vh - pr.height - margin)
+        }
+      }
+    }
+    // 수직: 위 방향일 때 상단 잘림
+    if (openUp && top < margin) top = margin
+
+    if (left !== pos.left || top !== pos.top || openUp !== pos.openUp) {
+      setPos({ top, left, openUp })
+    }
+  }, [open])
+
   const handleClick = () => {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect()
-      const left = Math.min(r.left, window.innerWidth - width - 12)
-      const spaceBelow = window.innerHeight - r.bottom - 12
-      const openUp = spaceBelow < 300 && r.top > 200
-      setPos({ top: openUp ? r.top - 6 : r.bottom + 6, left: Math.max(8, left), openUp })
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const margin = 8
+      // 초기 left: 버튼 왼쪽 기준, 오른쪽 경계 클램프
+      const left = Math.min(Math.max(margin, r.left), vw - width - margin)
+      const spaceBelow = vh - r.bottom - margin
+      const spaceAbove = r.top - margin
+      const openUp = spaceBelow < 200 && spaceAbove > spaceBelow
+      setPos({ top: openUp ? r.top - 6 : r.bottom + 6, left, openUp })
     }
     setOpen(v => !v)
   }
@@ -643,6 +686,7 @@ export function EngPopover({ title, children, width = 360 }: {
           ref={panelRef}
           style={{
             position: 'fixed',
+            top: pos.top,
             left: pos.left,
             zIndex: 9999,
             background: T.bgPanel,
@@ -657,9 +701,6 @@ export function EngPopover({ title, children, width = 360 }: {
             lineHeight: T.lh.relaxed,
             color: T.textPrimary,
             fontFamily: T.fontSans,
-            ...(pos.openUp
-              ? { bottom: window.innerHeight - pos.top, top: 'auto' }
-              : { top: pos.top, bottom: 'auto' }),
           }}
         >
           {title && (
