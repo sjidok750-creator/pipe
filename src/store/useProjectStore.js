@@ -173,9 +173,9 @@ export const useProjectStore = create((set, get) => ({
     set({ projects: projectRepo.list() })
   },
 
-  // ── Export JSON ───────────────────────────────────────────
+  // ── Export JSON (File System Access API → fallback <a> download) ──
 
-  exportJSON: (id) => {
+  exportJSON: async (id) => {
     const project = projectRepo.get(id)
     if (!project) return
 
@@ -183,19 +183,57 @@ export const useProjectStore = create((set, get) => ({
       .map(m => m === 'structural' ? 'S' : m === 'seismicPrelim' ? 'P' : 'D')
       .join('')
 
-    const file = {
+    const fileData = {
       app: 'PIPER',
       fileVersion: 1,
       exportedAt: new Date().toISOString(),
       project,
     }
 
-    const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' })
+    const json = JSON.stringify(fileData, null, 2)
+    const safeName = project.meta.name.replace(/[^\w가-힣\-]/g, '_')
+    const suggestedName = `${safeName}_${moduleCode}.piper.json`
+
+    // File System Access API 지원 여부 확인
+    if (typeof window.showSaveFilePicker === 'function') {
+      try {
+        const { saveHandle, loadHandle } = await import('../lib/fileHandleStore.js')
+
+        // 이전 핸들에서 startIn 디렉토리 추출 시도
+        let startIn
+        try {
+          const prev = await loadHandle()
+          if (prev) startIn = prev
+        } catch { /* ignore */ }
+
+        const handle = await window.showSaveFilePicker({
+          suggestedName,
+          ...(startIn ? { startIn } : {}),
+          types: [{
+            description: 'PIPER 프로젝트 파일',
+            accept: { 'application/json': ['.json', '.piper.json'] },
+          }],
+        })
+
+        await saveHandle(handle)
+
+        const writable = await handle.createWritable()
+        await writable.write(json)
+        await writable.close()
+        return
+      } catch (err) {
+        // 사용자가 취소한 경우 (AbortError) → 아무것도 안 함
+        if (err instanceof Error && err.name === 'AbortError') return
+        // 그 외 오류 → fallback
+      }
+    }
+
+    // Fallback: 일반 <a> 다운로드
+    const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    const safeName = project.meta.name.replace(/[^\w가-힣\-]/g, '_')
-    a.download = `${safeName}_${moduleCode}.piper.json`
+    a.download = suggestedName
     a.click()
     URL.revokeObjectURL(url)
   },
