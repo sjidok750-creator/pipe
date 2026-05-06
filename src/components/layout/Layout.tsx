@@ -50,9 +50,11 @@ export default function Layout() {
     'seismic-prelim': 'seismicPrelim',
     'seismic-detail': 'seismicDetail',
   }
-  const visibleTabs = pathname === '/' || enabledModules.length === 0
-    ? MODULE_TABS
-    : MODULE_TABS.filter(t => enabledModules.includes(MODULE_ID_MAP[t.id]))
+  const visibleTabs = pathname === '/'
+    ? []
+    : enabledModules.length === 0
+      ? MODULE_TABS
+      : MODULE_TABS.filter(t => enabledModules.includes(MODULE_ID_MAP[t.id]))
 
   // 초 단위 실시간 저장 시각 (저장됨 표시 시 tick)
   const [, setTick] = useState(0)
@@ -202,7 +204,8 @@ export default function Layout() {
         </div>
       </header>
 
-      {/* ── 모듈 탭바 ── */}
+      {/* ── 모듈 탭바 (홈에서는 숨김) ── */}
+      {visibleTabs.length > 0 && (
       <div className="no-print" style={{ background: T.bgHeaderDeep, borderBottom: `1px solid rgba(0,0,0,0.25)`, flexShrink: 0 }}>
         <div style={{ maxWidth: 960, margin: '0 auto', padding: '0 16px', display: 'flex' }}>
           {visibleTabs.map(tab => {
@@ -230,6 +233,7 @@ export default function Layout() {
           })}
         </div>
       </div>
+      )}
 
       {/* ── 하위 탭 ── */}
       {subNav && (

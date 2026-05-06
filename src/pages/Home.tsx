@@ -414,51 +414,63 @@ export default function Home() {
 
       {/* 액션 툴바 */}
       <div style={{
-        display: 'flex', gap: 8, background: 'white',
-        border: `1px solid #E6E2DB`,
-        borderRadius: 12, padding: '10px 14px',
-        alignItems: 'center',
-        boxShadow: '0 1px 3px rgba(26,21,18,0.05)',
+        display: 'flex', gap: 10, alignItems: 'center',
+        padding: '12px 16px',
+        background: 'white',
+        border: '1px solid #E6E2DB',
+        borderRadius: 12,
+        boxShadow: '0 1px 4px rgba(26,21,18,0.05)',
       }}>
-        {/* 새 평가 */}
+        {/* New Project */}
         <button
           onClick={openNewModal}
           style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 18px', borderRadius: 8,
+            display: 'flex', alignItems: 'center', gap: 9,
+            padding: '0 20px', borderRadius: 9,
             background: T.bgActive, color: 'white',
-            border: 'none', fontSize: 13, fontWeight: 700,
-            cursor: 'pointer', minHeight: 38, fontFamily: T.fontSans,
-            boxShadow: '0 1px 4px rgba(204,107,61,0.25)',
-            letterSpacing: '0.1px',
+            border: 'none', cursor: 'pointer',
+            fontFamily: T.fontSans, height: 44,
+            boxShadow: '0 2px 8px rgba(204,107,61,0.28)',
+            flexShrink: 0,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="9" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><line x1="11" y1="5" x2="14" y2="5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><line x1="12.5" y1="3.5" x2="12.5" y2="6.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-          새 평가
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <rect x="2" y="1" width="9" height="13" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+            <line x1="11" y1="5" x2="14.5" y2="5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+            <line x1="12.75" y1="3.25" x2="12.75" y2="6.75" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+          </svg>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, letterSpacing: '0.1px' }}>New Project</div>
+            <div style={{ fontSize: 9.5, opacity: 0.72, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>새 평가 시작</div>
+          </div>
         </button>
 
-        <div style={{ width: 1, height: 22, background: '#E6E2DB', flexShrink: 0 }} />
-
-        {/* 프로젝트 열기 */}
+        {/* Open Project */}
         <button
           onClick={() => setShowOpenModal(true)}
           style={{
-            display: 'flex', alignItems: 'center', gap: 7,
-            padding: '8px 16px', borderRadius: 8,
-            background: 'white', border: `1px solid #E0DDD7`,
-            color: T.textLabel, fontSize: 13, fontWeight: 600,
-            cursor: 'pointer', minHeight: 38, fontFamily: T.fontSans,
+            display: 'flex', alignItems: 'center', gap: 9,
+            padding: '0 18px', borderRadius: 9,
+            background: '#FAFAF9', border: '1px solid #E0DDD7',
+            color: T.textLabel, cursor: 'pointer',
+            fontFamily: T.fontSans, height: 44,
+            flexShrink: 0,
           }}
         >
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M1.5 5.5C1.5 4.67 2.17 4 3 4H6.5L8 5.5H13C13.83 5.5 14.5 6.17 14.5 7V12C14.5 12.83 13.83 13.5 13 13.5H3C2.17 13.5 1.5 12.83 1.5 12V5.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
-          프로젝트 열기
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <path d="M1.5 5.5C1.5 4.67 2.17 4 3 4H6.5L8 5.5H13C13.83 5.5 14.5 6.17 14.5 7V12C14.5 12.83 13.83 13.5 13 13.5H3C2.17 13.5 1.5 12.83 1.5 12V5.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/>
+          </svg>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2, letterSpacing: '0.1px' }}>Open Project</div>
+            <div style={{ fontSize: 9.5, color: T.textDisabled, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>프로젝트 열기</div>
+          </div>
         </button>
 
         <Link
           to="/admin"
           style={{
             marginLeft: 'auto', fontSize: 10, color: T.textDisabled,
-            fontFamily: T.fontSans, textDecoration: 'none',
+            fontFamily: T.fontSans, textDecoration: 'none', flexShrink: 0,
           }}
         >관리 ⚙</Link>
       </div>
