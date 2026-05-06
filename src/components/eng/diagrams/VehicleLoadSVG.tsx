@@ -1,207 +1,269 @@
-// 차량하중 분포각 개념도 — 내진성능 평가요령 부록C 해설식(5.3.3)
-// Wm = 2·Pm·D / (C·(a+2h·tanθ)) × (1+i)
+// 차량하중 분포도 — 기준서 [그림 4.3.3-1] 재현
+// 좌: 정면도(단면) — Pm → 45°분포 → a+2h·tanθ → 관단면
+// 우: 평면도 — C(점유폭) → 관축방향 하중 분포
 import React from 'react'
-import { T } from '../tokens'
 
 export function VehicleLoadSVG({
-  width = 380, height = 215,
+  width = 480,
+  height = 220,
 }: {
   width?: number
   height?: number
 }) {
-  const W = width, H = height
+  const W = width
+  const H = height
 
-  // ── 레이아웃 상수 ────────────────────────────────────────────
-  const roadY   = 54
-  const tireH   = 18   // 타이어 높이 (도로 위)
-  const h_px    = 104  // 토피 h 시각적 높이
-  const pipeR   = 15
-  const cx      = Math.round(W * 0.487)  // 관 중심 X
-
-  const a_half      = 20   // 반접지폭 (시각적)
-  const tireLeft    = cx - a_half
-  const tireRight   = cx + a_half
-
-  const pipeCrownY  = roadY + h_px
-  const pipeCenterY = pipeCrownY + pipeR
-  const pipeInvertY = pipeCenterY + pipeR
-
-  // θ=45° → spread = h_px
-  const spread   = h_px
-  const distLeft  = tireLeft - spread
-  const distRight = tireRight + spread
+  // ── 좌/우 패널 분할 ─────────────────────────────────────────
+  const divX   = Math.round(W * 0.52)   // 구분선 X
+  const leftW  = divX - 6
+  const rightW = W - divX - 4
+  const rightX = divX + 6               // 우측 패널 시작
 
   // ── 색상 ────────────────────────────────────────────────────
-  const clrLoad = '#c45520'   // 하중 (주황)
-  const clrDim  = '#2a5280'   // 치수선 (파랑)
-  const clrPipe = '#2a6ab0'   // 관 (파랑)
-  const clrSoil = '#b8a888'   // 지반 (황갈)
-  const clrRoad = '#444'      // 도로선
-  const clrAngle= '#607080'   // 각도
+  const C_LOAD  = '#555'      // 하중 화살표 — 회색 (기준서 스타일)
+  const C_DIM   = '#222'      // 치수선
+  const C_LINE  = '#222'      // 외곽선
+  const C_DASH  = '#555'      // 점선
+  const C_HATCH = '#888'      // 해칭
 
-  // ── 포장 사선 (도로면 위) ────────────────────────────────────
-  const paveLines: React.ReactNode[] = []
-  for (let x = -10; x < W + 10; x += 14) {
-    paveLines.push(
+  // ══════════════════════════════════════════════════════════════
+  // 좌측 — 정면도 (단면)
+  // ══════════════════════════════════════════════════════════════
+  const lRoadY   = 58          // 도로면 Y
+  const lH_px    = 90          // 토피 시각적 높이
+  const lPipeR   = 14          // 관 반경 (단면)
+  const lCX      = Math.round(leftW * 0.50)  // 관 중심 X (좌 패널 기준)
+
+  const la_half    = 18         // 접지폭 a/2
+  const lTireL     = lCX - la_half
+  const lTireR     = lCX + la_half
+  const lTireH     = 16         // 타이어 높이
+
+  const lPipeCrownY  = lRoadY + lH_px
+  const lPipeCenterY = lPipeCrownY + lPipeR
+  const lPipeInvertY = lPipeCenterY + lPipeR
+
+  // θ=45° → spread = lH_px
+  const lSpread   = lH_px
+  const lDistL    = lTireL - lSpread
+  const lDistR    = lTireR + lSpread
+
+  // 포장 해칭 (도로면 위 좌측)
+  const hatchLinesL: React.ReactNode[] = []
+  for (let x = -8; x < leftW + 8; x += 10) {
+    hatchLinesL.push(
       <line key={x}
-        x1={x} y1={roadY}
-        x2={Math.max(0, x - 12)} y2={roadY - 12}
-        stroke="#999" strokeWidth={0.9} />,
+        x1={x} y1={lRoadY}
+        x2={Math.max(0, x - 10)} y2={lRoadY - 10}
+        stroke={C_HATCH} strokeWidth={0.9} />
     )
   }
 
-  // ── Wm 하중 화살표 (관 상단) ────────────────────────────────
-  const wmArrows: React.ReactNode[] = []
-  const nArr = 8
-  for (let i = 0; i < nArr; i++) {
-    const ax = distLeft + (distRight - distLeft) * (i + 0.5) / nArr
-    wmArrows.push(
+  // 관 하부 해칭
+  const hatchLinesLB: React.ReactNode[] = []
+  for (let x = -8; x < leftW + 8; x += 10) {
+    hatchLinesLB.push(
+      <line key={x}
+        x1={x} y1={lPipeInvertY + 2}
+        x2={Math.max(0, x - 10)} y2={lPipeInvertY + 12}
+        stroke={C_HATCH} strokeWidth={0.9} />
+    )
+  }
+
+  // Wm 하중 화살표 (관 상단)
+  const wmArrowsL: React.ReactNode[] = []
+  const nArrL = 7
+  for (let i = 0; i < nArrL; i++) {
+    const ax = lDistL + (lDistR - lDistL) * (i + 0.5) / nArrL
+    wmArrowsL.push(
       <line key={i}
-        x1={ax} y1={pipeCrownY - 13}
-        x2={ax} y2={pipeCrownY - 1}
-        stroke={clrLoad} strokeWidth={1.6}
-        markerEnd="url(#arr-load-d)" />,
+        x1={ax} y1={lPipeCrownY - 16}
+        x2={ax} y2={lPipeCrownY - 2}
+        stroke={C_LOAD} strokeWidth={1.4}
+        markerEnd="url(#lv-arr-down)" />
+    )
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // 우측 — 평면도
+  // ══════════════════════════════════════════════════════════════
+  const rTopY   = 30           // 상단 도로 경계
+  const rBotY   = H - 30       // 하단 도로 경계
+  const rMidY   = (rTopY + rBotY) / 2
+  const rPipeSpacing = 32      // 관 간격 (평면)
+  const rPipeR  = 11           // 평면도 관 반경
+
+  // 관 중심들 (평면 — 3개)
+  const rPipes  = [-rPipeSpacing, 0, rPipeSpacing].map(dy => rMidY + dy)
+
+  // C 치수선 위치
+  const rCLeft  = rightX + 18
+  const rCRight = rightX + rightW - 18
+
+  // 하중 화살표 (위에서 아래로 — 관 상단에 분포)
+  const wmArrowsR: React.ReactNode[] = []
+  const nArrR = 5
+  const rArrTop = rTopY + 4
+  const rArrBot = rMidY - rPipeR - 2  // 첫 번째 관 상단까지
+  for (let i = 0; i < nArrR; i++) {
+    const ax = rCLeft + (rCRight - rCLeft) * (i + 0.5) / nArrR
+    wmArrowsR.push(
+      <line key={i}
+        x1={ax} y1={rArrTop}
+        x2={ax} y2={rArrBot}
+        stroke={C_LOAD} strokeWidth={1.4}
+        markerEnd="url(#lv-arr-down)" />
     )
   }
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}
-      style={{ display: 'block', fontFamily: 'sans-serif' }}>
+      style={{ display: 'block', fontFamily: "'JetBrains Mono', 'Malgun Gothic', sans-serif", background: '#fff' }}>
       <defs>
-        {/* 하중 화살표 (아래방향) */}
-        <marker id="arr-load-d" markerWidth="6" markerHeight="5" refX="3" refY="5" orient="auto">
-          <polygon points="0,0 6,0 3,5" fill={clrLoad} />
+        {/* 아래 화살표 */}
+        <marker id="lv-arr-down" markerWidth="5" markerHeight="5" refX="2.5" refY="5" orient="auto">
+          <polygon points="0,0 5,0 2.5,5" fill={C_LOAD} />
         </marker>
-        {/* 치수선 화살표 (양방향 공용 — auto-start-reverse 사용) */}
-        <marker id="arr-dim" markerWidth="6" markerHeight="5" refX="0.5" refY="2.5" orient="auto-start-reverse">
-          <polygon points="0,0 6,2.5 0,5" fill={clrDim} />
+        {/* 치수 양방향 화살표 */}
+        <marker id="lv-dim" markerWidth="6" markerHeight="5" refX="0.5" refY="2.5" orient="auto-start-reverse">
+          <polygon points="0,0 6,2.5 0,5" fill={C_DIM} />
         </marker>
-        {/* 지반 해칭 패턴 */}
-        <pattern id="soil-hatch" patternUnits="userSpaceOnUse" width="10" height="10">
-          <line x1="0" y1="10" x2="10" y2="0" stroke={clrSoil} strokeWidth={1} />
-        </pattern>
-        {/* 분포 영역 패턴 */}
-        <pattern id="load-zone" patternUnits="userSpaceOnUse" width="8" height="8">
-          <line x1="0" y1="0" x2="8" y2="8" stroke={clrLoad} strokeWidth={0.5} strokeOpacity="0.35" />
-        </pattern>
+        {/* 위 화살표 (Pm) */}
+        <marker id="lv-arr-up" markerWidth="5" markerHeight="5" refX="2.5" refY="0" orient="auto">
+          <polygon points="0,5 5,5 2.5,0" fill={C_LOAD} />
+        </marker>
       </defs>
 
-      {/* ── 지반 토층 배경 ─────────────────────────────────── */}
-      <rect x={0} y={roadY} width={W} height={pipeCrownY - roadY}
-        fill="url(#soil-hatch)" opacity={0.5} />
-      <rect x={0} y={pipeInvertY} width={W} height={H - pipeInvertY}
-        fill="url(#soil-hatch)" opacity={0.5} />
+      {/* ══════════════════════════════════════════════════════════
+          좌측 패널 — 정면도
+          ══════════════════════════════════════════════════════════ */}
 
-      {/* ── 하중 분포 영역 (사다리꼴) ─────────────────────── */}
-      <polygon
-        points={`${tireLeft},${roadY} ${tireRight},${roadY} ${distRight},${pipeCrownY} ${distLeft},${pipeCrownY}`}
-        fill="url(#load-zone)" />
-      <polygon
-        points={`${tireLeft},${roadY} ${tireRight},${roadY} ${distRight},${pipeCrownY} ${distLeft},${pipeCrownY}`}
-        fill={clrLoad} fillOpacity={0.07}
-        stroke={clrLoad} strokeWidth={1.3} strokeDasharray="5,3" />
-
-      {/* ── 도로 포장 사선 ─────────────────────────────────── */}
-      {paveLines}
+      {/* 도로면 위 해칭 */}
+      {hatchLinesL}
       {/* 도로 표면선 */}
-      <line x1={0} y1={roadY} x2={W} y2={roadY} stroke={clrRoad} strokeWidth={2} />
+      <line x1={0} y1={lRoadY} x2={leftW} y2={lRoadY} stroke={C_LINE} strokeWidth={1.8} />
 
-      {/* ── 타이어 (도로면 위) ─────────────────────────────── */}
-      {/* 외곽 */}
-      <rect x={tireLeft} y={roadY - tireH} width={a_half * 2} height={tireH}
-        rx={4} fill="#222" />
-      {/* 트레드 표현 */}
-      <rect x={tireLeft + 3} y={roadY - tireH + 2} width={a_half * 2 - 6} height={tireH - 5}
-        rx={2} fill="#444" />
-      {/* 접지면 강조 */}
-      <rect x={tireLeft} y={roadY - 4} width={a_half * 2} height={4}
-        fill="#111" />
+      {/* 타이어 (동그라미 — 기준서 스타일) */}
+      <circle cx={lCX} cy={lRoadY - 12} r={11}
+        fill="#eee" stroke={C_LINE} strokeWidth={1.4} />
 
-      {/* ── Pm 하중 화살표 ─────────────────────────────────── */}
-      <line
-        x1={cx} y1={roadY - tireH - 26}
-        x2={cx} y2={roadY - tireH - 1}
-        stroke={clrLoad} strokeWidth={2.8}
-        markerEnd="url(#arr-load-d)" />
-      <text x={cx + 6} y={roadY - tireH - 14}
-        fontSize={13} fill={clrLoad} fontWeight="bold" dominantBaseline="middle">Pm</text>
+      {/* Pm 하중 화살표 (타이어 위) */}
+      <line x1={lCX} y1={lRoadY - 38}
+            x2={lCX} y2={lRoadY - 23}
+        stroke={C_LOAD} strokeWidth={1.8}
+        markerEnd="url(#lv-arr-down)" />
 
-      {/* ── a 접지폭 치수선 ────────────────────────────────── */}
-      {/* 수평 치수선 (타이어 위) */}
-      <line x1={tireLeft} y1={roadY - tireH - 12}
-            x2={tireRight} y2={roadY - tireH - 12}
-        stroke={clrDim} strokeWidth={1}
-        markerStart="url(#arr-dim)" markerEnd="url(#arr-dim)" />
-      {/* 끝선 */}
-      <line x1={tireLeft}  y1={roadY - tireH - 16} x2={tireLeft}  y2={roadY - tireH - 8} stroke={clrDim} strokeWidth={0.8} />
-      <line x1={tireRight} y1={roadY - tireH - 16} x2={tireRight} y2={roadY - tireH - 8} stroke={clrDim} strokeWidth={0.8} />
-      <text x={cx} y={roadY - tireH - 22}
-        fontSize={10} fill={clrDim} textAnchor="middle" fontStyle="italic">a</text>
+      {/* a 치수선 (타이어 하단 접지폭) */}
+      <line x1={lTireL} y1={lRoadY - 2}
+            x2={lTireR} y2={lRoadY - 2}
+        stroke={C_DIM} strokeWidth={0.9}
+        markerStart="url(#lv-dim)" markerEnd="url(#lv-dim)" />
+      <text x={lCX} y={lRoadY + 10}
+        fontSize={9} fill={C_DIM} textAnchor="middle" fontStyle="italic">a</text>
 
-      {/* ── 45° 분포각 호 + 레이블 ─────────────────────────── */}
-      {/* 수직 기준선 */}
-      <line x1={tireRight} y1={roadY} x2={tireRight} y2={roadY + 36}
-        stroke={clrAngle} strokeWidth={0.9} strokeDasharray="3,2" />
-      {/* 45° 호 */}
-      <path
-        d={`M ${tireRight},${roadY + 30} A 30,30 0 0 1 ${tireRight + 30 * Math.sin(Math.PI / 4)},${roadY + 30 * Math.cos(Math.PI / 4)}`}
-        fill="none" stroke={clrAngle} strokeWidth={1.1} />
-      <text x={tireRight + 16} y={roadY + 28}
-        fontSize={9.5} fill={clrAngle}>θ = 45°</text>
+      {/* 45° 분포선 (점선) */}
+      <line x1={lTireL} y1={lRoadY} x2={lDistL} y2={lPipeCrownY}
+        stroke={C_DASH} strokeWidth={1} strokeDasharray="4,3" />
+      <line x1={lTireR} y1={lRoadY} x2={lDistR} y2={lPipeCrownY}
+        stroke={C_DASH} strokeWidth={1} strokeDasharray="4,3" />
 
-      {/* ── h 토피 치수선 (우측) ───────────────────────────── */}
-      <line x1={W - 32} y1={roadY}      x2={W - 32} y2={pipeCrownY}
-        stroke={clrDim} strokeWidth={1}
-        markerStart="url(#arr-dim)" markerEnd="url(#arr-dim)" />
-      {/* 끝선 */}
-      <line x1={W - 38} y1={roadY}      x2={W - 26} y2={roadY}      stroke={clrDim} strokeWidth={0.8} />
-      <line x1={W - 38} y1={pipeCrownY} x2={W - 26} y2={pipeCrownY} stroke={clrDim} strokeWidth={0.8} />
-      <text x={W - 20} y={(roadY + pipeCrownY) / 2 - 6}
-        fontSize={11} fill={clrDim} fontStyle="italic" dominantBaseline="middle">h</text>
-      <text x={W - 20} y={(roadY + pipeCrownY) / 2 + 8}
-        fontSize={8} fill={clrDim} dominantBaseline="middle">(토피)</text>
+      {/* θ 각도 표시 */}
+      <path d={`M ${lTireR},${lRoadY + 22} A 22,22 0 0 1 ${lTireR + 22 * Math.sin(Math.PI / 4)},${lRoadY + 22 * (1 - Math.cos(Math.PI / 4))}`}
+        fill="none" stroke={C_DIM} strokeWidth={0.9} />
+      <text x={lTireR + 14} y={lRoadY + 22}
+        fontSize={9} fill={C_DIM} fontStyle="italic">θ</text>
 
-      {/* ── 분포선 (45°) ───────────────────────────────────── */}
-      <line x1={tireLeft}  y1={roadY} x2={distLeft}  y2={pipeCrownY} stroke="#999" strokeWidth={1.3} />
-      <line x1={tireRight} y1={roadY} x2={distRight} y2={pipeCrownY} stroke="#999" strokeWidth={1.3} />
+      {/* h 치수선 (우측) */}
+      <line x1={leftW - 20} y1={lRoadY} x2={leftW - 20} y2={lPipeCrownY}
+        stroke={C_DIM} strokeWidth={0.9}
+        markerStart="url(#lv-dim)" markerEnd="url(#lv-dim)" />
+      <line x1={leftW - 25} y1={lRoadY}      x2={leftW - 15} y2={lRoadY}      stroke={C_DIM} strokeWidth={0.8} />
+      <line x1={leftW - 25} y1={lPipeCrownY} x2={leftW - 15} y2={lPipeCrownY} stroke={C_DIM} strokeWidth={0.8} />
+      <text x={leftW - 10} y={(lRoadY + lPipeCrownY) / 2}
+        fontSize={10} fill={C_DIM} fontStyle="italic" dominantBaseline="middle">h</text>
 
-      {/* ── Wm 분포하중 화살표 ─────────────────────────────── */}
-      {wmArrows}
-      <text x={distLeft + 4} y={pipeCrownY - 17}
-        fontSize={10} fill={clrLoad} fontWeight="bold">Wm [kN/m]</text>
+      {/* Wm 분포하중 화살표 */}
+      {wmArrowsL}
 
-      {/* ── 관저면 분포폭 치수선 ───────────────────────────── */}
-      <line x1={distLeft} y1={pipeCrownY + 5} x2={distRight} y2={pipeCrownY + 5}
-        stroke={clrDim} strokeWidth={1}
-        markerStart="url(#arr-dim)" markerEnd="url(#arr-dim)" />
-      <line x1={distLeft}  y1={pipeCrownY + 1} x2={distLeft}  y2={pipeCrownY + 9} stroke={clrDim} strokeWidth={0.8} />
-      <line x1={distRight} y1={pipeCrownY + 1} x2={distRight} y2={pipeCrownY + 9} stroke={clrDim} strokeWidth={0.8} />
-      <text x={(distLeft + distRight) / 2} y={pipeCrownY + 20}
-        fontSize={9.5} fill={clrDim} textAnchor="middle">
-        a + 2h · tan θ
+      {/* 관 하부 해칭 (관 아래) */}
+      <line x1={0} y1={lPipeInvertY + 2} x2={leftW} y2={lPipeInvertY + 2} stroke={C_LINE} strokeWidth={1.2} />
+      {hatchLinesLB}
+
+      {/* a+2h·tanθ 치수선 (하단) */}
+      <line x1={lDistL} y1={lPipeCrownY + 6} x2={lDistR} y2={lPipeCrownY + 6}
+        stroke={C_DIM} strokeWidth={0.9}
+        markerStart="url(#lv-dim)" markerEnd="url(#lv-dim)" />
+      <line x1={lDistL}  y1={lPipeCrownY + 2} x2={lDistL}  y2={lPipeCrownY + 10} stroke={C_DIM} strokeWidth={0.8} />
+      <line x1={lDistR}  y1={lPipeCrownY + 2} x2={lDistR}  y2={lPipeCrownY + 10} stroke={C_DIM} strokeWidth={0.8} />
+      <text x={(lDistL + lDistR) / 2} y={lPipeCrownY + 22}
+        fontSize={9} fill={C_DIM} textAnchor="middle" fontStyle="italic">
+        a+2h·tan θ
       </text>
 
-      {/* ── 파이프 단면 ────────────────────────────────────── */}
-      {/* 파이프 외곽 */}
-      <ellipse cx={cx} cy={pipeCenterY} rx={52} ry={pipeR}
-        fill="#d6ecfa" stroke={clrPipe} strokeWidth={2} />
-      {/* 관벽 표현 */}
-      <ellipse cx={cx} cy={pipeCenterY} rx={45} ry={pipeR - 4}
-        fill="#c0e0f4" stroke={clrPipe} strokeWidth={0.7} strokeDasharray="3,2" />
-      {/* 내공 (유수부) */}
-      <ellipse cx={cx} cy={pipeCenterY} rx={38} ry={pipeR - 7}
-        fill="#eaf6fd" stroke="none" />
+      {/* 관 단면 (원) */}
+      <circle cx={lCX} cy={lPipeCenterY} r={lPipeR + 3}
+        fill="#f0f0f0" stroke={C_LINE} strokeWidth={1.6} />
+      <circle cx={lCX} cy={lPipeCenterY} r={lPipeR - 3}
+        fill="white" stroke={C_LINE} strokeWidth={0.8} />
 
-      {/* ── 관 레이블 ─────────────────────────────────────── */}
-      <text x={cx} y={pipeCenterY + 1}
-        fontSize={9} fill={clrPipe} textAnchor="middle" dominantBaseline="middle"
-        fontWeight="bold">D</text>
+      {/* ══════════════════════════════════════════════════════════
+          우측 패널 — 평면도
+          ══════════════════════════════════════════════════════════ */}
 
-      {/* ── C 차량점유폭 안내 (하단 노트) ─────────────────── */}
-      <rect x={2} y={H - 22} width={W - 4} height={20}
-        fill={T.bgPanelAlt ?? '#f5f5f5'} rx={3} />
-      <text x={8} y={H - 9} fontSize={8.5} fill="#555">
-        C (차량 점유폭): 관축 방향의 하중 분포 폭 (기본 3.0 m) — 평면도 기준
+      {/* 구분 수직선 */}
+      <line x1={divX} y1={10} x2={divX} y2={H - 10}
+        stroke="#ccc" strokeWidth={0.8} strokeDasharray="4,3" />
+
+      {/* 도로 경계 (상/하 — 해칭) */}
+      {/* 상단 해칭 */}
+      {Array.from({ length: Math.ceil(rightW / 10) + 2 }, (_, i) => (
+        <line key={'ht' + i}
+          x1={rightX + i * 10} y1={rTopY}
+          x2={rightX + i * 10 - 10} y2={rTopY - 10}
+          stroke={C_HATCH} strokeWidth={0.9} />
+      ))}
+      <line x1={rightX} y1={rTopY} x2={rightX + rightW} y2={rTopY} stroke={C_LINE} strokeWidth={1.6} />
+
+      {/* 하단 해칭 */}
+      {Array.from({ length: Math.ceil(rightW / 10) + 2 }, (_, i) => (
+        <line key={'hb' + i}
+          x1={rightX + i * 10} y1={rBotY}
+          x2={rightX + i * 10 - 10} y2={rBotY + 10}
+          stroke={C_HATCH} strokeWidth={0.9} />
+      ))}
+      <line x1={rightX} y1={rBotY} x2={rightX + rightW} y2={rBotY} stroke={C_LINE} strokeWidth={1.6} />
+
+      {/* C 치수선 (상단) */}
+      <line x1={rCLeft} y1={rTopY - 14} x2={rCRight} y2={rTopY - 14}
+        stroke={C_DIM} strokeWidth={0.9}
+        markerStart="url(#lv-dim)" markerEnd="url(#lv-dim)" />
+      <line x1={rCLeft}  y1={rTopY - 18} x2={rCLeft}  y2={rTopY - 10} stroke={C_DIM} strokeWidth={0.8} />
+      <line x1={rCRight} y1={rTopY - 18} x2={rCRight} y2={rTopY - 10} stroke={C_DIM} strokeWidth={0.8} />
+      <text x={(rCLeft + rCRight) / 2} y={rTopY - 20}
+        fontSize={11} fill={C_DIM} textAnchor="middle" fontStyle="italic" fontWeight="bold">C</text>
+
+      {/* 관 (평면도 — 타원/원통) */}
+      {rPipes.map((py, idx) => (
+        <g key={idx}>
+          {/* 관 외곽 (타원) */}
+          <ellipse cx={(rCLeft + rCRight) / 2} cy={py} rx={(rCRight - rCLeft) / 2 - 2} ry={rPipeR}
+            fill="#f0f0f0" stroke={C_LINE} strokeWidth={1.4} />
+          {/* 관 내경 (점선) */}
+          <ellipse cx={(rCLeft + rCRight) / 2} cy={py} rx={(rCRight - rCLeft) / 2 - 8} ry={rPipeR - 4}
+            fill="white" stroke={C_LINE} strokeWidth={0.8} strokeDasharray="4,3" />
+          {/* 관축 중심선 */}
+          <line x1={rightX + 4} y1={py} x2={rightX + rightW - 4} y2={py}
+            stroke={C_DASH} strokeWidth={0.8} strokeDasharray="8,4,2,4" />
+        </g>
+      ))}
+
+      {/* 하중 화살표 (위에서 아래로 — 오른쪽 기준) */}
+      {wmArrowsR}
+
+      {/* ── 캡션 ── */}
+      <text x={W / 2} y={H - 5}
+        fontSize={9.5} fill="#333" textAnchor="middle">
+        [그림 4.3.3-1]  차량하중 분포도
       </text>
     </svg>
   )
