@@ -44,7 +44,7 @@ export default function SessionAutoSaver() {
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputs, result, prelimInputs, prelimResult, detailInputs, detailResult])
+  }, [inputs, result, prelimInputs, prelimResult, detailInputs, detailResult, projectId, projectName, enabledModules])
 
   return null
 }
