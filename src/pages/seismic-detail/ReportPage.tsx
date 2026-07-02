@@ -5,30 +5,33 @@ import { SEISMIC_ZONE, SEISMIC_GRADE, calcKvFromN, getLayerAtDepth } from '../..
 import {
   Frac, Sub, Sup, Sqrt, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G,
 } from '../../components/report/MathElements'
-// WIcon → PiperIcon (인라인)
+import ReportTitleBlock from '../../components/report/ReportTitleBlock'
+import { useProjectStore } from '../../store/useProjectStore.js'
+import { exportSeismicDetailXlsx } from '../../lib/xlsx/seismicXlsx.js'
 
-// ── 스타일 상수 ─────────────────────────────────────────────────
-const WARM_DARK = '#2C2118'
+// ── 스타일 상수 (설계보고서 부록 양식: 전체 괘선·모노크롬) ────────
+const WARM_DARK = '#111'
 const CORAL = '#CC6B3D'
 const F_BODY = '"Malgun Gothic", "나눔고딕", "Noto Sans KR", sans-serif'
 const F_MONO = 'Consolas, "Courier New", monospace'
 
 const SEC_TITLE: React.CSSProperties = {
   fontSize: 13, fontWeight: 700, color: WARM_DARK,
-  borderBottom: `2px solid ${CORAL}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
+  background: '#F2F0EC', borderLeft: '3px solid #333',
+  padding: '3px 10px', marginTop: 14, marginBottom: 6,
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const SUB_TITLE: React.CSSProperties = {
   fontSize: 11, fontWeight: 700, color: WARM_DARK,
-  borderLeft: `3px solid ${CORAL}`, paddingLeft: 6, marginTop: 8, marginBottom: 3,
+  borderLeft: '3px solid #555', paddingLeft: 6, marginTop: 8, marginBottom: 3,
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }
 const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 5, breakInside: 'avoid', pageBreakInside: 'avoid' }
 const TABLE_LONG: React.CSSProperties = { ...TABLE, breakInside: 'auto', pageBreakInside: 'auto' }
-const TH: React.CSSProperties = { background: WARM_DARK, color: 'white', padding: '3px 6px', fontWeight: 700, border: '1px solid #999', textAlign: 'center' }
-const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #C8C3BC', verticalAlign: 'middle', fontSize: 10 }
+const TH: React.CSSProperties = { background: '#F2F0EC', color: '#111', padding: '3px 6px', fontWeight: 700, border: '1px solid #888', textAlign: 'center' }
+const TD: React.CSSProperties = { padding: '2px 5px', border: '1px solid #AAA', verticalAlign: 'middle', fontSize: 10 }
 const TDB: React.CSSProperties = { ...TD, fontWeight: 700 }
 const TDR: React.CSSProperties = { ...TD, textAlign: 'right', fontFamily: F_MONO }
 const TDC: React.CSSProperties = { ...TD, textAlign: 'center' }
@@ -118,6 +121,8 @@ function SoilProfileFigure({ layers, pipeDepth, title }: {
 export default function SeismicDetailReportPage() {
   const navigate = useNavigate()
   const { detailInputs: inp, detailResult: r } = useSeismicStore()
+  const projectName = useProjectStore((s: any) => s.projectName)
+  const facilityName = useProjectStore((s: any) => s.activeFacilityName)
 
   if (!r) {
     return (
@@ -135,7 +140,6 @@ export default function SeismicDetailReportPage() {
   const rs = r as any
   const Z = SEISMIC_ZONE[inp.zone as 'I' | 'II'].Z
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
-  const today = new Date().toLocaleDateString('ko-KR')
 
   const nu = isSegmented ? 0.28 : 0.30
   const E_MPa = rs.E_use ?? (isSegmented ? 160000 : 210000)
@@ -166,6 +170,10 @@ export default function SeismicDetailReportPage() {
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: CORAL, color: 'white', border: 'none', borderRadius: 2 }}>
           인쇄 / PDF 저장
         </button>
+        <button onClick={() => { exportSeismicDetailXlsx({ inp, rs, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2 }}>
+          엑셀(.xlsx) 다운로드
+        </button>
         <button onClick={() => navigate('/seismic-detail/result')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: CORAL, border: '1px solid #E0DDD7', borderRadius: 2 }}>
           결과 페이지로
@@ -174,42 +182,14 @@ export default function SeismicDetailReportPage() {
 
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F_BODY, fontSize: 11, lineHeight: 1.45, color: '#111' }}>
 
-        {/* ── 표지 헤더 ── */}
-        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${CORAL}`, paddingBottom: 10, marginBottom: 12 }}>
-          {/* W 아이콘 */}
-          <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
-            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
-            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
-            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
-              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
-          </svg>
-
-          {/* 제목부 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, color: '#888', letterSpacing: 0.3, marginBottom: 3, fontFamily: F_MONO }}>
-              KDS 57 17 00 : 2022 · 기존시설물(상수도) 내진성능 평가요령 부록 C
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: CORAL, lineHeight: 1.2, marginBottom: 4 }}>
-              {isSegmented ? 'C.1 분절관 내진성능 본평가 검토서' : 'C.2 연속강관 내진성능 본평가 검토서'}
-            </div>
-            <div style={{ fontSize: 10, color: '#666' }}>
-              {isSegmented
-                ? '덕타일 주철관 (KS D 4311 수도용 원심력 덕타일주철관 2종관)'
-                : '상수도용 도복장강관 (KS D 3565)'}
-            </div>
-          </div>
-
-          {/* 우측 메타 */}
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 10, color: CORAL, letterSpacing: 1, marginBottom: 5, fontWeight: 600 }}>
-              PIPER
-            </div>
-            <div style={{ fontSize: 9, color: '#999', fontFamily: F_MONO }}>작성일</div>
-            <div style={{ fontSize: 10, color: '#555', fontFamily: F_MONO, fontWeight: 600 }}>{today}</div>
-          </div>
-        </div>
+        {/* ── 표제부 ── */}
+        <ReportTitleBlock
+          standard="KDS 57 17 00 : 2022 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 C"
+          title={isSegmented ? '매설관로 내진성능 본평가 검토서 (분절관)' : '매설관로 내진성능 본평가 검토서 (연속관)'}
+          subtitle={isSegmented
+            ? '응답변위법 — 덕타일 주철관 (KS D 4311 수도용 원심력 덕타일주철관 2종관)'
+            : '응답변위법 — 상수도용 도복장강관 (KS D 3565)'}
+        />
 
         {/* ═══════════════════════════════════════════════ */}
         {/* C.x.1 지반조건 및 관로 사양                    */}
@@ -1694,12 +1674,6 @@ export default function SeismicDetailReportPage() {
             </tr>
           </tbody>
         </table>
-
-        <div style={{ fontSize: 11, lineHeight: 1.55, padding: '6px 0', marginTop: 4 }}>
-          {r.ok
-            ? '본 관로는 응답변위법에 의한 내진성능 본평가 결과 모든 검토항목에서 허용기준을 만족한다. 내진안전성이 확보된 것으로 판단한다.'
-            : '본 관로는 응답변위법에 의한 내진성능 본평가 결과 일부 검토항목에서 허용기준을 초과한다. 내진 보강공법을 검토하여야 한다.'}
-        </div>
 
         {/* 각주 */}
         <div style={{ marginTop: 20, borderTop: '1px solid #ccc', paddingTop: 8, fontSize: 10, color: '#666', lineHeight: 1.9 }}>

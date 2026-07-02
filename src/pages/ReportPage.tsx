@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { T } from '../components/eng/tokens'
 import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../components/report/MathElements'
+import ReportTitleBlock from '../components/report/ReportTitleBlock'
+import { useProjectStore } from '../store/useProjectStore.js'
+import { exportStructuralXlsx } from '../lib/xlsx/structuralXlsx.js'
 import { fmtNum } from '../lib/format'
-// WIcon → PiperIcon (인라인)
 
-// ── 인라인 스타일 상수 ──────────────────────────────────────
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 11, fontWeight: 700, color: '#2C2118', borderBottom: '1px solid #C8C3BC', textAlign: 'left', background: '#EDEBE6' }
-const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #E0DDD7', verticalAlign: 'middle', fontSize: 11 }
-const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#2C2118', borderLeft: '3px solid #CC6B3D', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
+// ── 인라인 스타일 상수 (설계보고서 부록 양식: 전체 괘선·모노크롬) ──
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 6 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 11, fontWeight: 700, color: '#111', border: '1px solid #888', textAlign: 'left', background: '#F2F0EC' }
+const TD: React.CSSProperties = { padding: '2px 6px', border: '1px solid #AAA', verticalAlign: 'middle', fontSize: 11 }
+const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#111', borderLeft: '3px solid #555', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
 const NOTE: React.CSSProperties = { fontSize: 10, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
@@ -22,7 +24,7 @@ function CalcRow({ label, expr, result, unit, indent = false }: {
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: indent ? 16 : 0, fontSize: 11 }}>
       <span style={{ width: 180, flexShrink: 0, color: '#444', fontWeight: 600 }}>{label}</span>
       <span style={{ color: '#555', flex: 1 }}>{expr}</span>
-      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#CC6B3D', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
+      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
     </div>
   )
 }
@@ -35,6 +37,8 @@ function HR() {
 export default function ReportPage() {
   const navigate = useNavigate()
   const { result, inputs } = useStore()
+  const projectName = useProjectStore((s: any) => s.projectName)
+  const facilityName = useProjectStore((s: any) => s.activeFacilityName)
 
   if (!result) {
     return (
@@ -51,7 +55,6 @@ export default function ReportPage() {
   const { verdict, steps, pipeType, Do, tAdopt, tRequired, fy: resultFy, steelGrade: resultSteelGrade } = result
   const fy = resultFy ?? 235
   const rs = steps as any
-  const today = new Date().toLocaleDateString('ko-KR')
   const F = T.fontSans
   const mono: React.CSSProperties = { fontFamily: T.fontMono }
 
@@ -68,8 +71,8 @@ export default function ReportPage() {
   const verdictItems = Object.entries(verdict).filter(([k]) => k !== 'overallOK') as [string, any][]
 
   const rh: React.CSSProperties = {
-    background: T.bgSection, padding: '3px 10px', fontWeight: 700, fontSize: 12,
-    color: T.textAccent, borderLeft: `3px solid ${T.bgActive}`, margin: '10px 0 5px',
+    background: '#F2F0EC', padding: '3px 10px', fontWeight: 700, fontSize: 12,
+    color: '#111', borderLeft: '3px solid #333', margin: '12px 0 5px',
     fontFamily: F,
     breakAfter: 'avoid', pageBreakAfter: 'avoid',
     breakInside: 'avoid', pageBreakInside: 'avoid',
@@ -82,6 +85,10 @@ export default function ReportPage() {
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
+        <button onClick={() => { exportStructuralXlsx({ inputs, result, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
+          엑셀(.xlsx) 다운로드
+        </button>
         <button onClick={() => navigate('/structural/result')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>
           결과 페이지로
@@ -90,35 +97,12 @@ export default function ReportPage() {
 
       <div className="report-body" style={{ background: 'white', padding: '16px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.45 }}>
 
-        {/* ── 표지 헤더 ── */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 10, marginBottom: 12 }}>
-          <svg width="54" height="54" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
-            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
-            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
-            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
-              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
-          </svg>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
-              KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
-              매설관로 구조안전성 검토서
-            </div>
-            <div style={{ fontSize: 10, color: T.textMuted }}>
-              {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
-            </div>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 10, color: T.bgActive, letterSpacing: 1, marginBottom: 5, fontWeight: 600 }}>
-              PIPER
-            </div>
-            <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
-            <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
-          </div>
-        </div>
+        {/* ── 표제부 ── */}
+        <ReportTitleBlock
+          standard="KDS 57 10 00 : 2022 상수도 시설 설계기준 — 관로"
+          title="매설관로 구조안전성 검토서"
+          subtitle={pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
+        />
 
         {/* ── 1. 검토 개요 ── */}
         <div style={rh}>1. 검토 개요</div>
@@ -442,7 +426,7 @@ export default function ReportPage() {
         <div style={rh}>5. 최소관두께 검토 (참고)</div>
         <div style={NOTE}>
           {pipeType === 'steel'
-            ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값 + 부식여유 1.5mm. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+            ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값. 부식여유는 필요 시 별도 가산. 기준: KDS 57 10 00 §3.2 / AWWA M11'
             : '주철관: KS D 4311 Di기반 Barlow 역산(내압) + 링휨 역산(외압) 중 최댓값. KS D 4311에 취급두께·부식여유 별도 규정 없음.'}
         </div>
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
@@ -459,7 +443,7 @@ export default function ReportPage() {
                 result={s1?.tHandling ?? 0} unit="mm"/>
               <HR/>
               <CalcRow label="소요 최소두께"
-                expr={`max(위 3가지) + 부식여유 1.5mm`}
+                expr={`max(위 3가지)  ※ 부식여유 별도 고려`}
                 result={tRequired ?? 0} unit="mm"/>
             </>
           ) : (
@@ -480,14 +464,6 @@ export default function ReportPage() {
           <CalcRow label="채택 두께 t" expr=""
             result={`${tAdopt} ${(tAdopt >= (tRequired ?? 0)) ? '≥' : '<'} ${(tRequired??0).toFixed(2)}mm  →  ${(tAdopt >= (tRequired ?? 0)) ? 'O.K.' : 'N.G.'}`}
             unit=""/>
-        </div>
-
-        {/* ── 6. 검토 의견 ── */}
-        <div style={rh}>6. 검토 의견</div>
-        <div style={{ fontSize: 11, lineHeight: 2, fontFamily: F, padding: '6px 0' }}>
-          {verdict.overallOK
-            ? `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 모든 검토항목에서 허용기준을 만족한다. ${result.pipeDimManual ? `D₀=${Do}mm, t=${tAdopt}mm [직접입력]` : `DN ${result.DN} (D₀=${Do}mm, t=${tAdopt}mm)`} ${pipeType === 'steel' ? '강관' : '덕타일 주철관'}은 설계 하중 조건에 대하여 구조적으로 안전한 것으로 판단한다.`
-            : `본 관로는 KDS 57 10 00 : 2022 기준에 의한 구조안전성 검토 결과 일부 검토항목에서 허용기준을 초과한다. 관경·관두께·침상조건 등을 재검토하거나 보강 방안을 강구하여야 한다.`}
         </div>
 
         {/* 각주 */}
