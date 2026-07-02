@@ -19,7 +19,7 @@ const td: React.CSSProperties = {
   fontFamily: T.fontSans, verticalAlign: 'top',
 }
 const tdMono: React.CSSProperties = {
-  ...td, fontFamily: T.fontMono, fontSize: 10.5, color: T.textNumber,
+  ...td, fontFamily: T.fontMono, fontSize: 11, color: T.textNumber,
 }
 
 // ── 강관 설계기준 ────────────────────────────────────────────
@@ -98,7 +98,7 @@ export default function StructuralOverviewPage() {
       {/* ── ① 검토 목적 및 적용 범위 ── */}
       <EngPanel title="① 검토 목적 및 적용 범위">
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 11.5, color: T.textLabel }}>현재 관종:</span>
+          <span style={{ fontSize: 12, color: T.textLabel }}>현재 관종:</span>
           <EngSegment
             options={[
               { key: 'steel',   label: '도복장강관',    sub: '6단계' },
@@ -110,14 +110,14 @@ export default function StructuralOverviewPage() {
         </div>
 
         {isSteel ? (
-          <div style={{ fontSize: 11.5, lineHeight: 1.7, color: T.textLabel }}>
+          <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
             <b>목적</b>: 매설 도복장강관(KS D 3565)의 내압·토압·차량하중에 대한 구조적 안전성을 KDS 57 10 00 : 2022 기준으로 검토하고 소요 관두께를 산정한다.<br />
             <b>적용 범위</b>: DN 80 ~ DN 3000 (PN 계열), 토피 0.3 ~ 10.0 m, DB-24 차량하중.<br />
             <b>검토 항목</b>: 내압 (후프응력) → 링 휨응력 → 처짐 → 외압 좌굴 → 최소관두께 역산.<br />
             <b>검토 제외</b>: 수격압 상세해석 (ksurge 계수로 간략 반영), 용접부 피로·수온변화·잔류응력, 횡방향 지반변형 (내진평가 모듈 별도).
           </div>
         ) : (
-          <div style={{ fontSize: 11.5, lineHeight: 1.7, color: T.textLabel }}>
+          <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
             <b>목적</b>: 매설 덕타일 주철관(KS D 4311)의 내압·토압·차량하중에 대한 구조적 안전성을 KDS 57 10 00 : 2022 / DIPRA 기준으로 검토한다.<br />
             <b>적용 범위</b>: DN 80 ~ DN 2600 (K-7 / K-9 / K-10 / K-12 등급), 토피 0.3 ~ 10.0 m.<br />
             <b>검토 항목</b>: 내압 (Barlow, Di 기반) → 링 휨응력 → 처짐 (Iowa 식) → 최소관두께 역산.<br />

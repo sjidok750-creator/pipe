@@ -42,7 +42,7 @@ export default function PrintLayout({ children, backPath }: PrintLayoutProps) {
         >
           ← 돌아가기
         </button>
-        <span style={{ fontSize: 10.5, color: '#666', marginLeft: 8 }}>
+        <span style={{ fontSize: 11, color: '#666', marginLeft: 8 }}>
           브라우저 인쇄 대화상자에서 &quot;머리글/바닥글&quot;을 해제하면 더 깔끔합니다
         </span>
       </div>

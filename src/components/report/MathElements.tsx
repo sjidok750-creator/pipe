@@ -109,7 +109,7 @@ export function FormulaBlock({
         borderLeft: '3px solid #CC6B3D',
         padding: '5px 12px',
         margin: '4px 0 6px',
-        fontSize: 10.5,
+        fontSize: 11,
         lineHeight: 1.55,
         ...style,
       }}
@@ -141,7 +141,7 @@ export function ResultBlock({
         borderLeft: `3px solid ${color}`,
         padding: '4px 12px',
         margin: '3px 0 5px',
-        fontSize: 10.5,
+        fontSize: 11,
         lineHeight: 1.55,
       }}
     >
@@ -156,7 +156,7 @@ export function OKBadge({ ok }: { ok: boolean }) {
     <span style={{
       display: 'inline-block',
       padding: '1px 8px',
-      fontSize: 10.5,
+      fontSize: 11,
       fontWeight: 700,
       borderRadius: 2,
       background: ok ? '#f0faf4' : '#fff0f0',

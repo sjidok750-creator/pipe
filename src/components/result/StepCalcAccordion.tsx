@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import FormulaBlock from './FormulaBlock'
+import { fmtNum as fmtSmart } from '../../lib/format'
 
 interface StepData {
   title: string
@@ -16,7 +17,7 @@ interface Props {
 
 function fmtNum(v: unknown): string {
   if (typeof v !== 'number') return String(v)
-  return v.toFixed(4)
+  return fmtSmart(v)
 }
 
 // 각 step별 계산 과정 텍스트 생성
@@ -121,11 +122,12 @@ function buildCalcLines(stepKey: string, step: StepData, pipeType: string): stri
     lines.push(`B' = 1/(1+4×e^(-0.065×${s.HoverDo?.toFixed(3)})) = ${s.Bprime?.toFixed(4)}`)
     lines.push(`EI/Do³ = ${s.EI_Do3?.toFixed(3)} kPa`)
     lines.push(`E' = ${s.Eprime} kPa`)
-    lines.push(`Pcr = (1/FS)×√(32×Rw×B'×E'×EI/Do³)`)
-    lines.push(`    = (1/${s.FS_allow})×√(32×${s.Rw}×${s.Bprime?.toFixed(4)}×${s.Eprime}×${s.EI_Do3?.toFixed(3)})`)
-    lines.push(`    = ${s.Pcr?.toFixed(3)} kPa`)
+    const PcrTh = s.Pcr_theory ?? (s.Pcr ?? 0) * (s.FS_allow ?? 2.5)
+    lines.push(`이론 좌굴압력 Pcr,th = √(32×Rw×B'×E'×EI/Do³)`)
+    lines.push(`    = √(32×${s.Rw}×${s.Bprime?.toFixed(4)}×${s.Eprime}×${s.EI_Do3?.toFixed(3)}) = ${PcrTh?.toFixed(3)} kPa`)
+    lines.push(`허용 좌굴압력 Pcr = Pcr,th / FS = ${PcrTh?.toFixed(3)} / ${s.FS_allow} = ${s.Pcr?.toFixed(3)} kPa`)
     lines.push(`외압 Pe = W_total/Do = ${s.Pe_ext?.toFixed(3)} kPa`)
-    lines.push(`F.S. = Pcr / Pe = ${s.Pcr?.toFixed(3)} / ${s.Pe_ext?.toFixed(3)} = ${s.bucklingFS_actual?.toFixed(3)} ≥ ${s.FS_allow} → ${s.ok ? 'OK' : 'NG'}`)
+    lines.push(`F.S. = Pcr,th / Pe = ${PcrTh?.toFixed(3)} / ${s.Pe_ext?.toFixed(3)} = ${s.bucklingFS_actual?.toFixed(3)} ≥ ${s.FS_allow} → ${s.ok ? 'OK' : 'NG'}`)
   }
 
 

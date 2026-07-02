@@ -94,7 +94,9 @@ export function calcSteelPipe(inputs) {
   //
   // 허용응력 σ_ba = 0.5 × fy (KDS 57 상시 하중조합)
   // ────────────────────────────────────────
-  const beddingRow = STEEL_BEDDING[steelBeddingType] || STEEL_BEDDING['deg90']
+  // 구버전 저장 데이터 호환: deg180(기준표에 없는 각도, 폐기) → deg150
+  const beddingKey = steelBeddingType === 'deg180' ? 'deg150' : steelBeddingType
+  const beddingRow = STEEL_BEDDING[beddingKey] || STEEL_BEDDING['deg90']
   const Kb_steel   = beddingRow.Kb
   const Kx_steel   = beddingRow.Kx
 
@@ -133,10 +135,14 @@ export function calcSteelPipe(inputs) {
   const Bprime  = 1 / (1 + 4 * Math.exp(-0.065 * HoverDo))
 
   const EI_Do3 = EI / (Do_m ** 3)
-  const Pcr = (1 / mat.bucklingFS) * Math.sqrt(32 * Rw * Bprime * Eprime * EI_Do3)
+  const Pcr_theory = Math.sqrt(32 * Rw * Bprime * Eprime * EI_Do3)  // 이론 좌굴압력 (kPa)
+  const Pcr = Pcr_theory / mat.bucklingFS                            // 허용 좌굴압력 (kPa)
 
   const Pe_ext = Ptotal
-  const bucklingFS_actual = Pcr / Pe_ext
+  // 안전율 = 이론 좌굴압력 / 실제 외압. 판정: FS_actual ≥ 2.5 (동치: Pcr(허용) ≥ Pe)
+  // ※ 종전 구현은 허용값(이미 1/FS 적용)에 다시 FS ≥ 2.5를 요구하여 유효 안전율 6.25를
+  //    강제하는 이중 적용 오류가 있었음 — 실무 계산서(02-1.xlsx) 판정 방식과 정합하도록 수정
+  const bucklingFS_actual = Pcr_theory / Pe_ext
   const ok_buckling = bucklingFS_actual >= mat.bucklingFS
 
   // ────────────────────────────────────────
@@ -208,7 +214,7 @@ export function calcSteelPipe(inputs) {
         title: '외압 좌굴 검토',
         ref: 'KDS 57 10 00 §3.6 / AWWA M11 Eq.5-5',
         gwLevel, Rw, HoverDo, Do_m, H, Bprime, EI_Do3, Eprime,
-        Pcr, Pe_ext, bucklingFS_actual, FS_allow: mat.bucklingFS,
+        Pcr_theory, Pcr, Pe_ext, bucklingFS_actual, FS_allow: mat.bucklingFS,
         ok: ok_buckling,
         formula: 'P_{cr} = \\frac{1}{FS}\\sqrt{32 R_w B\' E\' \\frac{EI}{D_o^3}}',
       },

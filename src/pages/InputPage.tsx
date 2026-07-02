@@ -752,29 +752,29 @@ export default function InputPage() {
           <div style={{ marginBottom: 6 }}>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>
-                {inputs.pipeType === 'steel' ? '기초지지각 — AWWA M11 Table 5-1' : '침상 조건 (Bedding Type) — DIPRA Method'}
+                {inputs.pipeType === 'steel' ? '기초지지각 — 상수도시설기준 참고표-4.2.4 / AWWA M11' : '침상 조건 (Bedding Type) — DIPRA Method'}
               </div>
               {inputs.pipeType === 'steel' ? (<>
                 <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>deg90 (90° 지지)</strong>: Kb=0.235, Kx=0.108 — 일반 모래 기초<br/>
-                  <strong>deg120 (120° 지지)</strong>: Kb=0.189, Kx=0.090 — 자갈 기초<br/>
-                  <strong>deg150 (150° 지지)</strong>: Kb=0.157, Kx=0.075 — 콘크리트 기초<br/>
+                  <strong>deg90 (90° 지지)</strong>: Kb=0.157, Kx=0.096 — 일반 모래·쇄석 기초 (표준)<br/>
+                  <strong>deg120 (120° 지지)</strong>: Kb=0.138, Kx=0.089 — 중간높이까지 다짐<br/>
+                  <strong>deg150 (150° 지지)</strong>: Kb=0.128, Kx=0.085 — 상부까지 다짐 (최우수)<br/>
                   지지각이 클수록 하중 분산 유리 → Kb·Kx 감소 → 응력·처짐 감소
                 </div>
                 <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
                   <strong>실무 적용 기준 (KDS 57 10 00)</strong><br/>
                   표준 시공: deg90 (모래 되메움)<br/>
                   고압·대구경: deg120 이상 적용 권장<br/>
-                  콘크리트 기초: deg150
+                  최상급 다짐 기초: deg150
                 </div>
               </>) : (<>
                 <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다. Kb(링휨계수), Kd(처짐계수)에 영향을 미칩니다.</p>
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                  <strong>Type 1</strong>: Kb=0.235, Kd=0.108 — 관바닥 모양 맞춤 굴착<br/>
-                  <strong>Type 2</strong>: Kb=0.150, Kd=0.090 — 일반 평탄 굴착 (표준)<br/>
-                  <strong>Type 3</strong>: Kb=0.110, Kd=0.083 — 모래·자갈 쿠션 기초<br/>
-                  <strong>Type 4</strong>: Kb=0.085, Kd=0.075 — 콘크리트 기초
+                  <strong>Type 1</strong>: Kb=0.294, Kd=0.110 — 평기초·다짐 없음 (지지각 0°)<br/>
+                  <strong>Type 2</strong>: Kb=0.235, Kd=0.108 — 모래기초 약간 다짐 (지지각 30°, 표준)<br/>
+                  <strong>Type 3</strong>: Kb=0.189, Kd=0.103 — 모래·쇄석 균일다짐 (지지각 60°)<br/>
+                  <strong>Type 4</strong>: Kb=0.157, Kd=0.096 — 모래·쇄석 다짐 (지지각 90°)
                 </div>
                 <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
                   <strong>실무 적용</strong><br/>
@@ -792,7 +792,7 @@ export default function InputPage() {
                 return (
                   <button key={type} onClick={() => handleChange('steelBeddingType', type)}
                     style={{
-                      flex: '1 1 calc(50% - 4px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+                      flex: '1 1 calc(50% - 4px)', minWidth: 0, maxWidth: 'calc(50% - 2px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
                       border: `1px solid ${active ? T.bgActive : T.border}`,
                       background: active ? T.bgActive : T.bgPanel,
                       color: active ? T.textOnDark : T.textPrimary,
@@ -813,7 +813,7 @@ export default function InputPage() {
                 return (
                   <button key={type} onClick={() => handleChange('beddingType', type)}
                     style={{
-                      flex: '1 1 calc(50% - 4px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+                      flex: '1 1 calc(50% - 4px)', minWidth: 0, maxWidth: 'calc(50% - 2px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
                       border: `1px solid ${active ? T.bgActive : T.border}`,
                       background: active ? T.bgActive : T.bgPanel,
                       color: active ? T.textOnDark : T.textPrimary,

@@ -31,9 +31,10 @@ const DEFAULT_PRELIM = {
 // ── 상세평가 기본값 (부록C 예제값) ──────────────────────────
 // 분절관: 부록C.1 (덕타일 주철관 DN900), 연속관: 부록C.2 (강관 DN1000)
 
-// 공통 지반조건 (C.1·C.2 동일): 층1 H=30m Vs=89.4, 층2 H=5m Vs=172.9
+// 공통 지반조건 (그림 C.1.1/C.2.1): 층1 H=25m Vs=89.4, 층2 H=5m Vs=172.9 (합계 H=30m)
+// → TG=1.234s, Ts=1.543s (부록C 예제값 재현)
 const DEFAULT_LAYERS = [
-  { name: '표층',   H: 30, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
+  { name: '표층',   H: 25, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
   { name: '중간층', H: 5,  N: null, Vs_manual: 172.9, isRock: false, Vs: 172.9 },
 ]
 
@@ -49,8 +50,8 @@ const DEFAULT_SEGMENTED = {
   P: 1.0,            // P=1MPa
   hCover: 1.5,       // h=1.5m
   E_manual: false,
-  E_steel: 206000,
-  E_ductile: 170000,
+  E_steel: 210000,   // 부록C.2: 2.1×10⁸ kN/m²
+  E_ductile: 160000, // 부록C.1: 1.6×10⁸ kN/m²
   gammaSoil: 17,     // 부록C.1: γ=17 kN/m³
   Pm: 100,           // Pm=100 kN/輪
   Kv: 10000,         // Kv=10000 kN/m³
@@ -58,14 +59,15 @@ const DEFAULT_SEGMENTED = {
   nu: 0.28,          // ν=0.28
   Lj: 6,             // l=6m
   isSeismicJoint: false,
+  e_allow_manual: null,  // 허용신축량 직접입력 (m) — null이면 KS 삽입깊이 기반 자동
   hasSettle: false,
   D_settle: 0,
   L_settle: 0,
   h2_settle: 0,
-  deltaT: 15,
+  deltaT: 20,        // 부록C.1: ΔT=20℃
   strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
-  Vbs: 500,
+  Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
   H_bedrock: null,
   fillGapAsLastLayer: true,
@@ -84,7 +86,7 @@ const DEFAULT_CONTINUOUS = {
   hCover: 1.5,       // h=1.5m
   E_manual: true,    // 부록C.2: E=2.1×10⁸ kN/m²=210,000 MPa 직접 사용
   E_steel: 210000,   // 부록C.2: E=2.1×10⁵ MPa
-  E_ductile: 170000,
+  E_ductile: 160000, // 부록C.1: 1.6×10⁸ kN/m²
   gammaSoil: 17,     // 부록C.2: γ=17 kN/m³
   Pm: 100,           // Pm=100 kN/輪
   Kv: 10000,         // Kv=10000 kN/m³
@@ -99,7 +101,7 @@ const DEFAULT_CONTINUOUS = {
   deltaT: 15,        // 부록C.2: ΔT=15°C
   strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
-  Vbs: 500,
+  Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
   H_bedrock: null,
   fillGapAsLastLayer: true,
@@ -165,8 +167,8 @@ function calcDetail(inp) {
   const z_pipe = hCover + D_out / 1000 / 2
 
   // 탄성계수: 직접입력(E_manual=true) 시 사용자 입력값, 아니면 관종 기본값
-  const E_default_seg  = 170000  // 덕타일 주철관 (MPa)
-  const E_default_cont = 206000  // 강관 (MPa)
+  const E_default_seg  = 160000  // 덕타일 주철관 (MPa, 부록C C.1.2)
+  const E_default_cont = 210000  // 강관 (MPa, 부록C C.2.2)
   const E_use = E_manual
     ? (pipeType === 'segmented' ? (E_ductile ?? E_default_seg) : (E_steel ?? E_default_cont))
     : (pipeType === 'segmented' ? E_default_seg : E_default_cont)
@@ -188,8 +190,9 @@ function calcDetail(inp) {
       Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
       gamma: inp.gammaSoil ?? 18,
-      nu: nu ?? 0.26,
+      nu: nu ?? 0.28,
       l_joint: Lj, h_cover: hCover, z_pipe, isSeismicJoint,
+      e_allow_input: inp.e_allow_manual ?? null,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv_eff,
       // 부등침하: L_settle은 연약지반 전체 구간 길이, l_settle = L/2

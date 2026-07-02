@@ -35,50 +35,53 @@ export function calcDesignSpectrum(S, Fa, Fv) {
 }
 
 // ─── 기반면(암반) 속도응답스펙트럼 Sv 산정 ─────────────────
-// 지침 5.3.2(3): 기반면 가속도 스펙트럼(암반, Fa=Fv=1.0)을 변환 후 감쇠비 보정
-// KDS 17 10 00 암반지반 스펙트럼: T_A=0.06s, T_B=0.3s
-//   T ≤ T_A: Sa 선형 증가
-//   T_A ≤ T ≤ T_B: Sa = Sas (정가속도)
-//   T > T_B: Sa = Sas × T_B / T (정속도 구간 → Sv 일정)
-// Sv 플래토 = Sas × g × T_B / (2π)
-// 감쇠비 보정계수: η = √(10/(5+ξ))  [KDS 17 10 00]
-//   붕괴방지수준(ξ=20%): η = √(10/25) = 0.6325
-//   기능수행수준(ξ=10%): η = √(10/15) = 0.8165
+// 근거: KDS 17 10 00 암반지반(S1) 표준설계응답스펙트럼 + 감쇠보정계수 C_D
+//       (평가요령 부록C 및 실무 계산서 동일 적용 확인)
+//   T ≤ T_A(0.06s):        Sa = S×(1+30T)   [T_A에서 2.8S 도달]
+//   T_A ≤ T ≤ T_B(0.3s):  Sa = 2.8×S       (정가속도)
+//   T > T_B:                Sa = 0.84×S/T    (정속도 → Sv 일정)
+// 감쇠보정계수: C_D = (6.42/(1.42+ξ))^0.48  [KDS 17 10 00]
+//   붕괴방지수준(ξ=20%): C_D = 0.5605
+//   기능수행수준(ξ=10%): C_D = 0.7585
+//   (T=0에서 1.0, 0~T_A 직선보간, T≥T_A에서 C_D)
+// Sv = Sa × g × T / (2π) × C_D
 // S: Z × I (기반암 기준, Fa=Fv=1.0 적용 전)
-// 검증: 예제 Z=0.11, I=1.4, Ts=1.543s → Sv=0.113 m/s (붕괴방지)
+// 검증: 부록C 예제 C.2 — Z=0.11, I=1.4, Ts=1.543s → Sv=0.113 m/s ✓ (그림 C.2.4)
+//       실무 계산서 — Ts=0.256s → Sv=0.0967 / Ts=0.404s → Sv=0.113 ✓
+// ※ 구버전(2.5S plateau + η=√(10/(5+ξ)))은 붕괴방지수준에서 우연히 0.7% 차이로
+//    근접했으나 기능수행수준에서 약 4% 과소 → KDS 원식으로 교체
 export function calcSv(S, Ts, level = 'collapse', g = 9.81) {
-  const T_A = 0.06    // 암반지반 단주기 전이주기 (KDS 17 10 00 해설표 2.1.7)
+  const T_A = 0.06    // 암반지반 단주기 전이주기 (KDS 17 10 00)
   const T_B = 0.3     // 암반지반 장주기 전이주기
 
   // 암반 기반면 단주기 스펙트럼 가속도 (Fa=1.0)
-  const Sas = S * 2.5  // g배수
+  const Sas = S * 2.8  // g배수
 
-  // 감쇠비 보정계수
+  // 감쇠보정계수 C_D
   const xi = level === 'collapse' ? 20 : 10   // % (붕괴방지=20%, 기능수행=10%)
-  const eta = Math.sqrt(10 / (5 + xi))
+  const Cd_full = Math.pow(6.42 / (1.42 + xi), 0.48)
+  const Cd = Ts <= 0 ? 1.0 : (Ts >= T_A ? Cd_full : 1.0 + (Cd_full - 1.0) * (Ts / T_A))
 
-  // 감쇠보정 전 Sv 플래토 = Sas × g × T_B / (2π)
+  // 감쇠보정 전 Sv 플래토 (참고용)
   const Sv_plateau_raw = Sas * g * T_B / (2 * Math.PI)
 
-  // Ts 구간별 Sa 산정 (암반 기준)
-  let Sa_raw  // 감쇠보정 전, g배수
+  // Ts 구간별 Sa 산정 (암반 기준, 감쇠보정 전)
+  let Sa_raw  // g배수
   if (Ts <= T_A) {
-    Sa_raw = Sas * (0.4 + 0.6 * Ts / T_A)
+    Sa_raw = S * (1 + 30 * Ts)
   } else if (Ts <= T_B) {
-    Sa_raw = Sas                          // 정가속도 구간
+    Sa_raw = Sas                        // 정가속도 구간
   } else {
-    Sa_raw = Sas * T_B / Ts              // 정속도 구간 (Sa 감소, Sv 일정)
+    Sa_raw = 0.84 * S / Ts              // 정속도 구간 (Sa 감소, Sv 일정)
   }
 
-  // 감쇠보정 전 Sv
-  const Sv_raw = Sa_raw * g * Ts / (2 * Math.PI)
+  // Sv = Sa×g×T/(2π)×C_D  (T>T_B에서는 0.84S×g×C_D/(2π)로 자동 상수화)
+  const Sv = Sa_raw * g * Ts / (2 * Math.PI) * Cd
 
-  // 감쇠보정 후 Sv — 장주기 정속도 구간에서 플래토값 × η 적용
-  const Sv = (Ts > T_B ? Sv_plateau_raw : Sv_raw) * eta
+  const Sa = Sa_raw * Cd   // 감쇠보정 후 Sa (참고용)
 
-  const Sa = Sa_raw * eta   // 감쇠보정 후 Sa (참고용)
-
-  return { Sv, Sa, Sas, Sv_plateau_raw, eta, xi, T_A, T_B }
+  // eta 키는 구버전 호환용 별칭 (= C_D)
+  return { Sv, Sa, Sas, Sv_plateau_raw, eta: Cd, Cd, Cd_full, xi, T_A, T_B }
 }
 
 // ─── 내압에 의한 축응력 (분절관) ────────────────────────────
@@ -100,76 +103,125 @@ export function calcAxialStressTraffic(Wm, Z_m, E_kN, I_m, Kv, D_m) {
   return sigma_o_kN / 1000   // MPa
 }
 
-// ─── 보정계수 ξ1, ξ2 (분절관 지진 축응력·휨응력) ────────────
-// 근거: 기존시설물(상수도) 내진성능 평가요령 부록C 해설그림 C.1.4, C.1.5
+// ─── 보정계수 ξ1, ξ2 (분절관 지진 축응력·휨응력) — 해석해 ──
+// 근거: 평가요령 부록C 해설그림 5.3.3/5.3.4 (= C.1.4/C.1.5)의 원본 이론 모델
 //
-// ξ1: 단변수 해석 공식 — ξ1 = 0.5×(1+tanh(k×(ln(ν'×λ1L')−ln(u0))))
-//   k=0.952, u0=2.878 (앵커: ν'=0.019, λ1L'=16.818 → ξ1=0.015 ✓)
-//   부록C 예제 C.1 결과와 일치 검증
+// 모델: 이음부에서 힘 전달이 끊기는 관 1본(길이 l)이 정현파 지반변위
+//       ug = U·sin(kx+φ)를 받을 때의 응답을 연속관 대비 비율로 나타낸 해석해
+//   ξ1: 탄성지반(K1) 위 봉(축력), 양단 축력 0  → EA·u″ = K1(u−ug)
+//   ξ2: 탄성지반(K2) 위 보(휨),  양단 M=0, V=0 → EI·u⁗ + K2·u = K2·ug
+//   관 위치 불확실성 → 최악 위상 φ에 대해 최대화 (위상 최대화는 해석적 처리:
+//   응답이 cosφ·P(x)+sinφ·Q(x) 형태 → max_φ = √(P²+Q²))
 //
-// ξ2: 2D lookup table + 로그-선형 보간 (오버슈트 구간 포함)
-//   피크 위치 ≈ π/ν, 수렴 ≈ 2π/ν
-//   앵커: ν=0.028, λ2L=107.979 → ξ2=0.149 ✓
+// 검증 (그래프 판독 불필요 — 이론해가 지침 그래프 원본):
+//   · 지침 인쇄 곡선과 픽셀 대조 일치 (ξ1 전 곡선, ξ2 ν≤0.1 전 곡선)
+//   · 동일 모델이 지침 인쇄 수식 ūJ(이음부 신축량)를 4자리 재현 (0.2912/0.2913)
+//   · 실무 계산서 대사: ξ1(21.274, 0.046)=0.1181(≒0.118), ξ2(78.77, 0.066)=0.759(≒0.76)
+//   · ξ2 피크 위치 = 2√2π/ν (보-지반 고유파장 공진) — 지침 곡선과 일치
+// ※ 구버전(차트 디지타이즈 룩업)은 ξ2 곡선이 실제 대비 약 2.8배 좌측으로
+//    밀려 있어 폐기 — ν=0.028, λ2L=108에서 지침 예제 C.1의 0.149는
+//    지침 작성자의 수기 판독값이며 곡선 위 실제 값은 0.186 (이론해 채택)
 
-// ξ1 해석 공식 (단변수: u = ν' × λ1L')
-const _XI1_K  = 0.9517
-const _XI1_U0 = 2.878
-
-// ξ2 lookup table — (λ2L, ξ2), 곡선 파라미터 ν
-// 피크 위치: ν=0.01→350, 0.02→250, 0.04→78, 0.06→52, 0.10→30, 0.20→15
-// 앵커 기반 수치화: ν=0.02 x=108→0.024, ν=0.04 x=108→1.055
-const _XI2_TABLE = {
-  0.01: [[0,0],[100,0.001],[200,0.020],[300,0.120],[350,0.280],[400,0.500],[450,0.750],[500,0.920],[550,1.020],[600,1.055],[650,1.065],[700,1.058],[800,1.030],[1000,1.010],[1400,1.003],[2000,1.000]],
-  0.02: [[0,0],[50,0.001],[75,0.004],[100,0.019],[108,0.027],[120,0.048],[140,0.115],[160,0.245],[180,0.460],[200,0.680],[220,0.880],[240,0.995],[250,1.052],[265,1.068],[280,1.072],[300,1.065],[350,1.035],[400,1.015],[500,1.005],[700,1.000]],
-  0.04: [[0,0],[20,0.050],[30,0.190],[40,0.430],[50,0.680],[60,0.880],[70,0.990],[78,1.050],[85,1.075],[100,1.055],[125,1.025],[150,1.010],[200,1.003],[300,1.000],[500,1.000]],
-  0.06: [[0,0],[15,0.120],[25,0.430],[35,0.760],[45,0.970],[52,1.040],[58,1.070],[65,1.075],[75,1.060],[90,1.030],[120,1.010],[180,1.003],[300,1.000],[500,1.000]],
-  0.10: [[0,0],[8,0.140],[15,0.500],[20,0.780],[25,0.940],[30,1.020],[35,1.060],[40,1.070],[50,1.055],[65,1.025],[90,1.010],[150,1.003],[250,1.000],[500,1.000]],
-  0.20: [[0,0],[4,0.140],[8,0.500],[12,0.830],[15,0.980],[18,1.040],[22,1.070],[28,1.060],[35,1.030],[50,1.010],[80,1.003],[130,1.000],[500,1.000]],
-}
-
-function _interp1D(pts, x) {
-  if (x <= pts[0][0]) return pts[0][1]
-  if (x >= pts[pts.length - 1][0]) return pts[pts.length - 1][1]
-  for (let i = 0; i < pts.length - 1; i++) {
-    if (x >= pts[i][0] && x <= pts[i + 1][0]) {
-      const t = (x - pts[i][0]) / (pts[i + 1][0] - pts[i][0])
-      return pts[i][1] + t * (pts[i + 1][1] - pts[i][1])
+// n×n 선형계 풀이 — 부분 피벗 가우스 소거
+function _solveLinear(A, b) {
+  const n = b.length
+  const M = A.map((row, i) => [...row, b[i]])
+  for (let col = 0; col < n; col++) {
+    let p = col
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[p][col])) p = r
+    if (Math.abs(M[p][col]) < 1e-300) return null
+    ;[M[col], M[p]] = [M[p], M[col]]
+    for (let r = 0; r < n; r++) {
+      if (r === col) continue
+      const f = M[r][col] / M[col][col]
+      for (let c2 = col; c2 <= n; c2++) M[r][c2] -= f * M[col][c2]
     }
   }
-  return pts[pts.length - 1][1]
+  return M.map((row, i) => row[n] / M[i][i])
 }
 
-// 2D 보간: ν 축은 로그, λ 축은 선형 (ξ2 전용)
-function _interpXi2(table, lam, nu) {
-  const nuKeys = Object.keys(table).map(Number).sort((a, b) => a - b)
-  const nuCl = Math.max(nuKeys[0], Math.min(nuKeys[nuKeys.length - 1], nu))
-  let lo = nuKeys[0], hi = nuKeys[nuKeys.length - 1]
-  for (let i = 0; i < nuKeys.length - 1; i++) {
-    if (nuCl >= nuKeys[i] && nuCl <= nuKeys[i + 1]) { lo = nuKeys[i]; hi = nuKeys[i + 1]; break }
+// 복소수 헬퍼: [re, im]
+const _cMul = (a, b) => [a[0]*b[0] - a[1]*b[1], a[0]*b[1] + a[1]*b[0]]
+const _cExp = (re, im) => { const m = Math.exp(re); return [m*Math.cos(im), m*Math.sin(im)] }
+
+// ξ1: 축응력 보정계수 — 탄성지반 위 자유단 봉의 해석해
+// lam1Lp = λ1 × L',  nu_prime = l / L'  (l=1 정규화: λ1·l = lam1Lp·ν', k·l = 2π·ν')
+export function calcXi1(lam1Lp, nu_prime, nx = 1001) {
+  const lam = lam1Lp * nu_prime
+  const k = 2 * Math.PI * nu_prime
+  if (!(lam > 1e-8) || !(k > 1e-10)) return 0
+  const Eexp = Math.exp(-lam)
+  // u_h = a1·e^{−λx} + a2·e^{−λ(1−x)},  변형률 BC: u'(0)=u'(1)=0 (이음부 축력 0)
+  // 계수행렬 [[−λ, λE],[−λE, λ]], 위상 cos/sin 성분별 우변
+  const det = -lam * lam * (1 - Eexp * Eexp)
+  if (Math.abs(det) < 1e-300) return 0
+  // cos성분: u_p' = k·cos(kx) → rhs [−k, −k·cos(k)]
+  const bc0 = -k, bc1 = -k * Math.cos(k)
+  const a1c = (bc0 * lam - lam * Eexp * bc1) / det
+  const a2c = (lam * Eexp * bc0 - lam * bc1) / det
+  // sin성분: u_p' = −k·sin(kx) → rhs [0, +k·sin(k)]
+  const bs0 = 0, bs1 = k * Math.sin(k)
+  const a1s = (bs0 * lam - lam * Eexp * bs1) / det
+  const a2s = (lam * Eexp * bs0 - lam * bs1) / det
+  let best = 0
+  for (let i = 0; i <= nx; i++) {
+    const x = i / nx
+    const e1 = -lam * Math.exp(-lam * x)
+    const e2 = lam * Math.exp(-lam * (1 - x))
+    const P = a1c * e1 + a2c * e2 + k * Math.cos(k * x)
+    const Q = a1s * e1 + a2s * e2 - k * Math.sin(k * x)
+    const v = P * P + Q * Q
+    if (v > best) best = v
   }
-  const xi_lo = _interp1D(table[lo], lam)
-  if (lo === hi) return Math.max(0, xi_lo)
-  const xi_hi = _interp1D(table[hi], lam)
-  const t = (Math.log(nuCl) - Math.log(lo)) / (Math.log(hi) - Math.log(lo))
-  // ξ 값이 모두 양수일 때 로그 보간, 0 근처는 선형
-  if (xi_lo > 0.001 && xi_hi > 0.001) {
-    return Math.max(0, Math.exp(Math.log(xi_lo) + t * (Math.log(xi_hi) - Math.log(xi_lo))))
+  return Math.sqrt(best) / k
+}
+
+// ξ2: 휨응력 보정계수 — 탄성지반 위 자유단 보의 해석해
+// lam2L = λ2 × L,  nu_val = l / L  (l=1 정규화: λ2·l = lam2L·ν, k·l = 2π·ν)
+export function calcXi2(lam2L, nu_val, nx = 1501) {
+  const lam = lam2L * nu_val
+  const k = 2 * Math.PI * nu_val
+  if (!(lam > 1e-6) || !(k > 1e-10)) return 0
+  const c = lam / Math.SQRT2
+  // 특성근 r = c(−1+i); 기저 F(x)=e^{rx}(좌측감쇠), G(x)=e^{r(1−x)}(우측감쇠)
+  // F⁽ⁿ⁾ = rⁿF, G⁽ⁿ⁾ = (−r)ⁿG;  r² = −2ic², r³ = 2c³(1+i)
+  const r2 = [0, -2 * c * c]
+  const r3 = [2 * c ** 3, 2 * c ** 3]
+  const F = (x) => _cExp(-c * x, c * x)
+  const G = (x) => _cExp(-c * (1 - x), c * (1 - x))
+  // u_h = Re[A·F] + Re[B·G], 미지수 [ReA, ImA, ReB, ImB]
+  // u⁽ⁿ⁾ 행: A항 계수 p=rⁿ·F → [p.re, −p.im], B항 q=(−1)ⁿrⁿ·G → [q.re, −q.im]
+  const row = (xv, rn, gsign) => {
+    const p = _cMul(rn, F(xv))
+    const q = _cMul([gsign * rn[0], gsign * rn[1]], G(xv))
+    return [p[0], -p[1], q[0], -q[1]]
   }
-  return Math.max(0, xi_lo + t * (xi_hi - xi_lo))
-}
-
-// ξ1: 축응력 보정계수 — 해석 공식 (단변수 u = ν' × λ1L')
-// lam1Lp = λ1 × L',  nu_prime = l / L'
-export function calcXi1(lam1Lp, nu_prime) {
-  const u = nu_prime * lam1Lp
-  if (u <= 0) return 0
-  return Math.min(1.0, Math.max(0, 0.5 * (1 + Math.tanh(_XI1_K * (Math.log(u) - Math.log(_XI1_U0))))))
-}
-
-// ξ2: 휨응력 보정계수 (오버슈트 허용 — 최대 약 1.07)
-// lam2L = λ2 × L,  nu_val = l / L
-export function calcXi2(lam2L, nu_val) {
-  return Math.max(0, _interpXi2(_XI2_TABLE, lam2L, nu_val))
+  const M = [
+    row(0, r2, +1),   // u''(0) = −u_p''(0)
+    row(1, r2, +1),   // u''(1)
+    row(0, r3, -1),   // u'''(0) [(−r)³ = −r³]
+    row(1, r3, -1),   // u'''(1)
+  ]
+  // u_p = sin(kx+φ): u_p''=−k²sin(kx+φ), u_p'''=−k³cos(kx+φ)
+  const bc = [k * k * Math.sin(0), k * k * Math.sin(k), k ** 3 * Math.cos(0), k ** 3 * Math.cos(k)]
+  const bs = [k * k * Math.cos(0), k * k * Math.cos(k), -(k ** 3) * Math.sin(0), -(k ** 3) * Math.sin(k)]
+  const ac = _solveLinear(M, bc)
+  const as = _solveLinear(M, bs)
+  if (!ac || !as) return 0
+  let best = 0
+  for (let i = 0; i <= nx; i++) {
+    const x = i / nx
+    const Fx = F(x), Gx = G(x)
+    const upp = (a) => {
+      const A = [a[0], a[1]], B = [a[2], a[3]]
+      return _cMul(_cMul(A, r2), Fx)[0] + _cMul(_cMul(B, r2), Gx)[0]
+    }
+    const P = upp(ac) - k * k * Math.sin(k * x)
+    const Q = upp(as) - k * k * Math.cos(k * x)
+    const v = P * P + Q * Q
+    if (v > best) best = v
+  }
+  return Math.sqrt(best) / (k * k)
 }
 
 // ─── 지진시의 축응력 (분절관) ───────────────────────────────
@@ -252,10 +304,11 @@ export function calcJointDispSeismic(Uh, L, K1_kN, E_kN, A_m, l) {
 // 해설식(5.3.26): e_t = α × ΔT × l
 // 해설식(5.3.27): e_d = √(l² + δ²) - l ≈ δ²/(2l) (소변위 근사)
 // σ_i, σ_o: kN/m², E: kN/m², l: m
-export function calcJointDispStatic(sigma_i_kN, sigma_o_kN, E_kN, l, deltaT, delta_settle, l_settle) {
+// α(선팽창계수): 주철 1.0×10⁻⁵/℃ — 부록C 표 C.1.4 역산 확인 (0.0012m = α×20℃×6m)
+export function calcJointDispStatic(sigma_i_kN, sigma_o_kN, E_kN, l, deltaT, delta_settle, l_settle, alpha = 1.0e-5) {
   const e_i = (sigma_i_kN / E_kN) * l                           // 내압 (m)
   const e_o = (sigma_o_kN / E_kN) * l                           // 차량 (m)
-  const e_t = 1.2e-5 * deltaT * l                               // 온도 (m), α주철=1.2e-5/℃
+  const e_t = alpha * deltaT * l                                // 온도 (m)
   // 부등침하: 해설식(5.3.27), ed = Δl = √(l²+δ²) - l
   const e_d = delta_settle > 0 && l_settle > 0
     ? Math.sqrt(l_settle ** 2 + delta_settle ** 2) - l_settle
@@ -298,9 +351,9 @@ export function getAllowableJointDisp(DN, isSeismicJoint = false) {
 }
 
 // ─── 허용응력 (분절관) ───────────────────────────────────────
-// 지침 예제(표 C.1.3) 허용응력: 27.50 MPa (덕타일주철관 2종관, 내진 시)
-// 산정 근거: KS D 4311 / KDS 57 17 00 (추후 확인 필요 — 현재 예제값 사용)
-// 상시 허용응력: 관종/관경에 따라 별도 (현재 예제 기준값 적용)
+// 평가요령 부록C 표 C.1.3 확인: 허용응력 27.50 MPa (덕타일주철관 2종관, 내진 시)
+// 실무 계산서(02-3.xlsx)도 동일값 적용. 관종·등급별 세부 산정근거는 지침에
+// 미제시 — 타 등급/관종 적용 시 sigma_allow 직접입력으로 조정
 export const ALLOW_STRESS_DI = {
   seismic: 27.5,   // MPa (예제 기준, 덕타일 주철관 2종관)
 }
@@ -320,8 +373,10 @@ export const ALLOW_STRESS_DI = {
  * @param {number} params.Vbs          - 기반암 전단파속도 (m/s)
  * @param {number} params.gamma        - 흙 단위체적중량 (kN/m³)
  * @param {number} params.P            - 설계수압 (MPa)
- * @param {number} params.nu           - 포아송비 (주철관 0.26)
- * @param {number} params.E            - 탄성계수 (MPa, 주철관 170,000)
+ * @param {number} params.nu           - 포아송비 (주철관 0.28, 부록C C.1.2)
+ * @param {number} params.E            - 탄성계수 (MPa, 주철관 160,000 = 1.6×10⁸ kN/m², 부록C C.1.2)
+ * @param {number} params.tolFactor    - 주철관 두께 공차계수 (t_eff = t/tolFactor, 부록C: 1.1)
+ * @param {number} params.e_allow_input - 허용신축량 직접입력 (m), 미입력 시 KS 삽입깊이 기반 산정
  * @param {number} params.h_cover      - 토피 (m)
  * @param {number} params.z_pipe       - 지표~관축 거리 (m)
  * @param {boolean} params.isSeismicJoint - 내진형 이음 여부
@@ -343,8 +398,8 @@ export function evalSegmented(params) {
     layers, Vbs,
     gamma = 18,         // kN/m³
     P,
-    nu = 0.26,          // 주철관
-    E = 170000,         // MPa, 주철관
+    nu = 0.28,          // 주철관 (부록C C.1.2: ν=0.28)
+    E = 160000,         // MPa, 주철관 (부록C C.1.2: 1.6×10⁸ kN/m²)
     h_cover, z_pipe,
     isSeismicJoint = false,
     Pm = 0,
@@ -355,15 +410,20 @@ export function evalSegmented(params) {
     delta_settle = 0,
     l_settle = 0,
     sigma_allow: sigma_allow_input,
+    tolFactor = 1.1,    // 주철구조물 두께 공차계수 (부록C C.1.2: t = t₀/1.1)
+    e_allow_input = null,
   } = params
 
   const D_m = D / 1000     // m (외경)
-  const t_m = t / 1000     // m (관두께)
+  // 유효 관두께: 공칭관두께에서 주철구조물 공차를 뺀 값 (부록C C.1.2, t = t₀/1.1)
+  // 단면성능(A, I, Z)과 내압 축응력 모두 유효두께 기준 (부록C 예제 및 실무 계산서 동일)
+  const t_eff = t / (tolFactor > 0 ? tolFactor : 1)   // mm
+  const t_m = t_eff / 1000  // m (유효 관두께)
   const E_kN = E * 1000    // kN/m²
   const P_MPa = P          // MPa
   const P_kN = P * 1000    // kN/m²
 
-  // 단면 특성 (m 단위)
+  // 단면 특성 (m 단위, 유효두께 기준)
   const A_m = Math.PI / 4 * (D_m ** 2 - (D_m - 2 * t_m) ** 2)    // m²
   const I_m = Math.PI / 64 * (D_m ** 4 - (D_m - 2 * t_m) ** 4)   // m⁴
   const Z_m = I_m / (D_m / 2)                                      // m³
@@ -401,7 +461,7 @@ export function evalSegmented(params) {
   const Uh = calcGroundDisp(Sv, Ts, z_pipe, H_total)  // m
 
   // ── Step 6: 파장 (해설식 5.3.7~5.3.9) ──
-  const { L, L1: Lwave1, L2: Lwave2, eps: epsWave } = calcWavelength(Ts, Vds, Vbs)
+  const { L, L1: Lwave1, L2: Lwave2 } = calcWavelength(Ts, Vds, Vbs)
 
   // ── Step 7: 지반 강성계수 (해설식 5.3.10~5.3.11) ──
   const { K1, K2 } = calcGroundStiffness(gamma, Vds)   // kN/m²
@@ -410,8 +470,8 @@ export function evalSegmented(params) {
   const { lambda1, lambda2 } = calcLambda(K1, K2, E_kN, A_m, I_m)
   const { alpha1, alpha2, Lprime } = calcAlpha(lambda1, lambda2, L)
 
-  // ── Step 9: 내압에 의한 축응력 (해설식 5.3.1) ──
-  const sigma_i = calcAxialStressInternal(nu, P_MPa, D, t)  // MPa
+  // ── Step 9: 내압에 의한 축응력 (해설식 5.3.1) — 유효두께 t_eff 적용 ──
+  const sigma_i = calcAxialStressInternal(nu, P_MPa, D, t_eff)  // MPa
 
   // ── Step 10: 차량하중에 의한 축응력 (해설식 5.3.2~5.3.3) ──
   // Wm = 2×Pm×D / (C×(a+2h×tan45°)) × (1+i)  [부록C 해설식(5.3.3)]
@@ -445,8 +505,12 @@ export function evalSegmented(params) {
   )
 
   // ── Step 15: 이음부 신축량 합산 및 검토 ──
+  // 허용신축량: 직접입력 우선 (부록C 예제 C.1은 DN900에 0.031m 적용 — 산정근거 미제시,
+  // 제조사 이음 허용기준 확인 권장), 미입력 시 KS D 4311 삽입깊이 기반 산정값 사용
   const e_total = e_i + e_o + e_t + e_d + uJ
-  const e_allow = getAllowableJointDisp(DN, isSeismicJoint)
+  const e_allow = (e_allow_input != null && e_allow_input > 0)
+    ? e_allow_input
+    : getAllowableJointDisp(DN, isSeismicJoint)
   const dispOK = e_total <= e_allow
 
   // ── Step 16: 이음부 굽힘각도 (θ_J) 검토 ──
@@ -472,13 +536,14 @@ export function evalSegmented(params) {
   return {
     ok: overallOK,
     // 입력 정리
+    t_nominal: t, t_eff, tolFactor,
     S, Fa, Fv, SDS, SD1,
     // 지반
     TG, Ts, Vds, H_total, H_effective, H_sum, gap: hGap, warnings: hWarnings, vsi,
     Sv, Sa, Sas, eta, xi, T_A, T_B,
-    Uh, L, Lwave1, Lwave2, epsWave,
+    Uh, L, Lwave1, Lwave2,
     // alias (보고서/결과 페이지 호환)
-    L1: Lwave1, L2: Lwave2, eps: epsWave,
+    L1: Lwave1, L2: Lwave2,
     // 지반 강성 / 관 특성
     K1, K2, lambda1, lambda2, alpha1, alpha2, Lprime,
     A_m, I_m, Z_m,

@@ -1,5 +1,5 @@
 // 암반 기반면 설계속도응답스펙트럼 — 평가요령 부록C 그림 C.1.3/C.2.4
-// 보고서와 동일한 방식: Fa=Fv=1.0 (암반), 감쇠보정계수 η 적용
+// KDS 17 10 00 암반(S1) 스펙트럼: Fa=Fv=1.0, 감쇠보정계수 C_D=(6.42/(1.42+ξ))^0.48 적용
 import React from 'react'
 import { T } from '../tokens'
 
@@ -8,12 +8,14 @@ const G = 9.81
 const T_A = 0.06
 const T_B = 0.30
 
-function svAt(t: number, S: number, eta: number): number {
+function svAt(t: number, S: number, cd: number): number {
   if (t <= 0) return 0
-  const Sas = S * 2.5
-  if (t <= T_A) return Sas * (0.4 + 0.6 * t / T_A) * G * t / (2 * Math.PI) * eta
-  if (t <= T_B) return Sas * G * t / (2 * Math.PI) * eta
-  return Sas * G * T_B / (2 * Math.PI) * eta  // plateau 상수
+  const cdT = t >= T_A ? cd : 1.0 + (cd - 1.0) * (t / T_A)
+  let Sa
+  if (t <= T_A) Sa = S * (1 + 30 * t)
+  else if (t <= T_B) Sa = S * 2.8
+  else Sa = 0.84 * S / t
+  return Sa * G * t / (2 * Math.PI) * cdT  // T>T_B에서 plateau 상수
 }
 
 export function RockSpectrumSVG({
@@ -32,12 +34,12 @@ export function RockSpectrumSVG({
   const gH = height - mt - mb
   const T_MAX = 3.0
 
-  // 붕괴방지 ξ=20%, 기능수행 ξ=10%
-  const eta_c = Math.sqrt(10 / (5 + 20))   // ≈ 0.632
-  const eta_f = Math.sqrt(10 / (5 + 10))   // ≈ 0.816
+  // 붕괴방지 ξ=20%, 기능수행 ξ=10% — C_D = (6.42/(1.42+ξ))^0.48
+  const eta_c = Math.pow(6.42 / 21.42, 0.48)   // ≈ 0.5605
+  const eta_f = Math.pow(6.42 / 11.42, 0.48)   // ≈ 0.7585
 
-  const plat_c = S_collapse * 2.5 * G * T_B / (2 * Math.PI) * eta_c
-  const plat_f = S_func     * 2.5 * G * T_B / (2 * Math.PI) * eta_f
+  const plat_c = 0.84 * S_collapse * G / (2 * Math.PI) * eta_c
+  const plat_f = 0.84 * S_func     * G / (2 * Math.PI) * eta_f
 
   const SV_MAX = (plat_c || 0.001) * 1.40
 
@@ -181,9 +183,9 @@ export function RockSpectrumSVG({
 
       {/* 축 제목 */}
       <text x={ml + gW / 2} y={height - 3} textAnchor="middle"
-        fontSize={9.5} fill="#444" fontFamily={T.fontSans}>주기 T (초)</text>
+        fontSize={10} fill="#444" fontFamily={T.fontSans}>주기 T (초)</text>
       <text x={9} y={mt + gH / 2} textAnchor="middle"
-        fontSize={9.5} fill="#444" fontFamily={T.fontSans}
+        fontSize={10} fill="#444" fontFamily={T.fontSans}
         transform={`rotate(-90, 9, ${mt + gH / 2})`}>Sv (m/s)</text>
     </svg>
   )

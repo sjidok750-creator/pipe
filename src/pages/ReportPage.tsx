@@ -3,22 +3,23 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { T } from '../components/eng/tokens'
 import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../components/report/MathElements'
+import { fmtNum } from '../lib/format'
 // WIcon → PiperIcon (인라인)
 
 // ── 인라인 스타일 상수 ──────────────────────────────────────
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10.5, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10.5, fontWeight: 700, color: '#2C2118', borderBottom: '1px solid #C8C3BC', textAlign: 'left', background: '#EDEBE6' }
-const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #E0DDD7', verticalAlign: 'middle', fontSize: 10.5 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 11, marginBottom: 4 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 11, fontWeight: 700, color: '#2C2118', borderBottom: '1px solid #C8C3BC', textAlign: 'left', background: '#EDEBE6' }
+const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #E0DDD7', verticalAlign: 'middle', fontSize: 11 }
 const SUB: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: '#2C2118', borderLeft: '3px solid #CC6B3D', paddingLeft: 6, marginTop: 8, marginBottom: 3, breakAfter: 'avoid', pageBreakAfter: 'avoid', breakInside: 'avoid', pageBreakInside: 'avoid' }
-const NOTE: React.CSSProperties = { fontSize: 9.5, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
+const NOTE: React.CSSProperties = { fontSize: 10, color: '#777', fontStyle: 'italic', marginTop: 3, marginBottom: 6 }
 
 // ── 계산 과정 행 컴포넌트 ────────────────────────────────────
 function CalcRow({ label, expr, result, unit, indent = false }: {
   label: string; expr: string; result: string | number; unit?: string; indent?: boolean
 }) {
-  const val = typeof result === 'number' ? result.toFixed(4) : result
+  const val = fmtNum(result)
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: indent ? 16 : 0, fontSize: 10.5 }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 3, paddingLeft: indent ? 16 : 0, fontSize: 11 }}>
       <span style={{ width: 180, flexShrink: 0, color: '#444', fontWeight: 600 }}>{label}</span>
       <span style={{ color: '#555', flex: 1 }}>{expr}</span>
       <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#CC6B3D', whiteSpace: 'nowrap' }}>= {val}{unit ? ' ' + unit : ''}</span>
@@ -100,13 +101,13 @@ export default function ReportPage() {
             <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
           </svg>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
+            <div style={{ fontSize: 9, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
               KDS 57 10 00 : 2022 · 상수도 시설 설계기준 — 관로
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
               매설관로 구조안전성 검토서
             </div>
-            <div style={{ fontSize: 9.5, color: T.textMuted }}>
+            <div style={{ fontSize: 10, color: T.textMuted }}>
               {pipeType === 'steel' ? '도복장강관 (KS D 3565)' : '덕타일 주철관 (KS D 4311)'}
             </div>
           </div>
@@ -115,7 +116,7 @@ export default function ReportPage() {
               PIPER
             </div>
             <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
-            <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
+            <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 
@@ -180,7 +181,7 @@ export default function ReportPage() {
             &nbsp;[KDS 57 10 00 §3.3]
           </FormulaRow>
         </FormulaBlock>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           <CalcRow label="흙 단위중량 γs" expr="" result={inputs.gammaSoil} unit="kN/m³"/>
           <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
           <CalcRow label="외경 Do" expr="" result={Do} unit="mm"/>
@@ -200,7 +201,7 @@ export default function ReportPage() {
                 &nbsp;[KDS 24 12 20]
               </FormulaRow>
             </FormulaBlock>
-            <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
               <CalcRow label="매설깊이 H" expr="" result={inputs.H} unit="m"/>
               <CalcRow label="Boussinesq 분산압 PLraw" expr="DB-24 테이블 보간" result={sTraffic?.PLraw ?? 0} unit="kPa"/>
               <CalcRow label="충격계수 IF" expr="H에 따른 테이블값" result={sTraffic?.IF ?? 1} unit=""/>
@@ -214,7 +215,7 @@ export default function ReportPage() {
         )}
 
         {/* 합계 */}
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           <CalcRow label="합계 하중 Wtotal"
             expr={`We + WL = ${(s2?.We ?? 0).toFixed(3)} + ${(sTraffic?.WL ?? 0).toFixed(3)}`}
             result={sTraffic?.Wtotal ?? (s2?.We ?? 0)} unit="kN/m"/>
@@ -255,7 +256,7 @@ export default function ReportPage() {
             </>
           )}
         </FormulaBlock>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           <CalcRow label="설계수압 Pd" expr="" result={inputs.Pd} unit="MPa"/>
           {pipeType === 'steel' && <CalcRow label="수격압 Pd'" expr={`Pd × ${inputs.surgeRatio} = ${inputs.Pd} × ${inputs.surgeRatio}`} result={inputs.Pd * inputs.surgeRatio} unit="MPa"/>}
           <CalcRow label="외경 Do" expr="" result={Do} unit="mm"/>
@@ -301,7 +302,7 @@ export default function ReportPage() {
             {G.sigma}<Sub>a,b</Sub> = {pipeType === 'steel' ? `0.50 × fy = 0.50 × ${fy} = ${(0.50*fy).toFixed(2)} MPa` : '0.50 × fu = 0.50 × 420 = 210 MPa'}
           </FormulaRow>
         </FormulaBlock>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           <CalcRow label="침상계수 Kb" expr={`${pipeType === 'steel' ? inputs.steelBeddingType : inputs.beddingType} 기준`} result={s4?.Kb_steel ?? s4?.Kb ?? 0} unit=""/>
           <CalcRow label="합계 하중 Wtotal" expr="토피하중 + 차량하중" result={s4?.Wtotal ?? 0} unit="kN/m"/>
           <CalcRow label="외경 Do" expr="" result={Do} unit="mm"/>
@@ -334,7 +335,7 @@ export default function ReportPage() {
             EI = E<Sub>pipe</Sub> × I
           </FormulaRow>
         </FormulaBlock>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           {pipeType === 'steel' && <CalcRow label="처짐 지연계수 DL" expr="(Deflection Lag Factor, 강관)" result={s5?.DL ?? 1.5} unit=""/>}
           <CalcRow label={`처짐계수 K${pipeType === 'steel' ? 'x' : 'd'}`} expr="침상조건 기준" result={s5?.K ?? s5?.Kd ?? 0} unit=""/>
           <CalcRow label="단위압력 Ptotal" expr="Wtotal / (Do/1000)" result={s5?.Ptotal ?? 0} unit="kPa"/>
@@ -376,23 +377,26 @@ export default function ReportPage() {
                 B' = <Frac top="1" bot={<>1 + 4e<Sup>−0.065H/D</Sup></>}/>&nbsp;(탄성토지지계수)
               </FormulaRow>
             </FormulaBlock>
-            <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+            <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
               <CalcRow label="지하수위 Rw" expr={`gwLevel = ${inputs.gwLevel}`} result={s6.Rw ?? 1} unit=""/>
               <CalcRow label="H/Do" expr={`H / (Do/1000) = ${inputs.H} / ${(Do/1000).toFixed(3)}`} result={s6.HoverDo ?? 0} unit=""/>
               <CalcRow label="탄성토지지계수 B'" expr={`1 / (1 + 4×e^(−0.065 × ${(s6.HoverDo??0).toFixed(2)}))`} result={s6.Bprime ?? 0} unit=""/>
               <CalcRow label="탄성지반반력 E'" expr="" result={inputs.Eprime} unit="kPa"/>
               <CalcRow label="EI/Do³" expr={`EI / (Do/1000)³`} result={s6.EI_Do3 ?? 0} unit="kN/m²"/>
               <HR/>
+              <CalcRow label="이론 좌굴압력 Pcr,th"
+                expr={`√(32 × ${(s6.Rw??1).toFixed(2)} × ${(s6.Bprime??0).toFixed(4)} × ${inputs.Eprime} × ${(s6.EI_Do3??0).toFixed(2)})`}
+                result={s6.Pcr_theory ?? (s6.Pcr ?? 0) * (s6.FS_allow ?? 2.5)} unit="kPa"/>
               <CalcRow label="허용 좌굴압력 Pcr"
-                expr={`(1/${s6.FS_allow??2.5}) × √(32 × ${(s6.Rw??1).toFixed(2)} × ${(s6.Bprime??0).toFixed(4)} × ${inputs.Eprime} × ${(s6.EI_Do3??0).toFixed(2)})`}
+                expr={`Pcr,th / FS = ${(s6.Pcr_theory ?? (s6.Pcr??0)*(s6.FS_allow??2.5)).toFixed(2)} / ${s6.FS_allow??2.5}`}
                 result={s6.Pcr ?? 0} unit="kPa"/>
               <CalcRow label="외압 Ptotal" expr="= 합계 하중 단위압력" result={s6.Pe_ext ?? 0} unit="kPa"/>
               <HR/>
               <CalcRow label="좌굴 안전율 FS"
-                expr={`Pcr / Pe_ext = ${(s6.Pcr??0).toFixed(2)} / ${(s6.Pe_ext??0).toFixed(2)}`}
+                expr={`Pcr,th / Pe_ext = ${(s6.Pcr_theory ?? (s6.Pcr??0)*(s6.FS_allow??2.5)).toFixed(2)} / ${(s6.Pe_ext??0).toFixed(2)}`}
                 result={s6.bucklingFS_actual ?? 0} unit=""/>
               <CalcRow label="허용 안전율" expr="" result={s6.FS_allow ?? 2.5} unit=""/>
-              <CalcRow label="판정" expr={`${(s6.bucklingFS_actual??0).toFixed(3)} ≥ ${s6.FS_allow??2.5}`} result={s6.ok ? 'O.K.' : 'N.G.'} unit=""/>
+              <CalcRow label="판정" expr={`FS ${(s6.bucklingFS_actual??0).toFixed(3)} ≥ ${s6.FS_allow??2.5} (동치: Pcr ${(s6.Pcr??0).toFixed(2)} ≥ Pe ${(s6.Pe_ext??0).toFixed(2)} kPa)`} result={s6.ok ? 'O.K.' : 'N.G.'} unit=""/>
             </div>
           </>
         )}
@@ -441,7 +445,7 @@ export default function ReportPage() {
             ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값 + 부식여유 1.5mm. 기준: KDS 57 10 00 §3.2 / AWWA M11'
             : '주철관: KS D 4311 Di기반 Barlow 역산(내압) + 링휨 역산(외압) 중 최댓값. KS D 4311에 취급두께·부식여유 별도 규정 없음.'}
         </div>
-        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 10.5 }}>
+        <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           {pipeType === 'steel' ? (
             <>
               <CalcRow label="내압 최소두께 (상시)"
@@ -487,7 +491,7 @@ export default function ReportPage() {
         </div>
 
         {/* 각주 */}
-        <div style={{ marginTop: 20, borderTop: `1px solid ${T.borderLight}`, paddingTop: 8, fontSize: 9.5, color: T.textMuted, fontFamily: F, lineHeight: 1.9 }}>
+        <div style={{ marginTop: 20, borderTop: `1px solid ${T.borderLight}`, paddingTop: 8, fontSize: 10, color: T.textMuted, fontFamily: F, lineHeight: 1.9 }}>
           ※ 토피하중: Prism Load  We = γs × H × Do  [KDS 57 10 00 §3.3]<br/>
           ※ 차량하중: DB-24 + AASHTO Boussinesq 분산 + 충격계수 IF  [KDS 24 12 20]<br/>
           ※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy)  [KDS 57 10 00 §3.2]<br/>

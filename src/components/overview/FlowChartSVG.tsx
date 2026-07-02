@@ -356,7 +356,7 @@ export default function FlowChartSVG({ spec }: { spec: FlowSpec }) {
         {/* 제목 */}
         <text
           x={W / 2} y={18}
-          textAnchor="middle" fontSize={10.5} fontWeight={700}
+          textAnchor="middle" fontSize={11} fontWeight={700}
           fill={T.textAccent} fontFamily={T.fontSans} letterSpacing={0.2}
         >
           {spec.title}

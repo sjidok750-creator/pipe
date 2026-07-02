@@ -17,7 +17,7 @@ const td: React.CSSProperties = {
   fontFamily: T.fontSans, verticalAlign: 'top',
 }
 const tdMono: React.CSSProperties = {
-  ...td, fontFamily: T.fontMono, fontSize: 10.5, color: T.textNumber,
+  ...td, fontFamily: T.fontMono, fontSize: 11, color: T.textNumber,
 }
 
 const criteria = [
@@ -83,7 +83,7 @@ export default function SeismicDetailOverviewPage() {
 
       {/* ── ① 검토 목적 및 적용 범위 ── */}
       <EngPanel title="① 검토 목적 및 적용 범위">
-        <div style={{ fontSize: 11.5, lineHeight: 1.7, color: T.textLabel }}>
+        <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
           <b>목적</b>: KDS 57 17 00 : 2022 및 「매설관로 내진성능평가 요령」 부록 C에 따른
           <b> 응답변위법</b>으로 매설관로의 지진 시 응력·변형을 계산하여 내진성능을 검토한다.<br />
           <b>해석 방법</b>: 표층 지반의 지진 응답(변위) 산정 → 관로에 강제 변위 재하 → 단면력 검토.<br />
@@ -101,7 +101,7 @@ export default function SeismicDetailOverviewPage() {
           <div style={{
             display: 'inline-block', padding: '3px 10px', marginBottom: 6,
             background: '#e8f0ff', border: '1px solid #3060c0',
-            borderRadius: 3, fontSize: 10.5, color: '#1a3060', fontWeight: 600,
+            borderRadius: 3, fontSize: 11, color: '#1a3060', fontWeight: 600,
             fontFamily: T.fontMono,
           }}>
             현재 선택: {pipeKind === 'continuous' ? '연속관 (파란색 강조)' : '분절관 (파란색 강조)'}

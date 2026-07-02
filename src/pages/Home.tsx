@@ -508,7 +508,7 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {['KDS 57 10 00', 'KDS 57 17 00', 'KS D 3565', 'KS D 4311', 'DB-24', 'AWWA M11', 'DIPRA'].map(b => (
-              <span key={b} style={{ fontSize: 9.5, padding: '2px 7px', borderRadius: 3, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(173,198,229,0.25)', color: 'rgba(255,255,255,0.55)', fontFamily: T.fontMono }}>{b}</span>
+              <span key={b} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(173,198,229,0.25)', color: 'rgba(255,255,255,0.55)', fontFamily: T.fontMono }}>{b}</span>
             ))}
           </div>
         </div>
@@ -543,7 +543,7 @@ export default function Home() {
           </svg>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2, letterSpacing: '0.1px' }}>New Project</div>
-            <div style={{ fontSize: 9.5, opacity: 0.72, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>새 평가 시작</div>
+            <div style={{ fontSize: 10, opacity: 0.72, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>새 평가 시작</div>
           </div>
         </button>
 
@@ -564,7 +564,7 @@ export default function Home() {
           </svg>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2, letterSpacing: '0.1px' }}>Open Project</div>
-            <div style={{ fontSize: 9.5, color: T.textDisabled, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>프로젝트 열기</div>
+            <div style={{ fontSize: 10, color: T.textDisabled, lineHeight: 1.2, marginTop: 1, fontWeight: 400 }}>프로젝트 열기</div>
           </div>
         </button>
 

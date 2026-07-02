@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { T } from './tokens'
+import { fmtNum } from '../../lib/format'
 
 // ══════════════════════════════════════════════════════════════
 // useNumberField — 숫자 입력 훅 (커서 끊김 없이 자유롭게 타이핑)
@@ -86,14 +87,16 @@ export function EngPanel({
       <div
         onClick={collapsible ? () => setOpen(v => !v) : undefined}
         style={{
-          background: T.bgHeader,
-          color: T.textOnDark,
-          fontSize: T.fs.md,
-          fontWeight: T.fw.semibold,
+          background: T.bgPanelAlt,
+          color: T.textPrimary,
+          fontSize: T.fs.base,
+          fontWeight: T.fw.bold,
           fontFamily: T.fontSans,
-          padding: '7px 12px',
+          padding: '7px 12px 7px 10px',
           lineHeight: '22px',
           letterSpacing: 0.2,
+          borderLeft: `4px solid ${T.bgActive}`,
+          borderBottom: `1px solid ${T.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -103,7 +106,7 @@ export function EngPanel({
       >
         <span>{title}</span>
         {collapsible && (
-          <span style={{ fontSize: T.fs.xs, opacity: 0.7 }}>{open ? '▲' : '▼'}</span>
+          <span style={{ fontSize: T.fs.xs, color: T.textMuted }}>{open ? '▲' : '▼'}</span>
         )}
       </div>
       {(!collapsible || open) && (
@@ -125,16 +128,14 @@ export function EngPanel({
 export function EngSection({ title }: { title: string }) {
   return (
     <div style={{
-      background: T.bgSection,
-      color: T.textAccent,
+      color: T.textLabel,
       fontSize: T.fs.sm,
       fontWeight: T.fw.semibold,
       fontFamily: T.fontSans,
-      padding: '4px 10px',
+      padding: '3px 0 3px 8px',
       marginBottom: 8,
       marginTop: 12,
-      borderLeft: `3px solid ${T.bgActive}`,
-      borderRadius: `0 ${T.radiusSm}px ${T.radiusSm}px 0`,
+      borderLeft: `2px solid ${T.borderStrong}`,
     }}>
       {title}
     </div>
@@ -409,7 +410,8 @@ export function EngSegment({
             onClick={() => onChange(opt.key)}
             style={{
               flex: 1,
-              padding: '5px 10px',
+              minWidth: 0,
+              padding: '5px 8px',
               borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
               borderRight: i < options.length - 1 ? `1px solid ${T.border}` : 'none',
               background: active ? T.bgActive : T.bgPanel,
@@ -428,11 +430,11 @@ export function EngSegment({
             }}
           >
             {opt.sub && (
-              <div style={{ fontSize: T.fs.xs, opacity: 0.75, lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: T.fs.xs, opacity: 0.75, lineHeight: 1.3, textAlign: 'center', width: '100%' }}>
                 {opt.sub}
               </div>
             )}
-            <div style={{ lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</div>
+            <div style={{ lineHeight: 1.3, textAlign: 'center', width: '100%' }}>{opt.label}</div>
           </button>
         )
       })}
@@ -484,17 +486,11 @@ export function EngTable({
               )}
             </td>
             <td style={{ ...tdS, textAlign: 'right', fontFamily: T.fontMono, color: T.textNumber, fontWeight: T.fw.semibold }}>
-              {typeof row.value === 'number'
-                ? (Math.abs(row.value) < 0.001 && row.value !== 0 ? row.value.toExponential(3) : row.value.toFixed(4))
-                : row.value}
+              {fmtNum(row.value)}
               {row.unit && <span style={{ fontSize: T.fs.xs, color: T.textMuted, marginLeft: 3 }}>{row.unit}</span>}
             </td>
             <td style={{ ...tdS, textAlign: 'right', fontFamily: T.fontMono, color: T.textMuted }}>
-              {row.limit !== undefined
-                ? (typeof row.limit === 'number'
-                  ? (Math.abs(row.limit) < 0.001 ? row.limit.toExponential(3) : row.limit.toFixed(4))
-                  : row.limit)
-                : '—'}
+              {row.limit !== undefined ? fmtNum(row.limit) : '—'}
               {row.limit !== undefined && row.unit && <span style={{ fontSize: T.fs.xs, marginLeft: 2 }}>{row.unit}</span>}
             </td>
             <td style={{ ...tdS, textAlign: 'center' }}>
@@ -559,9 +555,7 @@ export function EngParamGrid({
         }}>
           <span style={{ fontSize: T.fs.xs, color: T.textLabel, fontFamily: T.fontSans }}>{p.label}</span>
           <span style={{ fontSize: T.fs.sm, fontFamily: T.fontMono, color: T.textNumber, fontWeight: T.fw.semibold, whiteSpace: 'nowrap' }}>
-            {typeof p.value === 'number'
-              ? (Math.abs(p.value) < 0.0001 && p.value !== 0 ? p.value.toExponential(3) : p.value.toFixed(4))
-              : p.value}
+            {fmtNum(p.value)}
             {p.unit && <span style={{ fontSize: T.fs.xs, color: T.textMuted, marginLeft: 3 }}>{p.unit}</span>}
           </span>
         </div>
@@ -660,26 +654,29 @@ export function EngPopover({ title, children, width = 360 }: {
         ref={btnRef}
         onClick={handleClick}
         title="설명 보기"
+        aria-label="설명 보기"
         style={{
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-          padding: '0 8px',
-          height: 22,
-          borderRadius: T.radiusSm,
-          border: `1px solid ${open ? T.bgActive : T.border}`,
-          background: open ? T.bgActive : T.bgPanelAlt,
-          color: open ? T.textOnDark : T.textMuted,
-          fontSize: T.fs.xs,
-          fontWeight: T.fw.medium,
+          width: 20,
+          height: 20,
+          padding: 0,
+          borderRadius: '50%',
+          border: 'none',
+          background: open ? T.bgActiveTint : 'transparent',
+          color: open ? T.bgActive : T.textDisabled,
+          fontSize: 14,
+          fontWeight: T.fw.semibold,
           fontFamily: T.fontSans,
-          letterSpacing: 0.2,
+          lineHeight: 1,
           cursor: 'pointer',
           flexShrink: 0,
-          whiteSpace: 'nowrap',
-          transition: 'background 120ms, color 120ms, border-color 120ms',
+          transition: 'background 120ms, color 120ms',
           touchAction: 'manipulation',
         }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = T.bgActive }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = open ? T.bgActive : T.textDisabled }}
       >
-        설명
+        ⓘ
       </button>
       {open && createPortal(
         <div

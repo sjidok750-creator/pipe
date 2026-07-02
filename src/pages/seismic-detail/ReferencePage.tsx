@@ -715,9 +715,10 @@ export default function SeismicDetailReferencePage() {
                 </tbody>
               </table>
               <Note>
-                탄성계수 E = 170,000 MPa (덕타일주철관, KS D 4311)<br/>
-                포아송비 ν = 0.26~0.28 (일반적으로 0.26 적용)<br/>
-                부록C 예제 (DN900): D=0.900m, t₀=0.013m, A=0.033m², I=3.25×10⁻³m⁴
+                탄성계수 E = 160,000 MPa (덕타일주철관, 평가요령 부록C C.1.2: 1.6×10⁸ kN/m²)<br/>
+                포아송비 ν = 0.28 (부록C C.1.2)<br/>
+                계산용 유효두께 t = t₀/1.1 (공칭두께에서 주철구조물 공차 차감, 부록C C.1.2)<br/>
+                부록C 예제 (DN900): D=0.900m, t₀=0.013m → t=0.0118m, A=0.033m², I=3.25×10⁻³m⁴
               </Note>
             </Section>
           </div>
@@ -769,18 +770,18 @@ export default function SeismicDetailReferencePage() {
               </Note>
 
               <div style={{ marginTop: 20 }}>
-                <Section title="감쇠보정계수 η (붕괴방지·기능수행)">
+                <Section title="감쇠보정계수 C_D (붕괴방지·기능수행)">
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead><tr>
                       <th style={TH}>성능 수준</th>
                       <th style={THC}>감쇠비 ξ</th>
-                      <th style={THC}>η = √(10/(5+ξ))</th>
+                      <th style={THC}>C_D = (6.42/(1.42+ξ))^0.48</th>
                       <th style={TH}>적용 구간</th>
                     </tr></thead>
                     <tbody>
                       {[
-                        ['붕괴방지 (Collapse Prevention)', '20%', '0.6325', 'Ts > T_B'],
-                        ['기능수행 (Immediate Occupancy)', '10%', '0.8165', 'Ts > T_B'],
+                        ['붕괴방지 (Collapse Prevention)', '20%', '0.5605', 'T ≥ T_A (0~T_A 직선보간)'],
+                        ['기능수행 (Immediate Occupancy)', '10%', '0.7585', 'T ≥ T_A (0~T_A 직선보간)'],
                       ].map(([level, xi, eta, range], i) => (
                         <tr key={i} style={{ background: i % 2 === 0 ? C.bg0 : 'white' }}>
                           <td style={TDB}>{level}</td>
@@ -792,8 +793,9 @@ export default function SeismicDetailReferencePage() {
                     </tbody>
                   </table>
                   <Note>
-                    T_A = 0.06 s, T_B = 0.3 s (암반 기반 전이주기, KDS 17 10 00 해설표 2.1.7)<br/>
-                    Sv = (Sas × g × T_B / 2π) × η&nbsp;&nbsp;(T &gt; T_B 구간, 정속도 구간)
+                    T_A = 0.06 s, T_B = 0.3 s (암반 기반 전이주기, KDS 17 10 00)<br/>
+                    암반 스펙트럼: T≤T_A → S(1+30T), T_A~T_B → 2.8S, T&gt;T_B → 0.84S/T<br/>
+                    Sv = Sa × g × T / 2π × C_D&nbsp;&nbsp;(T &gt; T_B에서 0.84·S·g·C_D/2π 상수)
                   </Note>
                 </Section>
               </div>

@@ -98,7 +98,7 @@ export function BuriedPipeResponseSVG({
             <line x1={lx}   y1={dimY - 4} x2={lx}   y2={dimY + 4} stroke="#555" strokeWidth="0.9" />
             <line x1={xEnd} y1={dimY - 4} x2={xEnd} y2={dimY + 4} stroke="#555" strokeWidth="0.9" />
             <text x={lx + plotW / 2} y={dimY + 9}
-              textAnchor="middle" fontSize="8.5" fill="#333" fontFamily={T.fontMono}>
+              textAnchor="middle" fontSize="9" fill="#333" fontFamily={T.fontMono}>
               L = {L.toFixed(0)} m (지진파장)
             </text>
           </g>
@@ -109,13 +109,13 @@ export function BuriedPipeResponseSVG({
       <circle cx={xCrest} cy={pipeY - amp} r="4.5" fill="none"
         stroke="#1a3a5c" strokeWidth="1.5" />
       <text x={xCrest} y={pipeY - amp - 9}
-        textAnchor="middle" fontSize="8.5" fontWeight="700"
+        textAnchor="middle" fontSize="9" fontWeight="700"
         fill="#1a3a5c" fontFamily={T.fontMono}>ε_B max</text>
 
       {/* ε_L 마커 (영교점) */}
       <circle cx={xMid} cy={pipeY} r="3.5" fill="#c0392b" opacity="0.85" />
       <text x={xMid} y={pipeY - 7}
-        textAnchor="middle" fontSize="8.5" fontWeight="700"
+        textAnchor="middle" fontSize="9" fontWeight="700"
         fill="#c0392b" fontFamily={T.fontMono}>ε_L max</text>
 
       {/* 압축 / 인장 레이블 */}
@@ -175,11 +175,13 @@ export function JointDisplacementSVG({
       <rect x="80" y="61" width={Math.min(scale * 92, 120)} height="9" rx="1"
         fill={ok ? T.bgActive : '#c0392b'} opacity="0.8"/>
       <line x1="172" y1="58" x2="172" y2="74" stroke="#555" strokeWidth="0.8" strokeDasharray="2 1"/>
-      <text x="175" y="72" fontSize="7" fill="#555" fontFamily={T.fontMono}>{u_allow_mm.toFixed(0)} mm</text>
-      <text x="200" y="66" fontSize="9" fill={ok ? T.bgActive : '#c0392b'} fontWeight="700">
+      <text x="172" y="83" textAnchor="middle" fontSize="7" fill="#555" fontFamily={T.fontMono}>
+        {u_allow_mm.toFixed(0)} mm
+      </text>
+      <text x="208" y="69" fontSize="9" fill={ok ? T.bgActive : '#c0392b'} fontWeight="700">
         {ok ? 'O.K.' : 'N.G.'}
       </text>
-      <text x="52" y={H - 4} fontSize="8" fill="#888" fontFamily={T.fontSans}>
+      <text x="10" y={H - 4} fontSize="8" fill="#888" fontFamily={T.fontSans}>
         관 1본 = {Lj} m
       </text>
     </svg>

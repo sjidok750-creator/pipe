@@ -118,7 +118,7 @@ function DCRRow({ label, value, allow, unit, ok, higherIsBetter = false }: Gauge
       <div style={{
         width: 118,
         flexShrink: 0,
-        fontSize: 10.5,
+        fontSize: 11,
         fontFamily: T.fontMono,
         color: T.textMuted,
         textAlign: 'right',
@@ -138,7 +138,7 @@ function DCRRow({ label, value, allow, unit, ok, higherIsBetter = false }: Gauge
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: 9.5,
+        fontSize: 10,
         fontWeight: 700,
         color: 'white',
         fontFamily: T.fontSans,
@@ -164,7 +164,7 @@ export default function SafetyGaugeSVG({ items }: Props) {
         borderBottom: `1px solid ${T.borderLight}`,
         marginBottom: 2,
       }}>
-        <div style={{ width: 128, flexShrink: 0, fontSize: 9.5, color: T.textMuted, fontFamily: T.fontSans }}>항목</div>
+        <div style={{ width: 128, flexShrink: 0, fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>항목</div>
         <div style={{ flex: 1, position: 'relative', fontSize: 9, color: T.textMuted, fontFamily: T.fontSans }}>
           <span style={{ position: 'absolute', left: 0 }}>0</span>
           <span style={{
@@ -176,7 +176,7 @@ export default function SafetyGaugeSVG({ items }: Props) {
           }}>허용한계</span>
           <span style={{ position: 'absolute', right: 0 }}>1.2</span>
         </div>
-        <div style={{ width: 118, flexShrink: 0, fontSize: 9.5, color: T.textMuted, fontFamily: T.fontSans, textAlign: 'right' }}>실제 / 허용</div>
+        <div style={{ width: 118, flexShrink: 0, fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, textAlign: 'right' }}>실제 / 허용</div>
         <div style={{ width: 36, flexShrink: 0 }} />
       </div>
 
