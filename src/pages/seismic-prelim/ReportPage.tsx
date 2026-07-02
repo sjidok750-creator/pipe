@@ -8,11 +8,15 @@ import {
 } from '../../engine/seismicConstants.js'
 import { T } from '../../components/eng/tokens'
 import { Frac, Sub, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '../../components/report/MathElements'
-// WIcon → PiperIcon (인라인)
+import ReportTitleBlock from '../../components/report/ReportTitleBlock'
+import { useProjectStore } from '../../store/useProjectStore.js'
+import { exportSeismicPrelimXlsx } from '../../lib/xlsx/seismicXlsx.js'
 
 export default function SeismicPrelimReportPage() {
   const navigate = useNavigate()
   const { prelimInputs: inp, prelimResult: r } = useSeismicStore()
+  const projectName = useProjectStore((s: any) => s.projectName)
+  const facilityName = useProjectStore((s: any) => s.activeFacilityName)
 
   if (!r) {
     return (
@@ -29,7 +33,6 @@ export default function SeismicPrelimReportPage() {
   const Z = SEISMIC_ZONE[inp.zone as 'I' | 'II'].Z
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
   const sizeKey = getSizeIndex(inp.DN)
-  const today = new Date().toLocaleDateString('ko-KR')
 
   const F = T.fontSans
 
@@ -42,6 +45,20 @@ export default function SeismicPrelimReportPage() {
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
+        <button onClick={() => {
+          const indexLabels = {
+            KIND: KIND_INDEX[inp.pipeKind as keyof typeof KIND_INDEX]?.label,
+            EARTH: (EARTH_INDEX as any)[inp.soilType]?.label,
+            SIZE: SIZE_INDEX[getSizeIndex(inp.DN) as keyof typeof SIZE_INDEX]?.label,
+            CONNECT: CONNECT_INDEX[inp.connectCond as keyof typeof CONNECT_INDEX]?.label,
+            FACIL: FACIL_INDEX[inp.facilExists as keyof typeof FACIL_INDEX]?.label,
+            MCONE: MCONE_INDEX[inp.mcone as keyof typeof MCONE_INDEX]?.label,
+          }
+          exportSeismicPrelimXlsx({ inp, r, indexLabels, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e)))
+        }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
+          엑셀(.xlsx) 다운로드
+        </button>
         <button onClick={() => navigate('/seismic-prelim/result')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>
           결과 페이지로
@@ -51,35 +68,12 @@ export default function SeismicPrelimReportPage() {
       {/* 보고서 본문 */}
       <div className="report-body" style={{ background: 'white', padding: '12px 20px', fontFamily: F, fontSize: 11, lineHeight: 1.4 }}>
 
-        {/* ── 표지 헤더 ── */}
-        <div className="keep-together" style={{ display: 'flex', alignItems: 'center', gap: 14, borderBottom: `2.5px solid ${T.bgActive}`, paddingBottom: 8, marginBottom: 8 }}>
-          <svg width="46" height="46" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
-            <rect width="100" height="100" rx="18" fill="#F4EFE6"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="#1F1B17" strokeWidth="3.5"/>
-            <circle cx="50" cy="50" r="22" fill="none" stroke="#1F1B17" strokeWidth="1.2" strokeDasharray="1.2 1.6"/>
-            <path d="M 8 50 L 28 50 L 33 50 L 36 38 L 40 62 L 44 32 L 48 68 L 52 44 L 56 56 L 60 50 L 92 50"
-              fill="none" stroke="#D97757" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
-          </svg>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
-              KDS 57 17 00 : 2022 · 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 A
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
-              매설관로 내진성능 예비평가 검토서
-            </div>
-            <div style={{ fontSize: 10, color: T.textMuted }}>
-              내진성능 우선순위 평가 (취약도지수 VI 산정 방법)
-            </div>
-          </div>
-          <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 10, color: T.bgActive, letterSpacing: 1, marginBottom: 5, fontWeight: 600 }}>
-              PIPER
-            </div>
-            <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
-            <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
-          </div>
-        </div>
+        {/* ── 표제부 ── */}
+        <ReportTitleBlock
+          standard="KDS 57 17 00 : 2022 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 A"
+          title="매설관로 내진성능 예비평가 검토서"
+          subtitle="내진성능 우선순위 평가 (취약도지수 VI 산정 방법)"
+        />
 
         {/* ── 1. 평가 개요 ── */}
         <div style={RH}>1. 평가 개요</div>
@@ -153,7 +147,7 @@ export default function SeismicPrelimReportPage() {
 
         <table style={TABLE}>
           <thead>
-            <tr style={{ background: '#2C2118' }}>
+            <tr>
               <th style={TH}>지수 항목</th>
               <th style={TH}>산정 기준</th>
               <th style={{ ...TH, textAlign: 'right', width: 70 }}>지수값</th>
@@ -181,11 +175,11 @@ export default function SeismicPrelimReportPage() {
               <td style={TD} colSpan={2}>세부지수 합계 (KIND + EARTH + SIZE + CONNECT + FACIL + MCONE)</td>
               <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700 }}>{r.VI_sub.toFixed(1)}</td>
             </tr>
-            <tr style={{ background: T.bgActive }}>
-              <td style={{ ...TD, color: 'white', fontWeight: 700 }} colSpan={2}>
+            <tr style={{ background: '#EDEBE6' }}>
+              <td style={{ ...TD, fontWeight: 700 }} colSpan={2}>
                 VI = {r.FLEX.toFixed(0)} {G.times} {r.VI_sub.toFixed(1)}
               </td>
-              <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700, color: 'white', fontSize: 14 }}>
+              <td style={{ ...TD, textAlign: 'right', fontFamily: T.fontMono, fontWeight: 700, fontSize: 14 }}>
                 {r.VI.toFixed(1)}
               </td>
             </tr>
@@ -209,14 +203,6 @@ export default function SeismicPrelimReportPage() {
           </tbody>
         </table>
 
-        {/* ── 6. 검토 의견 ── */}
-        <div style={RH}>6. 검토 의견</div>
-        <div style={{ fontSize: 11, color: T.textPrimary, lineHeight: 1.8, fontFamily: F, padding: '4px 0' }}>
-          {r.isCritical
-            ? `본 관로는 지진도 ${r.seismicityGroup}그룹에 위치하며 취약도지수 VI = ${r.VI.toFixed(1)} ≥ 40으로 내진성능 중요상수도에 해당한다. KDS 57 17 00에 의거하여 응답변위법에 의한 내진성능 상세평가를 실시하여야 한다.`
-            : `본 관로는 지진도 ${r.seismicityGroup}그룹에 위치하며 취약도지수 VI = ${r.VI.toFixed(1)}으로 내진성능 유보상수도에 해당한다. 현 단계에서는 상세평가 없이 관찰 대상으로 분류하며, 향후 정밀 안전점검 시 재검토할 수 있다.`}
-        </div>
-
         {/* 각주 */}
         <div style={{ marginTop: 12, borderTop: `1px solid ${T.borderLight}`, paddingTop: 6, fontSize: 10, color: T.textMuted, fontFamily: F, lineHeight: 1.7 }}>
           ※ 적용기준: 기존시설물(상수도) 내진성능 평가요령 부록 A — 내진성능 우선순위 평가<br/>
@@ -228,12 +214,12 @@ export default function SeismicPrelimReportPage() {
   )
 }
 
-const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 4 }
-const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10, fontWeight: 700, color: 'white', borderBottom: '1px solid #bbb', textAlign: 'left' }
-const TD: React.CSSProperties = { padding: '2px 6px', borderBottom: '1px solid #ddd', verticalAlign: 'middle', fontSize: 10 }
+const TABLE: React.CSSProperties = { width: '100%', borderCollapse: 'collapse', fontSize: 10, marginBottom: 6 }
+const TH: React.CSSProperties = { padding: '2px 6px', fontSize: 10, fontWeight: 700, color: '#111', border: '1px solid #888', textAlign: 'left', background: '#F2F0EC' }
+const TD: React.CSSProperties = { padding: '2px 6px', border: '1px solid #AAA', verticalAlign: 'middle', fontSize: 10 }
 const RH: React.CSSProperties = {
-  background: '#EDEBE6', padding: '2px 10px', fontWeight: 700, fontSize: 11,
-  color: '#2C2118', borderLeft: '3px solid #CC6B3D', margin: '7px 0 4px',
+  background: '#F2F0EC', padding: '2px 10px', fontWeight: 700, fontSize: 11,
+  color: '#111', borderLeft: '3px solid #333', margin: '9px 0 4px',
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
 }

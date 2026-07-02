@@ -84,10 +84,10 @@ body {
     color: #000;
   }
 
-  /* A4 페이지 설정 */
+  /* A4 페이지 설정 — 보고서 부록 편철용 (좌측 제본 여백 확보) */
   @page {
     size: A4 portrait;
-    margin: 10mm 10mm 12mm 10mm;
+    margin: 14mm 12mm 16mm 20mm;
   }
 
   /* 앱 UI 전체 숨기기 */
