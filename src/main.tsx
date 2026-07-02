@@ -10,10 +10,18 @@ import { runStartup } from './lib/startup.js'
 runStartup()
 
 function Root() {
-  const [splashDone, setSplashDone] = useState(false)
+  // 스플래시는 브라우저 세션당 1회만 표시 (새로고침·페이지 이동 시 재표시 방지)
+  const [splashDone, setSplashDone] = useState(() => {
+    try { return sessionStorage.getItem('piper:splashSeen') === '1' } catch { return false }
+  })
+
+  const handleContinue = () => {
+    try { sessionStorage.setItem('piper:splashSeen', '1') } catch { /* ignore */ }
+    setSplashDone(true)
+  }
 
   if (!splashDone) {
-    return <SplashScreen onContinue={() => setSplashDone(true)} />
+    return <SplashScreen onContinue={handleContinue} />
   }
 
   return (

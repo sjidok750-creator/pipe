@@ -137,9 +137,9 @@ export function ResponseSpectrumSVG({
       <g>
         <line x1={tx(T_B)} y1={py} x2={tx(T_B)} y2={py + gh}
           stroke="#aaa" strokeWidth="0.9" strokeDasharray="3 2" />
-        <text x={tx(T_B)} y={py + gh + 12}
+        <text x={tx(T_B)} y={py + gh + 24}
           textAnchor="middle" fontSize="7.5" fill="#888" fontFamily={T.fontMono}>
-          T_B={T_B}
+          T_B
         </text>
       </g>
 
@@ -160,8 +160,8 @@ export function ResponseSpectrumSVG({
         <g>
           <circle cx={tx(Ts)} cy={ySvUsed} r="3.5"
             fill={T.bgActive} stroke="white" strokeWidth="1" />
-          <text x={tx(Ts) + 5} y={ySvUsed + 4}
-            fontSize="8.5" fontWeight="700" fill={T.bgActive} fontFamily={T.fontMono}>
+          <text x={tx(Ts) + 6} y={ySvUsed + 15}
+            fontSize="9" fontWeight="700" fill={T.bgActive} fontFamily={T.fontMono}>
             Sv={Sv_used!.toFixed(4)}
           </text>
         </g>
@@ -223,10 +223,10 @@ export function ResponseSpectrumSVG({
 
       {/* ── 축 제목 ── */}
       <text x={px + gw / 2} y={height - 2}
-        textAnchor="middle" fontSize="9.5" fill="#444" fontFamily={T.fontSans}>
+        textAnchor="middle" fontSize="10" fill="#444" fontFamily={T.fontSans}>
         주기 T (초)
       </text>
-      <text x="8" y={py + gh / 2} textAnchor="middle" fontSize="9.5" fill="#444"
+      <text x="8" y={py + gh / 2} textAnchor="middle" fontSize="10" fill="#444"
         fontFamily={T.fontSans} transform={`rotate(-90, 8, ${py + gh / 2})`}>
         Sv (m/s)
       </text>

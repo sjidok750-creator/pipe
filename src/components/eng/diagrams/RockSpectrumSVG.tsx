@@ -183,9 +183,9 @@ export function RockSpectrumSVG({
 
       {/* 축 제목 */}
       <text x={ml + gW / 2} y={height - 3} textAnchor="middle"
-        fontSize={9.5} fill="#444" fontFamily={T.fontSans}>주기 T (초)</text>
+        fontSize={10} fill="#444" fontFamily={T.fontSans}>주기 T (초)</text>
       <text x={9} y={mt + gH / 2} textAnchor="middle"
-        fontSize={9.5} fill="#444" fontFamily={T.fontSans}
+        fontSize={10} fill="#444" fontFamily={T.fontSans}
         transform={`rotate(-90, 9, ${mt + gH / 2})`}>Sv (m/s)</text>
     </svg>
   )

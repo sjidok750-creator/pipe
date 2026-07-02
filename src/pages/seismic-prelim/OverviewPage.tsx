@@ -16,7 +16,7 @@ const td: React.CSSProperties = {
   fontFamily: T.fontSans, verticalAlign: 'top',
 }
 const tdMono: React.CSSProperties = {
-  ...td, fontFamily: T.fontMono, fontSize: 10.5, color: T.textNumber,
+  ...td, fontFamily: T.fontMono, fontSize: 11, color: T.textNumber,
 }
 
 const criteria = [
@@ -55,7 +55,7 @@ export default function SeismicPrelimOverviewPage() {
 
       {/* ── ① 검토 목적 및 적용 범위 ── */}
       <EngPanel title="① 검토 목적 및 적용 범위">
-        <div style={{ fontSize: 11.5, lineHeight: 1.7, color: T.textLabel }}>
+        <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
           <b>목적</b>: KDS 57 17 00 : 2022 및 「기존시설물(상수도) 내진성능 평가요령」 부록 B에 따라
           상수도 매설관로의 취약도지수(VI)를 산정하고, 상세평가 수행 필요 여부를 판정한다.<br />
           <b>적용 범위</b>: 매설 상수도 관로 전체 (관종·규격 무관). 신설 및 기존 시설물 모두 적용 가능.<br />

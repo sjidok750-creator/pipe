@@ -14,7 +14,7 @@ const F_BODY = '"Malgun Gothic", "나눔고딕", "Noto Sans KR", sans-serif'
 const F_MONO = 'Consolas, "Courier New", monospace'
 
 const SEC_TITLE: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 700, color: WARM_DARK,
+  fontSize: 13, fontWeight: 700, color: WARM_DARK,
   borderBottom: `2px solid ${CORAL}`, paddingBottom: 2, marginTop: 12, marginBottom: 6,
   breakAfter: 'avoid', pageBreakAfter: 'avoid',
   breakInside: 'avoid', pageBreakInside: 'avoid',
@@ -109,7 +109,7 @@ function SoilProfileFigure({ layers, pipeDepth, title }: {
         <text x={margin.l + drawW * 0.87} y={(margin.t + pipeY) / 2} fontSize="8" fill="#c0392b">h</text>
         <text x={W - 10} y={margin.t + 10} textAnchor="end" fontSize="8" fill="#555">Vs (m/s)</text>
       </svg>
-      <div style={{ fontSize: 9.5, color: '#555', marginTop: 3 }}>{title}</div>
+      <div style={{ fontSize: 10, color: '#555', marginTop: 3 }}>{title}</div>
     </div>
   )
 }
@@ -188,13 +188,13 @@ export default function SeismicDetailReportPage() {
 
           {/* 제목부 */}
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 8.5, color: '#888', letterSpacing: 0.3, marginBottom: 3, fontFamily: F_MONO }}>
+            <div style={{ fontSize: 9, color: '#888', letterSpacing: 0.3, marginBottom: 3, fontFamily: F_MONO }}>
               KDS 57 17 00 : 2022 · 기존시설물(상수도) 내진성능 평가요령 부록 C
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: CORAL, lineHeight: 1.2, marginBottom: 4 }}>
               {isSegmented ? 'C.1 분절관 내진성능 본평가 검토서' : 'C.2 연속강관 내진성능 본평가 검토서'}
             </div>
-            <div style={{ fontSize: 9.5, color: '#666' }}>
+            <div style={{ fontSize: 10, color: '#666' }}>
               {isSegmented
                 ? '덕타일 주철관 (KS D 4311 수도용 원심력 덕타일주철관 2종관)'
                 : '상수도용 도복장강관 (KS D 3565)'}
@@ -207,7 +207,7 @@ export default function SeismicDetailReportPage() {
               PIPER
             </div>
             <div style={{ fontSize: 9, color: '#999', fontFamily: F_MONO }}>작성일</div>
-            <div style={{ fontSize: 9.5, color: '#555', fontFamily: F_MONO, fontWeight: 600 }}>{today}</div>
+            <div style={{ fontSize: 10, color: '#555', fontFamily: F_MONO, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 
@@ -344,7 +344,7 @@ export default function SeismicDetailReportPage() {
         </table>
 
         <div style={SUB_TITLE}>라. 지반분류</div>
-        <div style={{ fontSize: 10.5, lineHeight: 1.55, paddingLeft: 8 }}>
+        <div style={{ fontSize: 11, lineHeight: 1.55, paddingLeft: 8 }}>
           기반암 깊이가 {H_total.toFixed(1)} m이고, 토층평균전단파속도가 {Vs_avg.toFixed(0)} m/s로&nbsp;
           {inp.soilType} 지반으로 분류된다.
         </div>
@@ -372,7 +372,7 @@ export default function SeismicDetailReportPage() {
                 여기서,&nbsp; {G.nu} = {nu},&nbsp; P = {inp.P} MPa,&nbsp;
                 D = {D_m.toFixed(3)} m,&nbsp; t = t₀/1.1 = {t_eff_m.toFixed(4)} m
                 &nbsp;
-                <span style={{ fontSize: 9.5, color: '#64748b' }}>
+                <span style={{ fontSize: 10, color: '#64748b' }}>
                   [t: 공칭관두께 t₀={t_m.toFixed(4)}m에서 주철구조물 공차를 뺀 유효두께 — 부록C C.1.2]
                 </span>
               </FormulaRow>
@@ -422,7 +422,7 @@ export default function SeismicDetailReportPage() {
         {isSegmented ? (
           (inp.Pm ?? 0) <= 0 ? (
             <>
-              <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
+              <div style={{ fontSize: 11, paddingLeft: 8, lineHeight: 2 }}>
                 차량하중 없음 (Pm = 0) — 비도로 매설 구간.
               </div>
               <ResultBlock>
@@ -431,7 +431,7 @@ export default function SeismicDetailReportPage() {
             </>
           ) : (inp.Kv ?? 0) <= 0 ? (
             <>
-              <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2, color: '#ef4444' }}>
+              <div style={{ fontSize: 11, paddingLeft: 8, lineHeight: 2, color: '#ef4444' }}>
                 Kv 미입력 — σ_o 계산 불가. Kv를 입력하면 차량하중 축응력이 산정됩니다.
               </div>
               <ResultBlock>
@@ -525,7 +525,7 @@ export default function SeismicDetailReportPage() {
           })()
         ) : (inp.Pm ?? 0) <= 0 ? (
           <>
-            <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 2 }}>
+            <div style={{ fontSize: 11, paddingLeft: 8, lineHeight: 2 }}>
               차량하중 없음 (Pm = 0) — 비도로 매설 구간.
             </div>
             <ResultBlock>
@@ -559,7 +559,7 @@ export default function SeismicDetailReportPage() {
               : null
             return (
               <>
-                <div style={{ fontSize: 10.5, paddingLeft: 8, marginBottom: 4 }}>
+                <div style={{ fontSize: 11, paddingLeft: 8, marginBottom: 4 }}>
                   <strong>Kv 산정 ({
                     kvMethod === 'N_E0'  ? 'N치 E₀법: N → E₀ = 2800N → Kv₀ = E₀/30 → Kv 관경 보정' :
                     kvMethod === 'Vs'    ? 'Vs법: Kv = 0.09 × Vs²' :
@@ -706,7 +706,7 @@ export default function SeismicDetailReportPage() {
               const M     = rs.settle_M    ?? 0
               return (
                 <>
-                  <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
+                  <div style={{ fontSize: 11, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
                     탄성지반(Winkler) 위 보 모델을 적용하여 연약지반 위 관로에 작용하는 연직토하중 W<Sub>d</Sub>에 의한 최대 휨모멘트 M을 산정하고, 이로부터 축변형률을 계산한다.
                   </div>
                   <FormulaBlock>
@@ -760,13 +760,13 @@ export default function SeismicDetailReportPage() {
         <div style={SUB_TITLE}>
           {isSegmented ? '다.' : '마.'} 지진시의 {isSegmented ? <>축응력 ({G.sigma}<Sub>x</Sub>)</> : '축변형률'}
         </div>
-        <div style={{ fontSize: 10.5, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
+        <div style={{ fontSize: 11, paddingLeft: 8, lineHeight: 1.55, marginBottom: 4 }}>
           지진시 축응력은 기능수행수준과 붕괴방지수준에 동일한 절차로 진행되므로,
           지진력이 낮은 기능수행수준은 붕괴방지수준을 만족하는 경우 동일하게 만족하는 것으로 간주한다.
         </div>
 
         {/* ① 표층지반 고유주기 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+        <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ① 표층지반의 설계고유주기 (T<sub>s</sub>) 산정
         </div>
         <FormulaBlock>
@@ -783,7 +783,7 @@ export default function SeismicDetailReportPage() {
         </FormulaBlock>
 
         {/* ② 속도응답스펙트럼 + 감쇠보정계수 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+        <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (C_D) 산정
         </div>
 
@@ -886,7 +886,7 @@ export default function SeismicDetailReportPage() {
                   textAnchor="middle" fontSize={9} fill="#444"
                   transform={`translate(11,${mt+gH/2}) rotate(-90)`}
                 >Sv (m/s)</text>
-                <text x={ml+gW/2} y={mt-9} textAnchor="middle" fontSize={9.5} fontWeight="bold" fill={WARM_DARK}>
+                <text x={ml+gW/2} y={mt-9} textAnchor="middle" fontSize={10} fontWeight="bold" fill={WARM_DARK}>
                   암반지반 기반면에서의 설계속도응답스펙트럼
                 </text>
                 {/* 붕괴방지 곡선 (실선) */}
@@ -934,22 +934,22 @@ export default function SeismicDetailReportPage() {
               </svg>
 
               {/* ── 우측 표 + 파라미터 ── */}
-              <div style={{ fontSize: 9.5 }}>
+              <div style={{ fontSize: 10 }}>
                 <table style={{ ...TABLE, width: 'auto', marginBottom: 6 }}>
                   <thead>
                     <tr>
-                      <th style={{ ...TH, fontSize: 8.5 }}>구분</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>재현<br/>주기</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>위험도<br/>계수 I</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>S=Z·I<br/>(g)</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>ξ<br/>(%)</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>C_D</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>Sv<br/>(m/s)</th>
+                      <th style={{ ...TH, fontSize: 9 }}>구분</th>
+                      <th style={{ ...TH, fontSize: 9 }}>재현<br/>주기</th>
+                      <th style={{ ...TH, fontSize: 9 }}>위험도<br/>계수 I</th>
+                      <th style={{ ...TH, fontSize: 9 }}>S=Z·I<br/>(g)</th>
+                      <th style={{ ...TH, fontSize: 9 }}>ξ<br/>(%)</th>
+                      <th style={{ ...TH, fontSize: 9 }}>C_D</th>
+                      <th style={{ ...TH, fontSize: 9 }}>Sv<br/>(m/s)</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr style={{ background: '#f0f4f8' }}>
-                      <td style={{ ...TDB, fontSize: 8.5 }}>붕괴방지</td>
+                      <td style={{ ...TDB, fontSize: 9 }}>붕괴방지</td>
                       <td style={TDC}>{inp.seismicGrade === 'I' ? '1000년' : '500년'}</td>
                       <td style={TDC}>{I_c.toFixed(2)}</td>
                       <td style={TDC}>{S_c.toFixed(3)}</td>
@@ -958,7 +958,7 @@ export default function SeismicDetailReportPage() {
                       <td style={{ ...TDR, fontWeight: 700, color: CORAL }}>{Sv_c.toFixed(4)}</td>
                     </tr>
                     <tr>
-                      <td style={{ ...TDB, fontSize: 8.5 }}>기능수행</td>
+                      <td style={{ ...TDB, fontSize: 9 }}>기능수행</td>
                       <td style={TDC}>{inp.seismicGrade === 'I' ? '100년' : '50년'}</td>
                       <td style={TDC}>{I_f.toFixed(2)}</td>
                       <td style={TDC}>{S_f.toFixed(3)}</td>
@@ -968,7 +968,7 @@ export default function SeismicDetailReportPage() {
                     </tr>
                   </tbody>
                 </table>
-                <div style={{ fontSize: 8.5, color: '#555', lineHeight: 1.8, paddingLeft: 2 }}>
+                <div style={{ fontSize: 9, color: '#555', lineHeight: 1.8, paddingLeft: 2 }}>
                   Z = {Z_val},&nbsp; Sas<sub>붕괴</sub> = 2.8S = {(S_c*2.8).toFixed(3)} g,&nbsp;
                   Sas<sub>기능</sub> = {(S_f*2.8).toFixed(3)} g<br/>
                   Ts = {Ts_val.toFixed(3)} s &nbsp;
@@ -1002,7 +1002,7 @@ export default function SeismicDetailReportPage() {
         </FormulaBlock>
 
         {/* ③ 관축위치 지반변위 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+        <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ③ 관축위치의 지반변위 (U<sub>h</sub>) 산정
         </div>
         <FormulaBlock>
@@ -1026,7 +1026,7 @@ export default function SeismicDetailReportPage() {
         </ResultBlock>
 
         {/* ④ 파장 */}
-        <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+        <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
           ④ 지진시 파장 (L) 산정
         </div>
         <FormulaBlock>
@@ -1057,7 +1057,7 @@ export default function SeismicDetailReportPage() {
         {/* ⑤ 관체 응력/변형률 */}
         {isSegmented ? (
           <>
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
               ⑤ 지진시 축응력 ({G.sigma}<sub>x</sub>) 계산
             </div>
             <FormulaBlock>
@@ -1179,7 +1179,7 @@ export default function SeismicDetailReportPage() {
           </>
         ) : (
           <>
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
               ⑤ 지진에 의한 축변형률 ({G.epsilon}<sub>eq</sub>) 계산
             </div>
             <FormulaBlock>
@@ -1208,7 +1208,7 @@ export default function SeismicDetailReportPage() {
             </ResultBlock>
 
             {/* ── 상세 전개: ξ, L1, ε_L 산정 ── */}
-            <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 12, marginBottom: 4, color: WARM_DARK }}>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 12, marginBottom: 4, color: WARM_DARK }}>
               ⑤-상세 특성길이(ξ) 및 축변형률(ε<Sub>L</Sub>) 산정 과정
             </div>
             <FormulaBlock>
@@ -1282,7 +1282,7 @@ export default function SeismicDetailReportPage() {
         {isSegmented ? (
           <>
             <div style={SEC_TITLE}>C.1.2 라. 관체응력에 의한 내진안전성의 조사</div>
-            <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 발생응력과 지진시의 발생응력을 합산하고 이것이 허용응력 이하인지 조사한다.
             </div>
             <table style={TABLE}>
@@ -1504,7 +1504,7 @@ export default function SeismicDetailReportPage() {
 
             {/* C.1.4 이음부 굽힘각 */}
             <div style={SEC_TITLE}>C.1.4 이음부 굽힘각도 ({G.theta}<Sub>J</Sub>) — 참고 검토</div>
-            <div style={{ fontSize: 10.5, color: '#64748b', marginBottom: 6, fontFamily: 'inherit' }}>
+            <div style={{ fontSize: 11, color: '#64748b', marginBottom: 6, fontFamily: 'inherit' }}>
               2025년 상수도설계기준해설편 §4.3.3(2)다: "추가적으로 아래 식으로 계산된 지진 시 이음부의 휨 각도를 설계 허용 휨각도와 비교하여 휨각도에 대한 안전성을 검토할 수 있다" — 선택 검토 항목으로 최종 합격 판정에 포함되지 않음.
             </div>
             <FormulaBlock>
@@ -1520,7 +1520,7 @@ export default function SeismicDetailReportPage() {
                 허용 굽힘각 {G.theta}<Sub>allow</Sub> (참고):&nbsp;
                 DN {inp.DN} → <strong>{inp.DN <= 300 ? '5°' : inp.DN <= 400 ? '4°' : inp.DN <= 600 ? '3°' : inp.DN <= 900 ? '2.5°' : '2°'}</strong>
                 &nbsp;
-                <span style={{ fontSize: 10.5, color: '#64748b' }}>
+                <span style={{ fontSize: 11, color: '#64748b' }}>
                   [KCIP Tyton 접합 카탈로그 기준 — 평가요령(2021)·설계기준(2025) 미규정, 제조사 확인 필수]
                 </span>
               </FormulaRow>
@@ -1528,14 +1528,14 @@ export default function SeismicDetailReportPage() {
             <div style={{
               background: '#f8f8f8', border: '1px solid #ddd',
               borderLeft: '3px solid #94a3b8', borderRadius: 3,
-              padding: '7px 12px', fontSize: 11.5, color: '#334155',
+              padding: '7px 12px', fontSize: 12, color: '#334155',
               fontFamily: 'inherit',
             }}>
               {G.theta}<Sub>J</Sub> = <strong>{(rs.theta_J * 180 / Math.PI)?.toFixed(4)} {G.deg}</strong>
               &nbsp;{rs.angleOK ? G.le : G.ge}&nbsp;
               {G.theta}<Sub>allow</Sub> = {(rs.theta_allow * 180 / Math.PI)?.toFixed(2)} {G.deg}
               &nbsp;&nbsp;
-              <span style={{ fontSize: 10.5, color: rs.angleOK ? '#15803d' : '#b45309', fontWeight: 600 }}>
+              <span style={{ fontSize: 11, color: rs.angleOK ? '#15803d' : '#b45309', fontWeight: 600 }}>
                 ({rs.angleOK ? '허용 이내' : '허용 초과 — 제조사 기준 확인 필요'})
               </span>
             </div>
@@ -1544,7 +1544,7 @@ export default function SeismicDetailReportPage() {
           <>
             {/* 연속관: 축변형률 내진안전성 */}
             <div style={SEC_TITLE}>C.2.3 축변형률에 의한 내진안전성의 조사</div>
-            <div style={{ fontSize: 10.5, lineHeight: 1.55, marginBottom: 6 }}>
+            <div style={{ fontSize: 11, lineHeight: 1.55, marginBottom: 6 }}>
               상시하중에 의한 축변형률과 지진시의 축변형률을 합산하고 이것이 허용변형률 이하인지 조사한다.
             </div>
 
@@ -1695,14 +1695,14 @@ export default function SeismicDetailReportPage() {
           </tbody>
         </table>
 
-        <div style={{ fontSize: 10.5, lineHeight: 1.55, padding: '6px 0', marginTop: 4 }}>
+        <div style={{ fontSize: 11, lineHeight: 1.55, padding: '6px 0', marginTop: 4 }}>
           {r.ok
             ? '본 관로는 응답변위법에 의한 내진성능 본평가 결과 모든 검토항목에서 허용기준을 만족한다. 내진안전성이 확보된 것으로 판단한다.'
             : '본 관로는 응답변위법에 의한 내진성능 본평가 결과 일부 검토항목에서 허용기준을 초과한다. 내진 보강공법을 검토하여야 한다.'}
         </div>
 
         {/* 각주 */}
-        <div style={{ marginTop: 20, borderTop: '1px solid #ccc', paddingTop: 8, fontSize: 9.5, color: '#666', lineHeight: 1.9 }}>
+        <div style={{ marginTop: 20, borderTop: '1px solid #ccc', paddingTop: 8, fontSize: 10, color: '#666', lineHeight: 1.9 }}>
           ※ 적용기준: 기존시설물(상수도) 내진성능 평가요령 부록 C — 매설관로 내진성능 본평가 (응답변위법)<br />
           ※ KDS 57 17 00 : 2022 상수도 내진설계기준 / KDS 17 10 00 : 2022 내진설계 일반기준
         </div>

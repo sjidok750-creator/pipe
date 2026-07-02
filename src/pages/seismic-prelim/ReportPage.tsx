@@ -62,13 +62,13 @@ export default function SeismicPrelimReportPage() {
             <circle cx="50" cy="50" r="2" fill="#1F1B17"/>
           </svg>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 8.5, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
+            <div style={{ fontSize: 9, color: T.textDisabled, letterSpacing: 0.3, marginBottom: 3, fontFamily: T.fontMono }}>
               KDS 57 17 00 : 2022 · 상수도 내진설계기준 / 기존시설물(상수도) 내진성능 평가요령 부록 A
             </div>
             <div style={{ fontSize: 16, fontWeight: 900, color: T.bgActive, lineHeight: 1.2, marginBottom: 4, fontFamily: F }}>
               매설관로 내진성능 예비평가 검토서
             </div>
-            <div style={{ fontSize: 9.5, color: T.textMuted }}>
+            <div style={{ fontSize: 10, color: T.textMuted }}>
               내진성능 우선순위 평가 (취약도지수 VI 산정 방법)
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function SeismicPrelimReportPage() {
               PIPER
             </div>
             <div style={{ fontSize: 9, color: T.textDisabled, fontFamily: T.fontMono }}>작성일</div>
-            <div style={{ fontSize: 9.5, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
+            <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontMono, fontWeight: 600 }}>{today}</div>
           </div>
         </div>
 
@@ -218,7 +218,7 @@ export default function SeismicPrelimReportPage() {
         </div>
 
         {/* 각주 */}
-        <div style={{ marginTop: 12, borderTop: `1px solid ${T.borderLight}`, paddingTop: 6, fontSize: 9.5, color: T.textMuted, fontFamily: F, lineHeight: 1.7 }}>
+        <div style={{ marginTop: 12, borderTop: `1px solid ${T.borderLight}`, paddingTop: 6, fontSize: 10, color: T.textMuted, fontFamily: F, lineHeight: 1.7 }}>
           ※ 적용기준: 기존시설물(상수도) 내진성능 평가요령 부록 A — 내진성능 우선순위 평가<br/>
           ※ 취약도지수 산정: 해설표 3.4.2 (FLEX {G.times} 세부지수 합)<br/>
           ※ 그룹 판정: 해설표 3.4.1 (지진도 그룹) {G.times} VI 기준

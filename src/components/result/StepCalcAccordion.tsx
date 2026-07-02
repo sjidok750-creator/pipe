@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import FormulaBlock from './FormulaBlock'
+import { fmtNum as fmtSmart } from '../../lib/format'
 
 interface StepData {
   title: string
@@ -16,7 +17,7 @@ interface Props {
 
 function fmtNum(v: unknown): string {
   if (typeof v !== 'number') return String(v)
-  return v.toFixed(4)
+  return fmtSmart(v)
 }
 
 // 각 step별 계산 과정 텍스트 생성

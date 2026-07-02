@@ -792,7 +792,7 @@ export default function InputPage() {
                 return (
                   <button key={type} onClick={() => handleChange('steelBeddingType', type)}
                     style={{
-                      flex: '1 1 calc(50% - 4px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+                      flex: '1 1 calc(50% - 4px)', minWidth: 0, maxWidth: 'calc(50% - 2px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
                       border: `1px solid ${active ? T.bgActive : T.border}`,
                       background: active ? T.bgActive : T.bgPanel,
                       color: active ? T.textOnDark : T.textPrimary,
@@ -813,7 +813,7 @@ export default function InputPage() {
                 return (
                   <button key={type} onClick={() => handleChange('beddingType', type)}
                     style={{
-                      flex: '1 1 calc(50% - 4px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
+                      flex: '1 1 calc(50% - 4px)', minWidth: 0, maxWidth: 'calc(50% - 2px)', padding: '4px 8px', fontSize: '11px', cursor: 'pointer',
                       border: `1px solid ${active ? T.bgActive : T.border}`,
                       background: active ? T.bgActive : T.bgPanel,
                       color: active ? T.textOnDark : T.textPrimary,
