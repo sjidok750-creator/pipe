@@ -383,16 +383,19 @@ export default function ReportPage() {
               <CalcRow label="탄성지반반력 E'" expr="" result={inputs.Eprime} unit="kPa"/>
               <CalcRow label="EI/Do³" expr={`EI / (Do/1000)³`} result={s6.EI_Do3 ?? 0} unit="kN/m²"/>
               <HR/>
+              <CalcRow label="이론 좌굴압력 Pcr,th"
+                expr={`√(32 × ${(s6.Rw??1).toFixed(2)} × ${(s6.Bprime??0).toFixed(4)} × ${inputs.Eprime} × ${(s6.EI_Do3??0).toFixed(2)})`}
+                result={s6.Pcr_theory ?? (s6.Pcr ?? 0) * (s6.FS_allow ?? 2.5)} unit="kPa"/>
               <CalcRow label="허용 좌굴압력 Pcr"
-                expr={`(1/${s6.FS_allow??2.5}) × √(32 × ${(s6.Rw??1).toFixed(2)} × ${(s6.Bprime??0).toFixed(4)} × ${inputs.Eprime} × ${(s6.EI_Do3??0).toFixed(2)})`}
+                expr={`Pcr,th / FS = ${(s6.Pcr_theory ?? (s6.Pcr??0)*(s6.FS_allow??2.5)).toFixed(2)} / ${s6.FS_allow??2.5}`}
                 result={s6.Pcr ?? 0} unit="kPa"/>
               <CalcRow label="외압 Ptotal" expr="= 합계 하중 단위압력" result={s6.Pe_ext ?? 0} unit="kPa"/>
               <HR/>
               <CalcRow label="좌굴 안전율 FS"
-                expr={`Pcr / Pe_ext = ${(s6.Pcr??0).toFixed(2)} / ${(s6.Pe_ext??0).toFixed(2)}`}
+                expr={`Pcr,th / Pe_ext = ${(s6.Pcr_theory ?? (s6.Pcr??0)*(s6.FS_allow??2.5)).toFixed(2)} / ${(s6.Pe_ext??0).toFixed(2)}`}
                 result={s6.bucklingFS_actual ?? 0} unit=""/>
               <CalcRow label="허용 안전율" expr="" result={s6.FS_allow ?? 2.5} unit=""/>
-              <CalcRow label="판정" expr={`${(s6.bucklingFS_actual??0).toFixed(3)} ≥ ${s6.FS_allow??2.5}`} result={s6.ok ? 'O.K.' : 'N.G.'} unit=""/>
+              <CalcRow label="판정" expr={`FS ${(s6.bucklingFS_actual??0).toFixed(3)} ≥ ${s6.FS_allow??2.5} (동치: Pcr ${(s6.Pcr??0).toFixed(2)} ≥ Pe ${(s6.Pe_ext??0).toFixed(2)} kPa)`} result={s6.ok ? 'O.K.' : 'N.G.'} unit=""/>
             </div>
           </>
         )}
