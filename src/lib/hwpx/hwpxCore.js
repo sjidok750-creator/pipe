@@ -8,9 +8,10 @@ import JSZip from 'jszip'
 import { HWPX_TEMPLATE, SEC_OPEN, SECPR_BLOCK } from './template'
 
 // ── 스타일 ID (골든 템플릿 header.xml에 고정) ──
-// ※ 표 안 굵게는 반드시 본문 크기(20)를 사용 — 7/8은 제목용 대형 글꼴
-const CHAR = { normal: 0, bold: 20, small: 2, smallBold: 9, tiny: 23, title: 21, section: 22 }
-const PARA = { left: 32, center: 30, right: 31, justify: 0 }
+// ※ 한글은 IDRef를 배열 인덱스로 해석하므로 신설 ID는 연속 번호(간극 금지)
+// ※ 표 안 굵게는 반드시 본문 크기(11)를 사용 — 7/8은 제목용 대형 글꼴
+const CHAR = { normal: 0, bold: 11, small: 2, smallBold: 9, tiny: 13, title: 10, section: 12 }
+const PARA = { left: 22, center: 20, right: 21, justify: 0 }
 const BF = { cell: 3, headerShade: 5, none: 6, shadeBox: 7 }
 
 const PAGE_USABLE_W = 42520   // HWPUNIT (pagePr width 59528 − 좌우 여백 8504×2)
@@ -41,8 +42,10 @@ function runXml(run) {
 // ── 수식 (한글 수식 스크립트) ──
 function eqSize(script) {
   const depth = (script.match(/ over /g) || []).length
-  const h = Math.min(1000 + 850 * depth + (script.includes('sqrt') ? 400 : 0), 4200)
-  const w = Math.min(Math.max(script.length * 95, 2600), 9000)
+  const h = Math.min(1100 + 900 * depth + (script.includes('sqrt') ? 450 : 0), 4600)
+  // 폭은 과소 지정 시 후행 텍스트와 겹치므로 넉넉히 (중괄호·공백 제외 실질 길이 기준)
+  const core = script.replace(/[{}]/g, '').replace(/\s+/g, ' ')
+  const w = Math.min(Math.max(core.length * 130, 3200), 14000)
   return { w, h }
 }
 function equationXml(script) {
@@ -141,19 +144,25 @@ export class HwpxBuilder {
   table(spec) { this.body.push(tableXml(spec)); return this }
 
   // 수식 강조 박스: lines = [{label?, eq?|text?}, ...] — 음영 1열 표
+  // ※ 수식 개체 폭 추정 오차로 인한 겹침 방지: 수식과 후행 텍스트는 별도 행으로 분리
   eqBox(lines) {
-    this.body.push(tableXml({
-      shadeBox: true,
-      weights: [1],
-      rows: lines.map(l => [{
-        runs: [
-          ...(l.label ? [{ text: l.label + '  ', char: 'smallBold' }] : []),
-          ...(l.eq ? [{ eq: l.eq }] : []),
-          ...(l.text ? [{ text: l.text, small: true }] : []),
-        ],
-        bf: BF.shadeBox, align: 'left',
-      }]),
-    }))
+    const rows = []
+    lines.forEach(l => {
+      if (l.label || (l.text && !l.eq)) {
+        rows.push([{
+          runs: [
+            ...(l.label ? [{ text: l.label + '  ', char: 'smallBold' }] : []),
+            ...(!l.eq && l.text ? [{ text: l.text, small: true }] : []),
+          ],
+          bf: BF.shadeBox, align: 'left',
+        }])
+      }
+      if (l.eq) {
+        rows.push([{ runs: [{ eq: l.eq }], bf: BF.shadeBox, align: 'left' }])
+        if (l.text) rows.push([{ runs: [{ text: l.text.trim(), small: true }], bf: BF.shadeBox, align: 'left' }])
+      }
+    })
+    this.body.push(tableXml({ shadeBox: true, weights: [1], rows }))
     return this
   }
 
