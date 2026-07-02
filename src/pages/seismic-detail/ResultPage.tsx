@@ -55,28 +55,28 @@ export default function SeismicDetailResultPage() {
     { label: 'L (지진파장)',       value: rs.L,    unit: 'm' },
   ]
 
-  // 분절관 검토 행
+  // 분절관 검토 행 — 수식 표기는 엔진 산식(평가요령 해설식)과 일치
   const segRows = isSegmented ? [
-    { label: '내압 축응력 σ_i', formula: 'ν·P(D−t)/(2t)', value: rs.sigma_i, unit: 'MPa' },
-    { label: '차량 축응력 σ_o', formula: '분절관: 이음부 흡수 = 0', value: rs.sigma_o, unit: 'MPa' },
-    { label: '지진 축응력 σ_x', formula: 'E·ε_L = E·(4Uh/L)', value: rs.sigma_x, unit: 'MPa' },
+    { label: '내압 축응력 σ_i', formula: 'ν·P(D−t)/(2t)  [식 5.3.1]', value: rs.sigma_i, unit: 'MPa' },
+    { label: '차량 축응력 σ_o', formula: '0.322·Wm/Z·√(EI/(Kv·D))  [식 5.3.2]', value: rs.sigma_o, unit: 'MPa' },
+    { label: '지진 축응력 σ_x', formula: '√((ξ₁σ_L)²+(ξ₂σ_B)²)  [식 5.3.12]', value: rs.sigma_x, unit: 'MPa' },
     { label: '조합 축응력 σ_total', formula: 'σ_i + σ_o + σ_x', value: rs.sigma_total, unit: 'MPa', limit: rs.sigma_allow, ok: rs.stressOK },
   ] : []
 
   const segJointRows = isSegmented ? [
-    { label: '이음부 신축량 |u_J|', formula: '|u₀·ūJ| (해설식 5.3.28, β₁γ₁ 기반)', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
-    { label: '이음부 굽힘각 θ_J', formula: '(π·Uh/L)·sin(π·Lj/L)', value: rs.theta_J * 180 / Math.PI, unit: '°', limit: rs.theta_allow * 180 / Math.PI, ok: rs.angleOK },
+    { label: '이음부 신축량 |u_J|', formula: '|u₀·ūJ|  [식 5.3.28, β₁·γ₁ 기반]', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
+    { label: '이음부 굽힘각 θ_J', formula: '4π²·Lj·Uh/L²  (참고 검토)', value: rs.theta_J * 180 / Math.PI, unit: '°', limit: rs.theta_allow * 180 / Math.PI, ok: rs.angleOK },
   ] : []
 
-  // 연속관 검토 행
+  // 연속관 검토 행 — 수식 표기는 엔진 산식(평가요령 해설식)과 일치
   const contStrainRows = !isSegmented ? [
-    { label: '내압 축변형률 ε_i',  formula: '−ν·σ_θ/E', value: rs.epsilon_i, unit: '' },
-    { label: '차량 축변형률 ε_o',  formula: (rs.epsilon_o && rs.epsilon_o > 0) ? 'σ_o/E' : '= 0 (Pm 또는 Kv 미입력)', value: rs.epsilon_o, unit: '' },
-    { label: '온도 축변형률 ε_t',  formula: 'α_T·ΔT', value: rs.epsilon_t, unit: '' },
-    { label: '부등침하 변형률 ε_d', formula: 'δ/(2·L_settle)', value: rs.epsilon_d, unit: '' },
-    { label: '지진 변형률 ε_eq(축방향)', formula: '4Uh/L', value: rs.epsilon_eq_L, unit: '' },
-    { label: '지진 변형률 ε_eq(굽힘)',  formula: 'π²·D/(2L²)·Uh', value: rs.epsilon_eq_B, unit: '' },
-    { label: '합산 변형률 ε_total', formula: '|ε_i|+|ε_o|+|ε_t|+|ε_d|+|ε_eq|', value: rs.epsilon_total, unit: '', limit: rs.epsilon_allow, ok: rs.strainOK },
+    { label: '내압 축변형률 ε_i',  formula: '−ν·σ_θ/E  [식 5.3.36]', value: rs.epsilon_i, unit: '' },
+    { label: '차량 축변형률 ε_o',  formula: (rs.epsilon_o && rs.epsilon_o > 0) ? 'σ_o/E  [식 5.3.37]' : '= 0 (Pm 또는 Kv 미입력)', value: rs.epsilon_o, unit: '' },
+    { label: '온도 축변형률 ε_t',  formula: 'α_T·ΔT  [식 5.3.38]', value: rs.epsilon_t, unit: '' },
+    { label: '부등침하 변형률 ε_d', formula: 'M·D/(2EI), Winkler보  [식 5.3.39~42]', value: rs.epsilon_d, unit: '' },
+    { label: '지진 변형률 ε_L(축방향)', formula: rs.usedFriction ? 'L/ξ, 마찰 지배  [식 5.3.53]' : 'α₁·π·Uh/L  [식 5.3.43]', value: rs.epsilon_eq_L, unit: '' },
+    { label: '지진 변형률 ε_B(굽힘)',  formula: 'α₂·2π²·D·Uh/L²  [식 5.3.44]', value: rs.epsilon_eq_B, unit: '' },
+    { label: '합산 변형률 ε_total', formula: '|ε_i|+|ε_o|+|ε_t|+|ε_d|+√(ε_L²+ε_B²)', value: rs.epsilon_total, unit: '', limit: rs.epsilon_allow, ok: rs.strainOK },
   ] : []
 
   const contStressRows = !isSegmented ? [] : []
@@ -98,7 +98,7 @@ export default function SeismicDetailResultPage() {
             <EngPanel title="(a) 관체 축응력 검토  (분절관 — 덕타일 주철관)">
               <EngTable rows={segRows}/>
               <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-                허용응력 = {rs.sigma_allow} MPa  (내진 시, 덕타일 주철관 σ_y/1.5 = 300/1.5)
+                허용응력 = {rs.sigma_allow} MPa  (내진 시 — 평가요령 부록C 표 C.1.3, 덕타일 주철관 2종관 기준. 타 등급은 입력에서 조정)
               </div>
             </EngPanel>
             <EngPanel title="(b) 이음부 신축량 / 굽힘각도 검토  (분절관)">
@@ -167,7 +167,7 @@ export default function SeismicDetailResultPage() {
               Lj={inp.Lj}
             />
             <div style={{ fontSize: 10, color: T.textMuted, marginTop: 6, fontFamily: T.fontSans, lineHeight: 1.7 }}>
-              이음부 상대변위 u_J = Uh·sin(π·Lj/L)<br/>
+              이음부 상대변위 |u_J| = u₀·ūJ (평가요령 해설식 5.3.28)<br/>
               허용 신축량 = {inp.e_allow_manual != null && inp.e_allow_manual > 0
                 ? `직접입력 ${(inp.e_allow_manual * 1000).toFixed(1)} mm`
                 : `소켓 삽입량 × ${inp.isSeismicJoint ? '80% (내진형)' : '50% (일반형)'}`}

@@ -64,7 +64,7 @@ function LayerEditor({ layers, setLayers }: {
   }
 
   // 컬럼: #(24) | 토층명(flex) | H(60) | N(52) | Vs직접(58) | Vs결과(68) | X(28)
-  const COLS = '24px 1fr 60px 52px 58px 68px 28px'
+  const COLS = '24px 1fr 56px 48px 66px 74px 28px'
   const cellH = T.inputH
   const hStyle: React.CSSProperties = {
     fontSize: T.fs.xs, fontWeight: T.fw.semibold, color: T.textMuted,
@@ -139,7 +139,7 @@ function LayerEditor({ layers, setLayers }: {
               fontSize: T.fs.sm, fontFamily: T.fontMono, fontWeight: T.fw.semibold,
               color: vsColor, gap: 2,
             }}>
-              {l.Vs.toFixed(0)}
+              {Number(l.Vs.toFixed(1)).toLocaleString()}
               <span style={{ fontSize: 9, color: T.textMuted, fontWeight: T.fw.regular }}>({vsSource})</span>
             </div>
             {/* 삭제 버튼 */}
@@ -806,10 +806,10 @@ export default function SeismicDetailInputPage() {
                 <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontSize: 11, fontFamily: T.fontMono, lineHeight: 1.9, marginBottom: 6 }}>
                   <div><b>Step 1.</b> 단위길이 환산하중 Wm (해설식 5.3.3)</div>
                   <div style={{paddingLeft:8}}>Wm = (2·Pm·a) / ((a+2h·tan35°)(b+2h·tan35°)) × (1+i)</div>
-                  <div style={{paddingLeft:8, fontSize:9.5, color:T.textMuted}}>Pm: 1륜 하중(kN), a: 접지폭(0.2m), b: 점유폭(2.75m), h: 토피(m), i: 충격계수</div>
+                  <div style={{paddingLeft:8, fontSize:10, color:T.textMuted}}>Pm: 1륜 하중(kN), a: 접지폭(0.2m), b: 점유폭(2.75m), h: 토피(m), i: 충격계수</div>
                   <div style={{marginTop:4}}><b>Step 2.</b> 차량하중 축응력 σ_o (Winkler Beam, 해설식 5.3.2)</div>
                   <div style={{paddingLeft:8}}>σ_o = 0.322 × Wm/Z × (E·I / Kv·D)^0.25  [MPa]</div>
-                  <div style={{paddingLeft:8, fontSize:9.5, color:T.textMuted}}>Z: 단면계수(m³), E·I: 관 휨강성, Kv·D: 지반 연직 지지강성</div>
+                  <div style={{paddingLeft:8, fontSize:10, color:T.textMuted}}>Z: 단면계수(m³), E·I: 관 휨강성, Kv·D: 지반 연직 지지강성</div>
                 </div>
 
                 {/* 3. 충격계수 */}
@@ -885,7 +885,7 @@ export default function SeismicDetailInputPage() {
                 </div>
                 <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 11, lineHeight: 1.9, marginBottom: 8 }}>
                   <div>σ_o = 0.322 × Wm/Z × <strong>(E·I / Kv·D)^0.25</strong>  [MPa]</div>
-                  <div style={{fontSize:9.5, color:T.textMuted}}>Kv↑(단단) → σ_o↓(유리) / Kv↓(연약) → σ_o↑(불리)</div>
+                  <div style={{fontSize:10, color:T.textMuted}}>Kv↑(단단) → σ_o↓(유리) / Kv↓(연약) → σ_o↑(불리)</div>
                 </div>
                 <div style={{ fontWeight: 700, color: T.textAccent, marginBottom: 2 }}>방법 1 — N치 E₀법 (도로교 설계기준, 권장)</div>
                 <div style={{ padding: '5px 10px', background: T.bgSection, border: `1px solid ${T.border}`, borderRadius: 3, fontFamily: T.fontMono, fontSize: 11, lineHeight: 1.9, marginBottom: 6 }}>
@@ -1583,7 +1583,7 @@ export default function SeismicDetailInputPage() {
             <div>Vds(등가전단속도) = {svCalc.Vds.toFixed(1)} m/s &nbsp;|&nbsp; L(파장) = {svCalc.L.toFixed(1)} m</div>
             <div>Uh(지반변위, 붕괴방지) ≈ <strong style={{ color: '#c0392b' }}>{(svCalc.Uh * 1000).toFixed(2)} mm</strong></div>
             <div style={{ marginTop: 4, padding: '3px 6px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, color: T.textWarn, fontSize: 10, fontFamily: T.fontSans }}>
-              ※ 암반 기반면 스펙트럼(Fa=Fv=1.0, KDS 17 10 00: 2.8S) + 감쇠보정계수 C_D=(6.42/(1.42+ξ))^0.48 적용 — 평가요령 해설식 5.3.6<br/>
+              ※ 암반 기반면 스펙트럼(Fa=Fv=1.0, KDS 17 10 00: 2.8S) + 감쇠보정계수 <span style={{whiteSpace:"nowrap"}}>C_D=(6.42/(1.42+ξ))^0.48</span> 적용 — 평가요령 해설식 5.3.6<br/>
               붉은 수직선(Ts)에서의 Sv값이 실제 계산에 사용되는 설계속도입니다.
             </div>
           </div>

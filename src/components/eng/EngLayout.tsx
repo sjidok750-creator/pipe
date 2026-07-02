@@ -410,7 +410,8 @@ export function EngSegment({
             onClick={() => onChange(opt.key)}
             style={{
               flex: 1,
-              padding: '5px 10px',
+              minWidth: 0,
+              padding: '5px 8px',
               borderTop: 'none', borderBottom: 'none', borderLeft: 'none',
               borderRight: i < options.length - 1 ? `1px solid ${T.border}` : 'none',
               background: active ? T.bgActive : T.bgPanel,
@@ -429,11 +430,11 @@ export function EngSegment({
             }}
           >
             {opt.sub && (
-              <div style={{ fontSize: T.fs.xs, opacity: 0.75, lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ fontSize: T.fs.xs, opacity: 0.75, lineHeight: 1.3, textAlign: 'center', width: '100%' }}>
                 {opt.sub}
               </div>
             )}
-            <div style={{ lineHeight: 1.3, textAlign: 'center', width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt.label}</div>
+            <div style={{ lineHeight: 1.3, textAlign: 'center', width: '100%' }}>{opt.label}</div>
           </button>
         )
       })}
