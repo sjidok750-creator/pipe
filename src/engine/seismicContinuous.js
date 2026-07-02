@@ -86,11 +86,11 @@ export function calcStrainSettlement(L, gamma, h, h2, D_m, E_kN, I_m, K2) {
 // 해설식(5.3.45): ε_x = √(ε_L² + ε_B²)
 // 해설식(5.3.52~53): L과 L1(Ly)을 비교하여 ε_L 결정
 //   ξ = 2√2 × E×t/τ  (지침 해설식 5.3.52 / sipc 식(52): √는 숫자 2에만 적용)
-//   L1 = ξ × ε_y  (항복점 변형률)
+//   L1 = ξ × ε_y  (판정 기준 변형률 — 지침 C.2: ε_y = 46t/D)
 //   L > L1 → ε_L = α1 × ε_G  (일반식)
 //   L ≤ L1 → ε_L = L / ξ     (마찰 지배)
 // tau: 강관-지반 마찰력 (kN/m²), t_m: 관두께(m), E_kN: 탄성계수(kN/m²)
-// epsilon_y: 항복점 변형률 = sigma_y / E
+// epsilon_y: L1 산정 기준 변형률 (허용변형률과 동일 기준 적용)
 export function calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_y) {
   const epsilon_G = calcGroundStrain(Uh, L)
 
@@ -128,13 +128,16 @@ export function calcStrainTrafficContinuous(Wm, Z, E_kN, I, Kv, D_m) {
 }
 
 // ─── 허용변형률 (연속강관) ───────────────────────────────────
-// criterion = 'yield': σ_y/E — 항복점 변형률 (지침 부록C 표 C.2.3, 보수적)
-// criterion = 'buckling': 46t/D — 국부좌굴 한계 (ASCE/KDS 해설, t/D 기반)
-export function calcAllowableStrain(sigma_y, E_MPa, criterion = 'yield', t_mm, D_mm) {
+// criterion = 'buckling': 46t/D — 지침 부록C 표 C.2.3의 판정 기준
+//   (지침은 이를 "항복점 변형률(εy=46t/D)"로 표기 — 국부좌굴 개시 기반, 기본값)
+// criterion = 'yield': σ_y/E — 재료 항복 변형률 (보수적 대안)
+export function calcAllowableStrain(sigma_y, E_MPa, criterion = 'buckling', t_mm, D_mm) {
   if (criterion === 'buckling' && t_mm > 0 && D_mm > 0) {
-    return 46 * t_mm / D_mm  // ASCE Guidelines / KDS 해설: 46t/D (무차원)
+    // 지침 표기 εy = 46t/D는 % 값 (예제 C.2: t=9, D=1000 → 0.414%)
+    // → 무차원 변형률로 환산해 반환 (÷100)
+    return 46 * t_mm / D_mm / 100
   }
-  return sigma_y / E_MPa  // 항복점 변형률 (무차원)
+  return sigma_y / E_MPa  // 재료 항복점 변형률 (무차원)
 }
 
 // ─── 허용응력 (연속관, 강관) ─────────────────────────────────
@@ -178,7 +181,7 @@ export function calcVonMises(sigma_theta, sigma_x) {
  * @param {number} params.h_cover      - 토피 (m)
  * @param {number} params.z_pipe       - 지표~관축 거리 (m)
  * @param {number} params.nu           - 포아송비 (강관 0.3)
- * @param {number} params.E            - 탄성계수 (MPa, 강관 206,000)
+ * @param {number} params.E            - 탄성계수 (MPa, 강관 210,000 = 2.1×10⁸ kN/m², 부록C C.2.2)
  * @param {number} params.Pm           - 후륜 1륜당 차량하중 (kN), 없으면 0
  * @param {number} params.b_width      - 차량점유폭 (m), 기본 2.75
  * @param {number} params.a_contact    - 접지폭 (m), 기본 0.2
@@ -200,13 +203,13 @@ export function evalContinuous(params) {
     L_settle = 0,
     h_cover, z_pipe,
     nu = 0.3,
-    E = 206000,          // MPa (강관)
+    E = 210000,          // MPa (강관, 부록C C.2.2: 2.1×10⁸ kN/m²)
     Pm = 0,              // kN/輪 (차량 후륜 1륜 하중)
     b_width = 2.75,      // m
     a_contact = 0.2,     // m
     Kv = 0,              // kN/m³ (연직방향 지반반력계수)
     tau = 10,            // kN/m² (강관-지반 마찰력)
-    strainCriterion = 'yield',  // 'yield' (σ_y/E) | 'buckling' (46t/D)
+    strainCriterion = 'buckling',  // 'buckling' (46t/D, 지침 표 C.2.3 기본) | 'yield' (σ_y/E, 보수적)
   } = params
 
   const D_m = D_out / 1000    // m (외경)
@@ -290,19 +293,22 @@ export function evalContinuous(params) {
 
   // ── Step 13: 지진에 의한 축변형률 (해설식 5.3.43~5.3.53) ──
   const sigma_y = getSteelYieldStrength(t)
-  const epsilon_y = sigma_y / E   // 항복점 변형률 (무차원, E in MPa)
+  const epsilon_y = sigma_y / E   // 재료 항복점 변형률 (무차원, 참고용)
+
+  // 허용변형률 — L1(=ξ×ε) 판정 기준 변형률로도 사용
+  // (지침 C.2/실무 계산서: L1 = ξ × εy, εy = 46t/D 기준)
+  const epsilon_allow = calcAllowableStrain(sigma_y, E, strainCriterion, t, D_out)
 
   const {
     epsilon_G, epsilon_L, epsilon_B, epsilon_x,
     xi, L1: Ly, usedFriction,
-  } = calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_y)
+  } = calcStrainSeismic(Uh, L, D_m, alpha1, alpha2, E_kN, t_m, tau, epsilon_allow)
 
   // ── Step 14: 합성 변형률 합산 (절댓값 합산, 보수적) ──
   const epsilon_total = Math.abs(epsilon_i) + Math.abs(epsilon_o)
     + Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_x)
 
-  // ── Step 15: 허용변형률
-  const epsilon_allow = calcAllowableStrain(sigma_y, E, strainCriterion, t, D_out)
+  // ── Step 15: 허용변형률 판정
   const strainOK = epsilon_total <= epsilon_allow
 
   // ── Step 16: Von Mises 조합응력 검토 ──

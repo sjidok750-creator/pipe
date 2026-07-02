@@ -636,13 +636,13 @@ export default function SeismicDetailInputPage() {
                   <tbody>
                     <tr>
                       <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>강관 (연속관)</td>
-                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>206,000 MPa</td>
-                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>KS D 3565 / 지침 예제</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>210,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>평가요령 부록C C.2.2 (2.1×10⁸ kN/m²)</td>
                     </tr>
                     <tr style={{ background: T.bgPanelAlt }}>
                       <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>덕타일 주철관 (분절관)</td>
-                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>170,000 MPa</td>
-                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>KS D 4311 / 지침 예제</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, textAlign: 'center', fontFamily: T.fontMono }}>160,000 MPa</td>
+                      <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontSize: 10 }}>평가요령 부록C C.1.2 (1.6×10⁸ kN/m²)</td>
                     </tr>
                   </tbody>
                 </table>
@@ -655,7 +655,7 @@ export default function SeismicDetailInputPage() {
           }>
             <EngRadio
               options={[
-                { key: 'auto',   label: `자동  (${inp.pipeType === 'segmented' ? '170,000' : '206,000'} MPa)` },
+                { key: 'auto',   label: `자동  (${inp.pipeType === 'segmented' ? '160,000' : '210,000'} MPa)` },
                 { key: 'manual', label: '직접 입력' },
               ]}
               value={inp.E_manual ? 'manual' : 'auto'}
@@ -1080,6 +1080,26 @@ export default function SeismicDetailInputPage() {
                 />
               </EngRow>
 
+              <EngRow label="허용신축량 (mm)" popover={
+                <EngPopover title="이음부 허용신축량">
+                  <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                    미입력(0) 시 KS D 4311 소켓 삽입깊이 × 50%(일반형)/80%(내진형)로 자동 산정.<br/>
+                    평가요령 부록C 예제 C.1은 DN900에 <strong>31mm</strong>를 적용하였으나 산정근거가
+                    제시되지 않음 — <strong>제조사 이음 허용기준 확인 후 직접입력 권장</strong>.
+                  </div>
+                </EngPopover>
+              }>
+                <EngInput
+                  value={inp.e_allow_manual != null ? inp.e_allow_manual * 1000 : 0}
+                  onChange={v => {
+                    const mm = parseFloat(v) || 0
+                    set({ e_allow_manual: mm > 0 ? mm / 1000 : null })
+                  }}
+                  min={0} step={1} width={90}
+                />
+                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>0 = 자동 산정</span>
+              </EngRow>
+
               <EngDivider label="부등침하 조건"/>
               <EngRow label="부등침하 고려" popover={
                 <EngPopover title="부등침하 고려 여부">
@@ -1311,10 +1331,10 @@ export default function SeismicDetailInputPage() {
               }>
                 <EngRadio
                   options={[
-                    { key: 'yield',    label: 'σ_y / E  (항복점 변형률)' },
-                    { key: 'buckling', label: '46·t / D  (국부좌굴 한계)' },
+                    { key: 'buckling', label: '46·t/D [%]  (부록C 표 C.2.3 기준, 기본)' },
+                    { key: 'yield',    label: 'σ_y / E  (재료 항복 변형률, 보수적)' },
                   ]}
-                  value={inp.strainCriterion ?? 'yield'}
+                  value={inp.strainCriterion ?? 'buckling'}
                   onChange={v => set({ strainCriterion: v })}
                 />
               </EngRow>
@@ -1563,7 +1583,7 @@ export default function SeismicDetailInputPage() {
             <div>Vds(등가전단속도) = {svCalc.Vds.toFixed(1)} m/s &nbsp;|&nbsp; L(파장) = {svCalc.L.toFixed(1)} m</div>
             <div>Uh(지반변위, 붕괴방지) ≈ <strong style={{ color: '#c0392b' }}>{(svCalc.Uh * 1000).toFixed(2)} mm</strong></div>
             <div style={{ marginTop: 4, padding: '3px 6px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, color: T.textWarn, fontSize: 9.5, fontFamily: T.fontSans }}>
-              ※ 암반 기반면 스펙트럼(Fa=Fv=1.0) + 감쇠보정 η=√(10/(5+ξ)) 적용 — 평가요령 해설식 5.3.6<br/>
+              ※ 암반 기반면 스펙트럼(Fa=Fv=1.0, KDS 17 10 00: 2.8S) + 감쇠보정계수 C_D=(6.42/(1.42+ξ))^0.48 적용 — 평가요령 해설식 5.3.6<br/>
               붉은 수직선(Ts)에서의 Sv값이 실제 계산에 사용되는 설계속도입니다.
             </div>
           </div>

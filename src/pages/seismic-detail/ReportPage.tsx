@@ -137,11 +137,13 @@ export default function SeismicDetailReportPage() {
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
   const today = new Date().toLocaleDateString('ko-KR')
 
-  const nu = isSegmented ? 0.26 : 0.30
-  const E_MPa = rs.E_use ?? (isSegmented ? 170000 : 206000)
+  const nu = isSegmented ? 0.28 : 0.30
+  const E_MPa = rs.E_use ?? (isSegmented ? 160000 : 210000)
 
   const D_m = inp.D_out / 1000
   const t_m = inp.thickness / 1000
+  // 분절관(주철): 공차 차감 유효두께 t_eff = t₀/1.1 (부록C C.1.2) — 엔진 결과값 우선
+  const t_eff_m = isSegmented ? ((rs.t_eff ?? inp.thickness / 1.1) / 1000) : t_m
 
   const H_sum_layers = inp.layers.reduce((s, l) => s + l.H, 0)
   const H_total = rs.H_effective ?? H_sum_layers   // explicit 모드 시 H_bedrock 기준
@@ -151,7 +153,7 @@ export default function SeismicDetailReportPage() {
 
   const e_i_val = rs.sigma_i * inp.Lj / E_MPa
   const e_o_val = rs.e_o ?? 0
-  const e_t_val = 1.2e-5 * (inp.deltaT ?? 20) * inp.Lj
+  const e_t_val = rs.e_t ?? (1.0e-5 * (inp.deltaT ?? 20) * inp.Lj)  // α주철=1.0×10⁻⁵/℃ (부록C 표 C.1.4)
   const e_d_val = rs.e_d ?? 0
   const piLjL = Math.PI * inp.Lj / (rs.L ?? 1)
   const eps_label = inp.Vbs >= 300 ? '1.0' : '0.85'
@@ -368,17 +370,17 @@ export default function SeismicDetailReportPage() {
               </FormulaRow>
               <FormulaRow>
                 여기서,&nbsp; {G.nu} = {nu},&nbsp; P = {inp.P} MPa,&nbsp;
-                D = {D_m.toFixed(3)} m,&nbsp; t = {t_m.toFixed(4)} m
+                D = {D_m.toFixed(3)} m,&nbsp; t = t₀/1.1 = {t_eff_m.toFixed(4)} m
                 &nbsp;
                 <span style={{ fontSize: 9.5, color: '#64748b' }}>
-                  [t: 입력값 그대로 적용 — 부록C 예제는 t=t₀/1.1 사용, 기준서 본문 미규정]
+                  [t: 공칭관두께 t₀={t_m.toFixed(4)}m에서 주철구조물 공차를 뺀 유효두께 — 부록C C.1.2]
                 </span>
               </FormulaRow>
             </FormulaBlock>
             <ResultBlock ok>
               <FormulaRow>
                 {G.sigma}<Sub>i</Sub> = {nu} {G.times}&nbsp;
-                <Frac top={<>{(inp.P * 1000).toFixed(0)} {G.times} ({D_m.toFixed(3)} − {t_m.toFixed(4)})</>} bot={<>2 {G.times} {t_m.toFixed(4)}</>} />
+                <Frac top={<>{(inp.P * 1000).toFixed(0)} {G.times} ({D_m.toFixed(3)} − {t_eff_m.toFixed(4)})</>} bot={<>2 {G.times} {t_eff_m.toFixed(4)}</>} />
                 &nbsp;=&nbsp;<strong>{rs.sigma_i?.toFixed(2)} MPa</strong>
               </FormulaRow>
             </ResultBlock>
@@ -782,36 +784,39 @@ export default function SeismicDetailReportPage() {
 
         {/* ② 속도응답스펙트럼 + 감쇠보정계수 */}
         <div style={{ fontSize: 10.5, fontWeight: 700, marginTop: 10, marginBottom: 4, color: WARM_DARK }}>
-          ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (η) 산정
+          ② 기반면 표준설계속도응답스펙트럼 및 감쇠보정계수 (C_D) 산정
         </div>
 
         {/* 삽도: 암반지반 기반면 설계속도응답스펙트럼 (지침서 부록C 그림 C.1.3/C.2.4) */}
         {(() => {
           // 붕괴방지/기능수행 각각 다른 S = Z × I 적용 (해설표 2.1.1, 2.1.5)
-          // Sv(T) = Sas·g·T_B/(2π)·η  for T > T_B  (plateau, 상수)
+          // KDS 17 10 00 암반(S1) 스펙트럼: T≤T_A: S(1+30T) / T_A~T_B: 2.8S / T>T_B: 0.84S/T
+          // 감쇠보정계수 C_D = (6.42/(1.42+ξ))^0.48, Sv = Sa·g·T/(2π)·C_D
           const Z_val    = rs.Z ?? SEISMIC_ZONE[inp.zone as 'I'|'II'].Z
           const I_c      = rs.I_collapse ?? 1.4
           const I_f      = rs.I_func    ?? 0.57
           const S_c      = Z_val * I_c          // 붕괴방지 설계지반가속도
           const S_f      = Z_val * I_f          // 기능수행 설계지반가속도
           const T_A = 0.06, T_B = 0.3, g = 9.81
-          const eta_c = Math.sqrt(10 / 25)      // 붕괴방지 ξ=20%
-          const eta_f = Math.sqrt(10 / 15)      // 기능수행 ξ=10%
+          const eta_c = Math.pow(6.42 / (1.42 + 20), 0.48)   // 붕괴방지 ξ=20% → C_D=0.5605
+          const eta_f = Math.pow(6.42 / (1.42 + 10), 0.48)   // 기능수행 ξ=10% → C_D=0.7585
 
-          // Sv(T) 계산 — S별로 분리
-          const svAt = (t: number, S: number, eta: number) => {
+          // Sv(T) 계산 — S별로 분리 (KDS 17 10 00 + C_D)
+          const svAt = (t: number, S: number, cd: number) => {
             if (t <= 0) return 0
-            const Sas = S * 2.5
-            if (t <= T_A) return Sas * (0.4 + 0.6 * t / T_A) * g * t / (2 * Math.PI) * eta
-            if (t <= T_B) return Sas * g * t / (2 * Math.PI) * eta
-            return Sas * g * T_B / (2 * Math.PI) * eta   // plateau
+            const cdT = t >= T_A ? cd : 1.0 + (cd - 1.0) * (t / T_A)   // 0~T_A 직선보간
+            let Sa
+            if (t <= T_A) Sa = S * (1 + 30 * t)
+            else if (t <= T_B) Sa = S * 2.8
+            else Sa = 0.84 * S / t
+            return Sa * g * t / (2 * Math.PI) * cdT
           }
 
           const Ts_val  = rs.Ts ?? 0
           const Sv_c    = svAt(Ts_val, S_c, eta_c)   // 붕괴방지 Sv at Ts
           const Sv_f    = svAt(Ts_val, S_f, eta_f)   // 기능수행 Sv at Ts
-          const plat_c  = S_c * 2.5 * g * T_B / (2 * Math.PI) * eta_c
-          const plat_f  = S_f * 2.5 * g * T_B / (2 * Math.PI) * eta_f
+          const plat_c  = 0.84 * S_c * g / (2 * Math.PI) * eta_c
+          const plat_f  = 0.84 * S_f * g / (2 * Math.PI) * eta_f
 
           // SVG 치수 — 좌측 여백 충분히 확보 (Y축 레이블 공간)
           const W = 460, H = 210
@@ -938,7 +943,7 @@ export default function SeismicDetailReportPage() {
                       <th style={{ ...TH, fontSize: 8.5 }}>위험도<br/>계수 I</th>
                       <th style={{ ...TH, fontSize: 8.5 }}>S=Z·I<br/>(g)</th>
                       <th style={{ ...TH, fontSize: 8.5 }}>ξ<br/>(%)</th>
-                      <th style={{ ...TH, fontSize: 8.5 }}>η</th>
+                      <th style={{ ...TH, fontSize: 8.5 }}>C_D</th>
                       <th style={{ ...TH, fontSize: 8.5 }}>Sv<br/>(m/s)</th>
                     </tr>
                   </thead>
@@ -964,10 +969,12 @@ export default function SeismicDetailReportPage() {
                   </tbody>
                 </table>
                 <div style={{ fontSize: 8.5, color: '#555', lineHeight: 1.8, paddingLeft: 2 }}>
-                  Z = {Z_val},&nbsp; Sas<sub>붕괴</sub> = {(S_c*2.5).toFixed(3)} g,&nbsp;
-                  Sas<sub>기능</sub> = {(S_f*2.5).toFixed(3)} g<br/>
-                  Ts = {Ts_val.toFixed(3)} s &nbsp;→&nbsp; T &gt; T<sub>B</sub> 구간 적용<br/>
-                  S<sub>v</sub> = Sas·g·T<sub>B</sub>/(2π)·η = 상수 (plateau)
+                  Z = {Z_val},&nbsp; Sas<sub>붕괴</sub> = 2.8S = {(S_c*2.8).toFixed(3)} g,&nbsp;
+                  Sas<sub>기능</sub> = {(S_f*2.8).toFixed(3)} g<br/>
+                  Ts = {Ts_val.toFixed(3)} s &nbsp;
+                  {Ts_val > T_B
+                    ? <>→&nbsp; T &gt; T<sub>B</sub>: S<sub>v</sub> = 0.84·S·g·C<sub>D</sub>/(2π) = 상수 (plateau)</>
+                    : <>→&nbsp; S<sub>v</sub> = Sa(T)·g·T/(2π)·C<sub>D</sub></>}
                 </div>
               </div>
             </div>
@@ -977,21 +984,20 @@ export default function SeismicDetailReportPage() {
         {/* 감쇠보정계수 + Sv 산정 요약 */}
         <FormulaBlock>
           <FormulaRow>
-            <strong>감쇠비 보정계수</strong>&nbsp; η =&nbsp;
-            <Sqrt inner={<>10 / (5 + ξ)</>} />
+            <strong>감쇠보정계수</strong>&nbsp; C<Sub>D</Sub> = (6.42 / (1.42 + ξ))<Sup>0.48</Sup>
             &nbsp;[KDS 17 10 00]
           </FormulaRow>
           <FormulaRow>
-            붕괴방지 (ξ = 20%): η =&nbsp;
-            <Sqrt inner={<>10 / 25</>} />
-            &nbsp;= {Math.sqrt(10/25).toFixed(4)}&nbsp;&nbsp;|&nbsp;&nbsp;
-            기능수행 (ξ = 10%): η =&nbsp;
-            <Sqrt inner={<>10 / 15</>} />
-            &nbsp;= {Math.sqrt(10/15).toFixed(4)}
+            붕괴방지 (ξ = 20%): C<Sub>D</Sub> = {Math.pow(6.42/21.42, 0.48).toFixed(4)}
+            &nbsp;&nbsp;|&nbsp;&nbsp;
+            기능수행 (ξ = 10%): C<Sub>D</Sub> = {Math.pow(6.42/11.42, 0.48).toFixed(4)}
           </FormulaRow>
           <FormulaRow>
-            <strong>붕괴방지</strong>&nbsp; S<Sub>v</Sub> = (Z{G.times}I<Sub>붕괴</Sub>) {G.times} 2.5 {G.times} g {G.times} T<Sub>B</Sub> / (2{G.pi}) {G.times} η
+            <strong>붕괴방지</strong>&nbsp; S<Sub>v</Sub> = Sa(T<Sub>s</Sub>) {G.times} g {G.times} T<Sub>s</Sub> / (2{G.pi}) {G.times} C<Sub>D</Sub>
             &nbsp;=&nbsp;<strong>{rs.Sv?.toFixed(4)} m/s</strong>
+            &nbsp;<span style={{ fontSize: 9 }}>
+              (Sa: T≤0.06s → S(1+30T) / ≤0.3s → 2.8S / &gt;0.3s → 0.84S/T)
+            </span>
           </FormulaRow>
         </FormulaBlock>
 
@@ -1141,6 +1147,12 @@ export default function SeismicDetailReportPage() {
               <FormulaRow>
                 보정계수: {G.xi}<Sub>1</Sub> = {rs.xi1?.toFixed(4)},&nbsp;
                 {G.xi}<Sub>2</Sub> = {rs.xi2?.toFixed(4)}
+                &nbsp;
+                <span style={{ fontSize: 9, color: '#64748b' }}>
+                  [해설그림 5.3.3/5.3.4의 원본 이론해(탄성지반 위 자유단 관절 모델)로 직접 산정
+                  — λ<sub>1</sub>L′={rs.lam1Lp?.toFixed(2)}, ν′={rs.nu_prime?.toFixed(4)} /
+                  λ<sub>2</sub>L={rs.lam2L?.toFixed(2)}, ν={rs.nu_val?.toFixed(4)}]
+                </span>
               </FormulaRow>
               <FormulaRow>
                 {G.sigma}'<Sub>L</Sub> = {G.xi}<Sub>1</Sub> {G.times} {G.sigma}<Sub>L</Sub> = {rs.xi1?.toFixed(4)} {G.times} {rs.sigma_L?.toFixed(2)} = {rs.sigma_L_prime?.toFixed(2)} MPa
@@ -1473,7 +1485,9 @@ export default function SeismicDetailReportPage() {
                 <tr>
                   <td style={TDB} colSpan={2}>
                     허용 신축량 u<Sub>allow</Sub>&nbsp;
-                    ({inp.isSeismicJoint ? '내진형 이음 × 80%' : '일반형 이음 × 50%'})
+                    ({inp.e_allow_manual != null && inp.e_allow_manual > 0
+                      ? '직접입력 — 제조사 이음 허용기준'
+                      : (inp.isSeismicJoint ? 'KS 삽입깊이 × 80% (내진형)' : 'KS 삽입깊이 × 50% (일반형)')})
                   </td>
                   <td style={TDR}>{rs.u_allow?.toFixed(4)}</td>
                 </tr>
@@ -1545,10 +1559,10 @@ export default function SeismicDetailReportPage() {
                   <>
                     {G.epsilon}<Sub>allow</Sub> =&nbsp;
                     <Frac top="46t" bot="D" />
-                    &nbsp;=&nbsp;
+                    &nbsp;[%]&nbsp;=&nbsp;
                     <Frac top={`46 × ${inp.thickness}`} bot={inp.D_out} />
-                    &nbsp;=&nbsp;<strong>{rs.epsilon_allow?.toExponential(4)}</strong>&nbsp;
-                    ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
+                    &nbsp;=&nbsp;<strong>{(rs.epsilon_allow * 100)?.toFixed(4)} %</strong>&nbsp;
+                    (= {rs.epsilon_allow?.toExponential(4)}, 부록C 표 C.2.3)
                   </>
                 ) : (
                   <>
@@ -1597,7 +1611,7 @@ export default function SeismicDetailReportPage() {
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{(rs.epsilon_total * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr>
-                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> ({rs.strainCriterion === 'buckling' ? '46t/D, ASCE/KDS' : 'σ_y/E, 부록C'})</td>
+                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> ({rs.strainCriterion === 'buckling' ? '46t/D [%], 부록C 표 C.2.3' : 'σ_y/E, 보수적 대안'})</td>
                   <td style={TDR}>{(rs.epsilon_allow * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr style={{ background: rs.strainOK ? '#f0faf4' : '#fff0f0' }}>

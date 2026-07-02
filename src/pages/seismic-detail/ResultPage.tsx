@@ -30,15 +30,15 @@ export default function SeismicDetailResultPage() {
   const rs = r as any
 
   // 암반 기반 속도스펙트럼 파라미터 (Fa=Fv=1.0)
-  // Sas = S×2.5 (암반 단주기 스펙트럼), eta = 감쇠보정계수
+  // Sas = S×2.8 (KDS 17 10 00 암반 단주기 스펙트럼), C_D = 감쇠보정계수
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I' | 'II']
   const Z = rs.S / (inp.seismicGrade === 'I' ? 1.40 : 1.00)  // Z 역산
-  const Sas_collapse = rs.Sas   // 붕괴방지 암반 스펙트럼 (S_collapse×2.5)
-  const eta_collapse = rs.eta   // 붕괴방지 감쇠보정계수 (η=0.6325)
-  // 기능수행: S_func = Z×I_func, Sas_func = S_func×2.5, eta_func = √(10/15)=0.8165
+  const Sas_collapse = rs.Sas   // 붕괴방지 암반 스펙트럼 (S_collapse×2.8)
+  const eta_collapse = rs.Cd ?? rs.eta   // 붕괴방지 감쇠보정계수 C_D (ξ=20% → 0.5605)
+  // 기능수행: S_func = Z×I_func, Sas_func = S_func×2.8, C_D(ξ=10%)=0.7585
   const S_func = Z * gradeInfo.I_func
-  const Sas_func = S_func * 2.5
-  const eta_func = Math.sqrt(10 / 15)   // ξ=10% → η=0.8165
+  const Sas_func = S_func * 2.8
+  const eta_func = Math.pow(6.42 / 11.42, 0.48)   // ξ=10% → C_D=0.7585
 
   // 지반 해석 파라미터
   const groundParams = [
@@ -153,8 +153,8 @@ export default function SeismicDetailResultPage() {
             width={440} height={220}
           />
           <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-            암반기준 Sas = S·2.5 = {Sas_collapse?.toFixed(3)} g&nbsp;|&nbsp;
-            η(붕괴방지) = {eta_collapse?.toFixed(4)}&nbsp;|&nbsp;
+            암반기준 Sas = S·2.8 = {Sas_collapse?.toFixed(3)} g&nbsp;|&nbsp;
+            C_D(붕괴방지) = {eta_collapse?.toFixed(4)}&nbsp;|&nbsp;
             Ts(표층지반) = {rs.Ts?.toFixed(3)} s&nbsp;|&nbsp;
             Sv(사용값) = {rs.Sv?.toFixed(4)} m/s
           </div>
@@ -169,7 +169,9 @@ export default function SeismicDetailResultPage() {
             />
             <div style={{ fontSize: 10, color: T.textMuted, marginTop: 6, fontFamily: T.fontSans, lineHeight: 1.7 }}>
               이음부 상대변위 u_J = Uh·sin(π·Lj/L)<br/>
-              허용 신축량 = 소켓 삽입량 × {inp.isSeismicJoint ? '80% (내진형)' : '50% (일반형)'}
+              허용 신축량 = {inp.e_allow_manual != null && inp.e_allow_manual > 0
+                ? `직접입력 ${(inp.e_allow_manual * 1000).toFixed(1)} mm`
+                : `소켓 삽입량 × ${inp.isSeismicJoint ? '80% (내진형)' : '50% (일반형)'}`}
             </div>
           </EngPanel>
         )}
@@ -201,7 +203,7 @@ export default function SeismicDetailResultPage() {
             })}
             <div style={{ height: 1, background: T.border, margin: '4px 0' }}/>
             <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
-              허용값 = {rs.epsilon_allow?.toExponential(3)}  ({rs.strainCriterion === 'buckling' ? 'ASCE/KDS 해설, 46t/D' : '지침 부록C, σ_y/E'})
+              허용값 = {rs.epsilon_allow?.toExponential(3)}  ({rs.strainCriterion === 'buckling' ? '부록C 표 C.2.3, 46t/D [%]' : 'σ_y/E, 보수적 대안'})
             </div>
           </EngPanel>
         )}

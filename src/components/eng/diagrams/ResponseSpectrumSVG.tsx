@@ -1,12 +1,12 @@
 // 암반 기반면 속도응답스펙트럼 Sv — 매설관 내진 계산용
-// 근거: 평가요령 해설식(5.3.6), KDS 17 10 00
+// 근거: 평가요령 해설식(5.3.6), KDS 17 10 00 암반(S1) 표준설계응답스펙트럼
 // - 암반 기준 (Fa=Fv=1.0): T_A=0.06s, T_B=0.3s
-// - Sas = S×2.5 (암반 단주기 스펙트럼 가속도, g배수)
-// - T ≤ T_A: Sa = Sas×(0.4+0.6×T/T_A)  → Sv 선형 증가
-// - T_A ≤ T ≤ T_B: Sa = Sas             → Sv 선형 증가
-// - T > T_B: Sa = Sas×T_B/T             → Sv = Sas×g×T_B/(2π) 일정 (플래토)
-// - 감쇠보정: Sv × η,  η=√(10/(5+ξ)),  붕괴방지ξ=20%→η=0.6325, 기능수행ξ=10%→η=0.8165
-// - 피크 Sv(감쇠보정후) = Sas×g×T_B/(2π)×η 가 Uh 산정에 직접 사용됨
+// - Sas = S×2.8 (암반 단주기 스펙트럼 가속도, g배수)
+// - T ≤ T_A: Sa = S×(1+30T)             → T_A에서 2.8S 도달
+// - T_A ≤ T ≤ T_B: Sa = 2.8×S           → Sv 선형 증가
+// - T > T_B: Sa = 0.84×S/T              → Sv = 0.84×S×g/(2π)×C_D 일정 (플래토)
+// - 감쇠보정계수: C_D = (6.42/(1.42+ξ))^0.48, 붕괴방지ξ=20%→0.5605, 기능수행ξ=10%→0.7585
+// - 피크 Sv(감쇠보정후) = Sas×g×T_B/(2π)×C_D 가 Uh 산정에 직접 사용됨
 import React from 'react'
 import { T } from '../tokens'
 
@@ -15,12 +15,13 @@ const PI2 = 2 * Math.PI
 const T_A = 0.06   // 암반 단주기 전이주기
 const T_B = 0.3    // 암반 장주기 전이주기
 
-// 암반 기반 Sa 계산 (Fa=Fv=1.0, 감쇠보정 전)
+// 암반 기반 Sa 계산 (Fa=Fv=1.0, 감쇠보정 전) — KDS 17 10 00
 function saRock(t: number, Sas: number): number {
-  if (t < 0.001) return Sas * 0.4
-  if (t <= T_A) return Sas * (0.4 + 0.6 * t / T_A)
+  const S = Sas / 2.8
+  if (t < 0.001) t = 0.001
+  if (t <= T_A) return S * (1 + 30 * t)
   if (t <= T_B) return Sas
-  return Sas * T_B / t
+  return 0.84 * S / t
 }
 
 // 암반 기반 Sv 계산 (감쇠보정 후)
