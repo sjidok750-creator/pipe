@@ -6,6 +6,7 @@ import { Frac, Sub, Sup, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } fro
 import ReportTitleBlock from '../components/report/ReportTitleBlock'
 import { useProjectStore } from '../store/useProjectStore.js'
 import { exportStructuralXlsx } from '../lib/xlsx/structuralXlsx.js'
+import { exportStructuralHwpx } from '../lib/hwpx/structuralHwpx.js'
 import { fmtNum } from '../lib/format'
 
 // ── 인라인 스타일 상수 (설계보고서 부록 양식: 전체 괘선·모노크롬) ──
@@ -88,6 +89,10 @@ export default function ReportPage() {
         <button onClick={() => { exportStructuralXlsx({ inputs, result, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           엑셀(.xlsx) 다운로드
+        </button>
+        <button onClick={() => { exportStructuralHwpx({ inputs, result, projectName, facilityName }).catch((e: any) => alert('한글 생성 실패: ' + (e?.message ?? e))) }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1B3A66', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
+          한글(.hwpx) 다운로드
         </button>
         <button onClick={() => navigate('/structural/result')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>

@@ -11,6 +11,7 @@ import { Frac, Sub, FormulaBlock, FormulaRow, ResultBlock, OKBadge, G } from '..
 import ReportTitleBlock from '../../components/report/ReportTitleBlock'
 import { useProjectStore } from '../../store/useProjectStore.js'
 import { exportSeismicPrelimXlsx } from '../../lib/xlsx/seismicXlsx.js'
+import { exportSeismicPrelimHwpx } from '../../lib/hwpx/seismicHwpx.js'
 
 export default function SeismicPrelimReportPage() {
   const navigate = useNavigate()
@@ -58,6 +59,20 @@ export default function SeismicPrelimReportPage() {
         }}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           엑셀(.xlsx) 다운로드
+        </button>
+        <button onClick={() => {
+          const indexLabels = {
+            KIND: KIND_INDEX[inp.pipeKind as keyof typeof KIND_INDEX]?.label,
+            EARTH: (EARTH_INDEX as any)[inp.soilType]?.label,
+            SIZE: SIZE_INDEX[getSizeIndex(inp.DN) as keyof typeof SIZE_INDEX]?.label,
+            CONNECT: CONNECT_INDEX[inp.connectCond as keyof typeof CONNECT_INDEX]?.label,
+            FACIL: FACIL_INDEX[inp.facilExists as keyof typeof FACIL_INDEX]?.label,
+            MCONE: MCONE_INDEX[inp.mcone as keyof typeof MCONE_INDEX]?.label,
+          }
+          exportSeismicPrelimHwpx({ inp, r, indexLabels, projectName, facilityName }).catch((e: any) => alert('한글 생성 실패: ' + (e?.message ?? e)))
+        }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1B3A66', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
+          한글(.hwpx) 다운로드
         </button>
         <button onClick={() => navigate('/seismic-prelim/result')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: 'white', color: T.textAccent, border: `1px solid ${T.border}`, borderRadius: 2, fontFamily: F }}>

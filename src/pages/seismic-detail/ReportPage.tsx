@@ -8,6 +8,7 @@ import {
 import ReportTitleBlock from '../../components/report/ReportTitleBlock'
 import { useProjectStore } from '../../store/useProjectStore.js'
 import { exportSeismicDetailXlsx } from '../../lib/xlsx/seismicXlsx.js'
+import { exportSeismicDetailHwpx } from '../../lib/hwpx/seismicHwpx.js'
 
 // ── 스타일 상수 (설계보고서 부록 양식: 전체 괘선·모노크롬) ────────
 const WARM_DARK = '#111'
@@ -169,6 +170,10 @@ export default function SeismicDetailReportPage() {
         <button onClick={() => navigate('/seismic-detail/report/print')}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: CORAL, color: 'white', border: 'none', borderRadius: 2 }}>
           인쇄 / PDF 저장
+        </button>
+        <button onClick={() => { exportSeismicDetailHwpx({ inp, rs, projectName, facilityName }).catch((e: any) => alert('한글 생성 실패: ' + (e?.message ?? e))) }}
+          style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1B3A66', color: 'white', border: 'none', borderRadius: 2 }}>
+          한글(.hwpx) 다운로드
         </button>
         <button onClick={() => { exportSeismicDetailXlsx({ inp, rs, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2 }}>
