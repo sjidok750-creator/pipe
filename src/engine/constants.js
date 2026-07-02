@@ -134,7 +134,10 @@ export const GW_LEVEL_OPTIONS = [
   { value: 'surface', label: '지표면' },
 ]
 
-// 지하수위별 Rw 계수 (AWWA M11)
+// 지하수위별 Rw 계수 (좌굴 검토용 부력 저감계수)
+// ※ AWWA M11 원식은 Rw = 1 − 0.33(hw/h) (범위 1.0~0.67)로 아래 값보다 완화됨.
+//   본 표는 지하수위 상승에 따른 좌굴강도 저하를 단계별로 크게 반영한
+//   보수적(안전측) 설정값 — 원식 대비 Pcr을 낮게 평가하므로 안전측 판정
 export const GW_RW = {
   below:   1.00,
   bottom:  0.90,

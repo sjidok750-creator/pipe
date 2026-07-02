@@ -178,12 +178,14 @@ export function calcVds(layers, Ts) {
 }
 
 // 파장 L 계산 (기반암 전단파속도 Vbs, Ts, Vds)
+// 해설식(5.3.7~5.3.9): L = 2·L1·L2/(L1+L2), L1 = Ts·V_DS, L2 = Ts·V_BS
+// ※ 구버전에 있던 Vbs<300 시 0.85 보정계수는 지침에 근거가 없어 제거
+//   (기반암 정의 자체가 Vs≥760m/s — 지침 원식 그대로 적용)
 export function calcWavelength(Ts, Vds, Vbs) {
-  const eps = Vbs >= 300 ? 1.0 : 0.85  // 보정계수 (VBS≥300m/s → 1.0)
   const L1 = Vds * Ts
   const L2 = Vbs * Ts
-  const L = eps * (2 * L1 * L2) / (L1 + L2)
-  return { L, L1, L2, eps }
+  const L = (2 * L1 * L2) / (L1 + L2)
+  return { L, L1, L2 }
 }
 
 // 관축위치 지반수평변위 Uh

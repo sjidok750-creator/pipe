@@ -53,7 +53,6 @@ export default function SeismicDetailResultPage() {
     { label: 'Sv (속도응답스펙트럼)', value: rs.Sv, unit: 'm/s' },
     { label: 'Uh (지반수평변위)', value: rs.Uh,   unit: 'm' },
     { label: 'L (지진파장)',       value: rs.L,    unit: 'm' },
-    { label: '보정계수 ε',         value: rs.eps,  unit: '' },
   ]
 
   // 분절관 검토 행

@@ -461,7 +461,7 @@ export function evalSegmented(params) {
   const Uh = calcGroundDisp(Sv, Ts, z_pipe, H_total)  // m
 
   // ── Step 6: 파장 (해설식 5.3.7~5.3.9) ──
-  const { L, L1: Lwave1, L2: Lwave2, eps: epsWave } = calcWavelength(Ts, Vds, Vbs)
+  const { L, L1: Lwave1, L2: Lwave2 } = calcWavelength(Ts, Vds, Vbs)
 
   // ── Step 7: 지반 강성계수 (해설식 5.3.10~5.3.11) ──
   const { K1, K2 } = calcGroundStiffness(gamma, Vds)   // kN/m²
@@ -541,9 +541,9 @@ export function evalSegmented(params) {
     // 지반
     TG, Ts, Vds, H_total, H_effective, H_sum, gap: hGap, warnings: hWarnings, vsi,
     Sv, Sa, Sas, eta, xi, T_A, T_B,
-    Uh, L, Lwave1, Lwave2, epsWave,
+    Uh, L, Lwave1, Lwave2,
     // alias (보고서/결과 페이지 호환)
-    L1: Lwave1, L2: Lwave2, eps: epsWave,
+    L1: Lwave1, L2: Lwave2,
     // 지반 강성 / 관 특성
     K1, K2, lambda1, lambda2, alpha1, alpha2, Lprime,
     A_m, I_m, Z_m,

@@ -31,9 +31,10 @@ const DEFAULT_PRELIM = {
 // ── 상세평가 기본값 (부록C 예제값) ──────────────────────────
 // 분절관: 부록C.1 (덕타일 주철관 DN900), 연속관: 부록C.2 (강관 DN1000)
 
-// 공통 지반조건 (C.1·C.2 동일): 층1 H=30m Vs=89.4, 층2 H=5m Vs=172.9
+// 공통 지반조건 (그림 C.1.1/C.2.1): 층1 H=25m Vs=89.4, 층2 H=5m Vs=172.9 (합계 H=30m)
+// → TG=1.234s, Ts=1.543s (부록C 예제값 재현)
 const DEFAULT_LAYERS = [
-  { name: '표층',   H: 30, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
+  { name: '표층',   H: 25, N: null, Vs_manual: 89.4,  isRock: false, Vs: 89.4 },
   { name: '중간층', H: 5,  N: null, Vs_manual: 172.9, isRock: false, Vs: 172.9 },
 ]
 
@@ -66,7 +67,7 @@ const DEFAULT_SEGMENTED = {
   deltaT: 20,        // 부록C.1: ΔT=20℃
   strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
-  Vbs: 500,
+  Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
   H_bedrock: null,
   fillGapAsLastLayer: true,
@@ -100,7 +101,7 @@ const DEFAULT_CONTINUOUS = {
   deltaT: 15,        // 부록C.2: ΔT=15°C
   strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
-  Vbs: 500,
+  Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
   H_bedrock: null,
   fillGapAsLastLayer: true,

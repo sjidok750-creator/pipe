@@ -682,9 +682,9 @@ export default function SeismicDetailInputPage() {
                     </thead>
                     <tbody>
                       {[
-                        ['강관 SS400', '206,000', '206,000,000'],
-                        ['강관 SS490/SM490', '206,000', '206,000,000'],
-                        ['덕타일 주철관', '170,000', '170,000,000'],
+                        ['강관 (부록C C.2.2)', '210,000', '210,000,000'],
+                        ['강관 (KS D 3565 계열)', '206,000', '206,000,000'],
+                        ['덕타일 주철관 (부록C C.1.2)', '160,000', '160,000,000'],
                         ['주철관 (회주철)', '100,000~150,000', '—'],
                       ].map(([m, e, ek], i) => (
                         <tr key={i} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
@@ -703,9 +703,9 @@ export default function SeismicDetailInputPage() {
               </EngPopover>
             }>
               <EngInput
-                value={inp.pipeType === 'segmented' ? (inp.E_ductile ?? 170000) : (inp.E_steel ?? 206000)}
+                value={inp.pipeType === 'segmented' ? (inp.E_ductile ?? 160000) : (inp.E_steel ?? 210000)}
                 onChange={v => {
-                  const val = parseFloat(v) || (inp.pipeType === 'segmented' ? 170000 : 206000)
+                  const val = parseFloat(v) || (inp.pipeType === 'segmented' ? 160000 : 210000)
                   inp.pipeType === 'segmented'
                     ? set({ E_ductile: val })
                     : set({ E_steel: val })
