@@ -266,40 +266,57 @@ export default function ResultPage() {
             </div>
             <div style={{ fontSize: '11px', color: T.textMuted, marginBottom: 8 }}>{dual.verdictNote}</div>
 
-            <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textAccent, marginBottom: 3 }}>
-              ▶ 정식 판정 — {dual.primaryLabel}
-            </div>
-            <EngTable rows={[{
-              label: '링 휨응력 σb',
-              formula: dual.primaryCode === 'KWW2004'
-                ? "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]" : 'σb = Kb·Wtotal·Do/t²',
-              value: dual.primaryCode === 'KWW2004'
-                ? dual.A?.setA?.sigma_b : dual.B?.steps?.step4?.sigma_b,
-              unit: 'MPa',
-              limit: dual.primaryCode === 'KWW2004'
-                ? dual.A?.setA?.sigmaA_bend : dual.B?.steps?.step4?.sigmaA_bend,
-              ok: dual.primaryOK,
-            }]}/>
+            {(() => {
+              const isSteelDual = pipeType === 'steel'
+              // 관종별 링휨 데이터 위치가 다름 (강관 2004=setA, 현행=step4 / 주철관 모두 step3)
+              const pick = (res: any, code: string) => isSteelDual
+                ? (code === 'KWW2004' ? res?.setA : res?.steps?.step4)
+                : res?.steps?.step3
+              const fml = (code: string) => isSteelDual
+                ? (code === 'KWW2004' ? "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]" : 'σb = Kb·Wtotal·Do/t²')
+                : 'σb = Kb·Wtotal·Do/t²'
+              const refCode = dual.primaryCode === 'KWW2004' ? 'KDS2022' : 'KWW2004'
+              const P = pick(dual.primary, dual.primaryCode)
+              const R = pick(dual.reference, refCode)
+              const okOf = (x: any) => x?.ok ?? x?.ok_bending
+              return (
+                <>
+                  <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textAccent, marginBottom: 3 }}>
+                    ▶ 정식 판정 — {dual.primaryLabel}
+                  </div>
+                  <EngTable rows={[
+                    { label: '링 휨응력 σb', formula: fml(dual.primaryCode),
+                      value: P?.sigma_b, unit: 'MPa', limit: P?.sigmaA_bend, ok: okOf(P) },
+                    ...(dual.primary?.combined ? [{
+                      label: '조합응력', formula: '2.5σts+2.0σtd+1.4σb',
+                      value: dual.primary.combined.demand, unit: 'MPa',
+                      limit: dual.primary.combined.S, ok: dual.primary.combined.ok,
+                    }] : []),
+                  ]}/>
 
-            <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textMuted, margin: '10px 0 3px' }}>
-              ▷ 참고값 — {dual.referenceLabel} <span style={{ fontWeight: T.fw.normal }}>(판정에 사용하지 않음)</span>
-            </div>
-            <EngTable rows={[{
-              label: '링 휨응력 σb (참고)',
-              formula: dual.primaryCode === 'KWW2004'
-                ? 'σb = Kb·Wtotal·Do/t²' : "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]",
-              value: dual.primaryCode === 'KWW2004'
-                ? dual.B?.steps?.step4?.sigma_b : dual.A?.setA?.sigma_b,
-              unit: 'MPa',
-              limit: dual.primaryCode === 'KWW2004'
-                ? dual.B?.steps?.step4?.sigmaA_bend : dual.A?.setA?.sigmaA_bend,
-            }]}/>
+                  <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textMuted, margin: '10px 0 3px' }}>
+                    ▷ 참고값 — {dual.referenceLabel} <span style={{ fontWeight: T.fw.normal }}>(판정에 사용하지 않음)</span>
+                  </div>
+                  <EngTable rows={[
+                    { label: '링 휨응력 σb (참고)', formula: fml(refCode),
+                      value: R?.sigma_b, unit: 'MPa', limit: R?.sigmaA_bend },
+                    ...(dual.reference?.combined ? [{
+                      label: '조합응력 (참고)', formula: '2.5σts+2.0σtd+1.4σb',
+                      value: dual.reference.combined.demand, unit: 'MPa',
+                      limit: dual.reference.combined.S,
+                    }] : []),
+                  ]}/>
 
-            <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
-              ※ 두 방식은 토압(Marston/Prism)·링휨식(E′ 포함/미포함)이 달라 <strong>토피가 깊을수록 차이가 커집니다</strong>.
-              허용응력은 공통(참고표-4.2.5)입니다.<br/>
-              ※ 참고값이 초과하고 주기준이 만족하는 경우, 관 결함이 아니라 되메움 다짐도(E′) 확보 여부를 확인하십시오.
-            </div>
+                  <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
+                    ※ 두 방식은 <strong>토압 산정</strong>(H&gt;2m Marston / Prism)이 달라 토피가 깊을수록 차이가 커집니다.
+                    {isSteelDual
+                      ? ' 강관은 링휨식의 E′ 반영 여부도 다릅니다.'
+                      : ' 주철관은 링휨식이 동일(E′ 미포함)하며, 2004는 조합응력 검토가 추가됩니다.'}<br/>
+                    ※ 참고값이 초과하고 주기준이 만족하는 경우, 관 결함이 아니라 되메움 다짐도 확보 여부를 확인하십시오.
+                  </div>
+                </>
+              )
+            })()}
           </EngPanel>
         )}
 

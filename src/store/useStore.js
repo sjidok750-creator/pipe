@@ -4,7 +4,7 @@
 
 import { create } from 'zustand'
 import { calcSteelPipe, calcSteelPipeDual } from '../engine/steelPipe.js'
-import { calcDuctileIron } from '../engine/ductileIron.js'
+import { calcDuctileIron, calcDuctileIronDual } from '../engine/ductileIron.js'
 import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 
 const DEFAULT_INPUTS = {
@@ -130,6 +130,10 @@ export const useStore = create((set, get) => ({
         }
       } else {
         result = calcDuctileIron(calcInputs)
+        // 주철관도 동일 구조 — 병행 모드에서 두 기준 동시 계산
+        if (mode === 'BOTH') {
+          try { dual = calcDuctileIronDual({ ...calcInputs, primaryCode: primary }) } catch { dual = null }
+        }
       }
       set({ result, dual, reviewMode: mode, primaryCode: primary, calcError: null })
       return result
@@ -163,10 +167,16 @@ export const useStore = create((set, get) => ({
     const { history } = get()
     const entry = history.find((h) => h.id === id)
     if (entry) {
-      // 이전 dual 결과가 남지 않도록 초기화 후, 강관이면 재계산
+      // 이전 dual 결과가 남지 않도록 초기화 후, 병행 모드였으면 재계산
       let dual = null
-      if (entry.inputs?.pipeType === 'steel') {
-        try { dual = calcSteelPipeDual(entry.inputs) } catch { dual = null }
+      const em = entry.inputs?.reviewMode
+      if (em === 'BOTH') {
+        const pc = entry.inputs?.primaryCode ?? 'KWW2004'
+        const ci = { ...entry.inputs, codeStandard: pc, primaryCode: pc }
+        try {
+          dual = entry.inputs.pipeType === 'steel'
+            ? calcSteelPipeDual(ci) : calcDuctileIronDual(ci)
+        } catch { dual = null }
       }
       set({ inputs: entry.inputs, result: entry.result, dual, calcError: null })
     }

@@ -439,8 +439,8 @@ export function calcSteelPipeDual(inputs) {
   const primaryCode = inputs.primaryCode ?? 'KWW2004'
   const primary   = primaryCode === 'KWW2004' ? A : B
   const reference = primaryCode === 'KWW2004' ? B : A
-  const primaryLabel   = primaryCode === 'KWW2004' ? '상수도시설기준(2004)' : 'AWWA M11 방식'
-  const referenceLabel = primaryCode === 'KWW2004' ? 'AWWA M11 방식' : '상수도시설기준(2004)'
+  const primaryLabel   = primaryCode === 'KWW2004' ? '상수도기준 2004' : 'KDS 2022'
+  const referenceLabel = primaryCode === 'KWW2004' ? 'KDS 2022' : '상수도기준 2004'
   const primaryOK = primaryCode === 'KWW2004' ? aOK : bOK
 
   return {

@@ -3,8 +3,8 @@
 // 근거: KS D 4311 / KDS 57 10 00 / AWWA C150
 // ============================================================
 
-import { PIPE_MATERIAL, DI_THICKNESS, BEDDING, DI_COMBINED_2004 } from './constants.js'
-import { calcEarthLoad } from './earthLoad.js'
+import { PIPE_MATERIAL, DI_THICKNESS, BEDDING, DI_COMBINED_2004, MARSTON_2004, TRAFFIC_2004 } from './constants.js'
+import { calcEarthLoad, calcEarthLoadMarston, calcTrafficLoad2004 } from './earthLoad.js'
 import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 import { checkKdsCompliance } from './kdsCompliance.js'
 
@@ -66,11 +66,31 @@ export function calcDuctileIron(inputs) {
   // ────────────────────────────────────────
   // STEP 2: 토압 + 차량하중
   // ────────────────────────────────────────
-  const { We } = calcEarthLoad({ gammaSoil, H, Do })
-  const trafficResult = trafficMethod === 'wm'
-    ? calcTrafficLoadWm({ H, Do, hasTraffic, Pm: wmPm, C: wmC, a: wmA, theta: wmTheta })
-    : calcTrafficLoad({ H, Do, hasTraffic })
-  const { PL, WL, IF, PLraw } = trafficResult
+  // KWW2004: 토압·차량하중을 2004 [참고-4.2.1] 방식으로 산정
+  //   H ≤ 2.0m 연직토압 / H > 2.0m Marston (관종 무관 공통)
+  //   ※ 링휨 산정식 자체는 관종별로 다르므로 주철관은 강관의 E′ 포함식을 쓰지 않는다.
+  //     주철관 원문식(p.171): σb = 6(Kf·Wf + Kt·Wt)R²/t²  — E′ 미포함, 탄성단면
+  let We, WL, PL, IF, PLraw, earth2004 = null
+  if (codeStandard === 'KWW2004') {
+    const e = calcEarthLoadMarston({
+      H, Do, gammaSoil_kgfcm3: gammaSoil / 10 * 0.001,
+      kmu: MARSTON_2004.kmu, B_add_m: MARSTON_2004.B_add, H_limit: MARSTON_2004.H_prism_limit,
+    })
+    const tr = calcTrafficLoad2004({ H, ...TRAFFIC_2004 })
+    earth2004 = { Wv: e.Wv, Wt: tr.Wt, Cd: e.Cd, B_cm: e.B_cm, method: e.method, impactFactor: tr.i }
+    // kgf/cm² → kN/m  (×0.098067 MPa → ×1000 kPa → ×Do[m])
+    const Do_m = Do / 1000
+    We = e.Wv * 0.098067 * 1000 * Do_m
+    WL = hasTraffic ? tr.Wt * 0.098067 * 1000 * Do_m : 0
+    PL = hasTraffic ? tr.Wt * 0.098067 * 1000 : 0
+    PLraw = PL; IF = tr.i
+  } else {
+    ;({ We } = calcEarthLoad({ gammaSoil, H, Do }))
+    const trafficResult = trafficMethod === 'wm'
+      ? calcTrafficLoadWm({ H, Do, hasTraffic, Pm: wmPm, C: wmC, a: wmA, theta: wmTheta })
+      : calcTrafficLoad({ H, Do, hasTraffic })
+    ;({ PL, WL, IF, PLraw } = trafficResult)
+  }
   const Wtotal = We + WL
   const Ptotal = Wtotal / (Do / 1000)  // kPa
 
@@ -164,6 +184,7 @@ export function calcDuctileIron(inputs) {
       ? '상수도시설기준(2004) 덕타일 주철관 조합응력 — S = 420 MPa (GCD400 인장강도, KS D 4311)'
       : 'DIPRA / AWWA C150 (0.5·fu = 210 MPa) — KDS 57 10 00에 명시 조항 없음',
     combined,
+    earth2004,
     kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, surgeRatio, pipeDimManual }),
     steps: {
       step1: {
@@ -177,9 +198,12 @@ export function calcDuctileIron(inputs) {
       },
       step2: {
         title: '토압 및 차량하중 산정',
-        ref: trafficMethod === 'wm'
-          ? '내진성능 평가요령 부록C 해설식(5.3.3)'
-          : 'AWWA M11 Ch.5 / KDS 24 12 20',
+        ref: codeStandard === 'KWW2004'
+          ? '상수도시설기준(2004) [참고-4.2.1] — H≤2m 연직토압 / H>2m Marston'
+          : (trafficMethod === 'wm'
+              ? '내진성능 평가요령 부록C 해설식(5.3.3)'
+              : 'AWWA M11 Ch.5 / KDS 24 12 20'),
+        earthMethod: earth2004?.method ?? 'prism',
         gammaSoil, H, Do,
         We, PLraw, IF, PL, WL, Wtotal, Ptotal,
         trafficMethod,
@@ -212,5 +236,51 @@ export function calcDuctileIron(inputs) {
       deflection: { label: '처짐율',    value: deflectionRatio,  allow: mat.maxDeflection, unit: '%',   ok: ok_deflection },
       overallOK,
     },
+  }
+}
+
+/**
+ * 병행 검토 — 주철관 SET_A(2004) / SET_B(현행) 동시 계산
+ *
+ * ※ 링휨 산정식은 관종별로 원문이 다르므로 강관의 E′ 포함식을 쓰지 않는다.
+ *   주철관 원문식(2004 p.171): σb = 6(Kf·Wf + Kt·Wt)R² / t²  — E′ 미포함, 탄성단면
+ *   두 기준의 실질 차이는 (a) 토압 산정(Marston/Prism) (b) 조합응력 검토 유무 이다.
+ *
+ * @returns {{ A, B, verdict, verdictLabel, verdictNote, primary, reference, ... }}
+ */
+export function calcDuctileIronDual(inputs) {
+  const A = calcDuctileIron({ ...inputs, codeStandard: 'KWW2004' })
+  const B = calcDuctileIron({ ...inputs, codeStandard: 'KDS2022' })
+
+  // 2004는 조합응력이 지배 판정, 현행은 링휨 단독 허용치
+  const aOK = A.combined ? A.combined.ok : A.steps.step3.ok
+  const bOK = B.steps.step3.ok
+
+  let verdict, verdictLabel, verdictNote
+  if (aOK && bOK) {
+    verdict = 'PASS'; verdictLabel = '적합'
+    verdictNote = '두 기준 모두 만족.'
+  } else if (aOK && !bOK) {
+    verdict = 'CHECK_BACKFILL'; verdictLabel = '되메움 확인'
+    verdictNote = '구 기준(Marston 토압) 만족, 현행 기준(Prism 토압) 초과. 되메움 다짐도 확인 필요 — 관 결함이 아님.'
+  } else if (!aOK && !bOK) {
+    verdict = 'REINFORCE'; verdictLabel = '보강 필요'
+    verdictNote = '두 기준 모두 초과. K등급 상향 또는 보강 검토 필요.'
+  } else {
+    verdict = 'REVIEW'; verdictLabel = '검토 요망'
+    verdictNote = '구 기준 초과·현행 기준 만족 — 조합응력이 지배한 경우이므로 입력값을 확인하십시오.'
+  }
+
+  const primaryCode = inputs.primaryCode ?? 'KWW2004'
+  const primary   = primaryCode === 'KWW2004' ? A : B
+  const reference = primaryCode === 'KWW2004' ? B : A
+  const primaryLabel   = primaryCode === 'KWW2004' ? '상수도기준 2004' : 'KDS 2022'
+  const referenceLabel = primaryCode === 'KWW2004' ? 'KDS 2022' : '상수도기준 2004'
+  const primaryOK = primaryCode === 'KWW2004' ? aOK : bOK
+
+  return {
+    A, B, verdict, verdictLabel, verdictNote,
+    primaryCode, primary, reference, primaryLabel, referenceLabel, primaryOK,
+    pipeType: 'ductile',
   }
 }
