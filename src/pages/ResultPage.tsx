@@ -61,8 +61,7 @@ export default function ResultPage() {
 
   // 내압 검토
   const pressureRows = pipeType === 'steel' ? [
-    { label: '상시 내압응력 σ',   formula: 'Pd·Do/(2t)', value: hoopStep?.sigma_normal, unit: 'MPa', limit: hoopStep?.sigmaA_normal, ok: hoopStep?.ok_normal },
-    { label: '수격 내압응력 σ',   formula: 'Psurge·Do/(2t)', value: hoopStep?.sigma_surge, unit: 'MPa', limit: hoopStep?.sigmaA_surge, ok: hoopStep?.ok_surge },
+    { label: '내압응력 σ',   formula: 'Pd·D/(2t)', value: hoopStep?.sigma_normal, unit: 'MPa', limit: hoopStep?.sigmaA_normal, ok: hoopStep?.ok_normal },
   ] : [
     { label: '내압 후프응력 σ',   formula: 'Pd·Di/(2t)', value: hoopStep?.sigma_hoop, unit: 'MPa', limit: hoopStep?.sigmaA_hoop, ok: hoopStep?.ok },
   ]
@@ -85,8 +84,7 @@ export default function ResultPage() {
 
   // 최소관두께 검토 행 구성
   const minThkRows = pipeType === 'steel' ? [
-    { label: '내압 최소두께 (상시)', formula: 'Pd·Do/(2·σA_normal)', value: hoopStep?.tp_normal, unit: 'mm' },
-    { label: '내압 최소두께 (수격)', formula: 'Psurge·Do/(2·σA_surge)', value: hoopStep?.tp_surge, unit: 'mm' },
+    { label: '내압 최소두께', formula: 'Pd·D/(2·σa)', value: hoopStep?.tp_normal, unit: 'mm' },
     { label: '취급 최소두께', formula: 'Do/288', value: hoopStep?.tHandling, unit: 'mm' },
     { label: '소요 최소두께 (합계)', formula: 'max(위) + 1.5mm 부식여유', value: tRequired, unit: 'mm' },
     { label: '채택 두께 t', formula: '—', value: tAdopt, unit: 'mm', ok: tAdopt >= tRequired },
@@ -124,7 +122,7 @@ export default function ResultPage() {
                   : []
                 ),
                 ['설계수압 Pd', `${inputs.Pd} MPa`],
-                ['수격압 Pd\'', `${inputs.Pd} × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa`],
+                ['최대사용압력 (수격 포함)', `${inputs.Pd} × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa  [Ⅰ축 압력등급 검토용]`],
               ].map(([k, v], i) => (
                 <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>
                   <td style={{ padding: '4px 8px', width: 130, fontWeight: 700, color: T.textLabel, borderBottom: `1px solid ${T.borderLight}` }}>{k}</td>

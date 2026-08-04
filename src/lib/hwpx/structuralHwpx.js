@@ -61,7 +61,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
     weights: [1.2, 3.8],
     rows: ([
       ['설계 운전압력 Pd', `${inputs.Pd} MPa`],
-      ...(isSteel ? [["수격압 설계압력 Pd'", `Pd × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa`]] : []),
+      ...(isSteel ? [['최대사용압력 (수격 포함)', `Pd × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa  [압력등급 검토용]`]] : []),
       ['관정 매설깊이 H', `${inputs.H} m`],
       ['흙 단위중량 γ', `${inputs.gammaSoil} kN/m³`],
       ['차량하중', hasTraffic ? (isWm ? 'Wm 직접계산 (부록C 해설식 5.3.3)' : 'DB-24 적용 (KDS 24 12 20)') : '미적용'],
@@ -111,17 +111,12 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
     b.eqBox([
       { label: '강관 Barlow 공식', text: '[AWWA M11 Eq.3-1 / KS D 3565]' },
       { eq: 'sigma _{h} = {P _{d} times D _{o}} over {2 t} ~ rm { ( 상시 ) } , ~~ sigma _{a,n} = 0.50 f _{y}' },
-      { eq: "sigma _{h,surge} = {P _{d} ' times D _{o}} over {2 t} ~ rm { ( 수격 ) } , ~~ sigma _{a,s} = 0.75 f _{y}" },
     ])
     b.calcRows([
       { label: '설계수압 Pd', expr: '', value: `${inputs.Pd} MPa` },
-      { label: "수격압 Pd'", expr: `Pd × ${inputs.surgeRatio}`, value: `${f(inputs.Pd * inputs.surgeRatio)} MPa` },
       { label: '상시 후프응력 σh', expr: `Pd × Do / (2t) = ${inputs.Pd} × ${Do} / (2 × ${tAdopt})`, value: `${f(s1?.sigma_normal)} MPa` },
-      { label: '허용응력 σa,n', expr: `0.50 × ${fy}`, value: `${f(s1?.sigmaA_normal)} MPa` },
+      { label: '허용응력 σa', expr: '참고표-4.2.5', value: `${f(s1?.sigmaA_normal)} MPa` },
       { label: '판정', expr: `${f(s1?.sigma_normal)} ≤ ${f(s1?.sigmaA_normal)}`, value: ok(s1?.ok_normal) },
-      { label: '수격 후프응력 σh,s', expr: `Pd' × Do / (2t)`, value: `${f(s1?.sigma_surge)} MPa` },
-      { label: '허용응력 σa,s', expr: `0.75 × ${fy}`, value: `${f(s1?.sigmaA_surge)} MPa` },
-      { label: '판정', expr: `${f(s1?.sigma_surge)} ≤ ${f(s1?.sigmaA_surge)}`, value: ok(s1?.ok_surge) },
     ])
   } else {
     b.eqBox([
@@ -226,7 +221,6 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
     : '주철관: KS D 4311 Di기반 Barlow 역산(내압) + 링휨 역산(외압) 중 최댓값.')
   b.calcRows(isSteel ? [
     { label: '내압 최소두께 (상시)', expr: `Pd × Do / (2 × σa,n)`, value: `${f(s1?.tp_normal)} mm` },
-    { label: '내압 최소두께 (수격)', expr: `Pd' × Do / (2 × σa,s)`, value: `${f(s1?.tp_surge)} mm` },
     { label: '취급 최소두께', expr: `Do / 288 = ${Do} / 288`, value: `${f(s1?.tHandling)} mm` },
     { label: '소요 최소두께', expr: 'max(위 3가지) ※ 부식여유 별도 고려', value: `${f(result.tRequired)} mm` },
     { label: '채택 두께 t', expr: `${tAdopt} ${tAdopt >= (result.tRequired ?? 0) ? '≥' : '<'} ${f(result.tRequired)} mm`, value: ok(tAdopt >= (result.tRequired ?? 0)) },
@@ -258,7 +252,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   b.note(`※ 적용 설계기준: ${result?.appliedCodeLabel ?? 'KDS 57 10 00 : 2022 / AWWA M11'}`)
   if (result?.appliedFormula) b.note(`※ 링휨 적용식: ${result.appliedFormula}`)
   if (result?.allowSource)    b.note(`※ 링휨 허용응력 근거: ${result.allowSource}`)
-  b.note('※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy) [AWWA M11 Eq.3-1 / KS D 3565]')
+  b.note('※ 내압: 허용응력법 — σa는 상수도시설기준(2004) 참고표-4.2.5 강종별 고정값 [산정식: AWWA M11 Eq.3-1 / KS D 3565]')
   b.note('※ 링휨·처짐: DIPRA링휨 + 수정Iowa처짐 [DIPRA·AWWA C150 / AWWA M11 Eq.5-4]')
   if (isSteel) b.note('※ 외압좌굴: Modified AWWA M11 (강관 전용, FS = 2.5) [AWWA M11 좌굴식]')
 

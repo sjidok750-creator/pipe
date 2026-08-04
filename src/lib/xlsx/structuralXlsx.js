@@ -159,13 +159,9 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
 
   if (isSteel) {
     ck.sec('3.1 내압 검토 (Barlow) — AWWA M11 Eq.3-1 / KS D 3565').head()
-    const rSaN = ck.item({ label: '허용응력 (상시)', sym: 'σ_a,n', formula: '0.5*In_fy', result: s1?.sigmaA_normal, unit: 'MPa', note: '0.50 × f_y' })
-    const rSaS = ck.item({ label: '허용응력 (수격)', sym: 'σ_a,s', formula: '0.75*In_fy', result: s1?.sigmaA_surge, unit: 'MPa', note: '0.75 × f_y' })
-    const rPds = ck.item({ label: '수격 설계압력', sym: "P_d'", formula: 'In_Pd*In_sr', result: inputs.Pd * inputs.surgeRatio, unit: 'MPa' })
+    const rSaN = ck.item({ label: '허용응력', sym: 'σ_a', result: s1?.sigmaA_normal, unit: 'MPa', note: '상수도시설기준(2004) 참고표-4.2.5 강종별 고정값' })
     const rSn = ck.item({ label: '후프응력 (상시)', sym: 'σ_h', formula: 'In_Pd*In_Do/(2*In_t)', result: s1?.sigma_normal, unit: 'MPa', note: 'σ = P·D₀ / (2t)' })
     okRefs.push(ck.verdict({ formula: `IF(${rSn}<=${rSaN},"O.K.","N.G.")`, result: s1?.ok_normal ? 'O.K.' : 'N.G.', note: 'σ_h ≤ σ_a,n' }))
-    const rSs = ck.item({ label: '후프응력 (수격)', sym: 'σ_h,s', formula: `${rPds}*In_Do/(2*In_t)`, result: s1?.sigma_surge, unit: 'MPa' })
-    okRefs.push(ck.verdict({ formula: `IF(${rSs}<=${rSaS},"O.K.","N.G.")`, result: s1?.ok_surge ? 'O.K.' : 'N.G.', note: 'σ_h,s ≤ σ_a,s' }))
   } else {
     ck.sec('3.1 내압 검토 (Di 기반 Barlow) — KS D 4311 §5').head()
     const rSa = ck.item({ label: '허용응력', sym: 'σ_a', formula: 'In_fu/3', result: s1?.sigmaA_hoop, unit: 'MPa', note: 'f_u / 3' })
@@ -209,7 +205,6 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
   ck.sec('3.5 최소 소요두께 검토 (참고)').head()
   if (isSteel) {
     const rtn = ck.item({ label: '내압 최소두께 (상시)', sym: 't_p,n', formula: 'In_Pd*In_Do/(2*0.5*In_fy)', result: s1?.tp_normal, unit: 'mm' })
-    const rts = ck.item({ label: '내압 최소두께 (수격)', sym: 't_p,s', formula: 'In_Pd*In_sr*In_Do/(2*0.75*In_fy)', result: s1?.tp_surge, unit: 'mm' })
     const rth = ck.item({ label: '취급 최소두께', sym: 't_h', formula: 'In_Do/288', result: s1?.tHandling, unit: 'mm', note: 'D₀/288 (AWWA M11)' })
     const rtreq = ck.item({ label: '소요 최소두께', sym: 't_req', formula: `MAX(${rtn},${rts},${rth})`, result: result.tRequired, unit: 'mm', bold: true, note: '부식여유는 별도 고려' })
     ck.verdict({ formula: `IF(In_t>=${rtreq},"O.K.","N.G.")`, result: tAdopt >= (result.tRequired ?? 0) ? 'O.K.' : 'N.G.', note: '채택두께 t ≥ t_req' })

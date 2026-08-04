@@ -153,33 +153,41 @@ export function calcSteelPipe(inputs) {
     if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
   }
 
+  // 허용응력 — 반드시 이 단일 지점에서만 결정 (하드코딩 금지)
+  // 내압·링휨 공용 (2004 참고표-4.2.5 구조에 따름)
+  const allow = resolveAllowable(codeStandard, { fy, steelGradeLegacy })
+
   // ────────────────────────────────────────
   // STEP 1: 내압 검토 (Barlow 공식)
   // 근거: AWWA M11 Eq.3-1 (Barlow) / KS D 3565  ※KDS 57 10 00에 명시 조항 없음
   // 채택된 두께로 실제 응력 계산 후 허용응력과 비교
   // ────────────────────────────────────────
-  // ⚠ 내압(후프) 허용응력 0.50/0.75 fy 는 KDS 57 10 00 · 2004 기준 어느 쪽에도
-  //   명시 조항이 없다(2004 참고표-4.2.5는 링휨 전용). 허용응력설계법의 관행값이다.
-  //   링휨과 달리 대체할 원문 근거가 없어 값은 유지하되, 출처를 결과에 명시한다.
-  const sigmaA_normal = mat.allowRatio_normal * fy  // MPa: 0.50 × fy
-  const sigmaA_surge  = mat.allowRatio_surge  * fy  // MPa: 0.75 × fy
-  const hoopAllowSource = '허용응력설계법 관행 (상시 0.50·fy / 수격 0.75·fy) — '
-    + 'KDS 57 10 00 및 상수도시설기준(2004) 모두 내압 허용응력 명시 조항 없음'
-  const Psurge = Pd * surgeRatio                        // MPa
+  // 내압 허용응력 — 상수도시설기준(2004) 인쇄 p.175 〈참고표-4.2.5〉 허용응력
+  //   원문 구성: 2. 강관의 관두께 계산식
+  //             1) 내압에 의한 검토  σt = P·D/(2t)
+  //             2) 외압에 대한 검토  σb = (2/f·Z)···E′···
+  //             3) 허용응력 〈참고표-4.2.5〉   ← 내압·외압 공용 단일표
+  //   즉 참고표-4.2.5는 특정 검토 전용이 아니라 관두께 계산 전체에 적용된다.
+  //   따라서 링휨과 동일한 값(강종별 100/125/140 MPa)을 내압에도 사용한다.
+  //
+  // ※ 종전 0.50×fy(=117.5)는 어느 기준 문서에도 근거가 없어 폐지.
+  // ※ 수격압 별도 허용응력(종전 0.75×fy)은 2004 원문 p.172~175에 존재하지 않는다.
+  //   (수격 ×1.33 완화 규정도 원문에 없음 — 파생 요약 PDF의 오기)
+  //   2004는 내압 검토에 단일 허용응력만 적용하므로 수격 항목을 두지 않는다.
+  //   ⚠ 관내 수격압 자체는 압력등급 적합성(kdsCompliance)에서 최대사용압력으로 검토된다.
+  const sigmaA_normal = allow.value   // MPa — 참고표-4.2.5 강종별 고정값
+  const hoopAllowSource = allow.source
 
-  // Barlow 공식: σ = P × Do / (2t)
-  const sigma_normal = (Pd     * Do) / (2 * tAdopt)  // MPa
-  const sigma_surge  = (Psurge * Do) / (2 * tAdopt)  // MPa
+  // Barlow 공식: σ = P × D / (2t)   [2004 원문: D = 관의 내경]
+  const sigma_normal = (Pd * Do) / (2 * tAdopt)  // MPa
 
   // 참고: 이 두께가 최소 소요 두께를 만족하는지 역산 (정보 제공용)
-  const tp_normal  = (Pd     * Do) / (2 * sigmaA_normal)  // mm
-  const tp_surge   = (Psurge * Do) / (2 * sigmaA_surge)   // mm
-  const tHandling  = Do / mat.handlingDivisor              // mm
-  const tCalcMin   = Math.max(tp_normal, tp_surge, tHandling)
-  const tRequired  = tCalcMin                              // mm (최소 소요 두께, 참고용)
+  const tp_normal  = (Pd * Do) / (2 * sigmaA_normal)  // mm
+  const tHandling  = Do / mat.handlingDivisor          // mm
+  const tCalcMin   = Math.max(tp_normal, tHandling)
+  const tRequired  = tCalcMin                          // mm (최소 소요 두께, 참고용)
 
   const ok_normal = sigma_normal <= sigmaA_normal
-  const ok_surge  = sigma_surge  <= sigmaA_surge
 
   // ────────────────────────────────────────
   // STEP 2: 토압 산정 (Prism Load)
@@ -222,8 +230,6 @@ export function calcSteelPipe(inputs) {
   const Kb_steel   = beddingRow.Kb
   const Kx_steel   = beddingRow.Kx
 
-  // 허용응력은 반드시 이 단일 지점에서만 결정 (하드코딩 금지)
-  const allow = resolveAllowable(codeStandard, { fy, steelGradeLegacy })
 
   let setA = null
   let sigma_b, sigmaA_bend, ok_bending
@@ -293,7 +299,7 @@ export function calcSteelPipe(inputs) {
   // ────────────────────────────────────────
   // 최종 결과 조립
   // ────────────────────────────────────────
-  const overallOK = ok_normal && ok_surge && ok_bending && ok_deflection && ok_buckling
+  const overallOK = ok_normal && ok_bending && ok_deflection && ok_buckling
 
   return {
     pipeType: 'steel',
@@ -324,14 +330,14 @@ export function calcSteelPipe(inputs) {
       step1: {
         title: '내압 검토',
         ref: 'AWWA M11 Eq.3-1 (Barlow) / KS D 3565',
-        Pd, Psurge, surgeRatio,
+        Pd,
         fy, steelGrade,
-        sigmaA_normal, sigmaA_surge,
-        tp_normal, tp_surge, tHandling, tCalcMin, tRequired,
+        sigmaA_normal,
+        tp_normal, tHandling, tCalcMin, tRequired,
         tAdopt, pnGrade,
-        sigma_normal, sigma_surge,
-        ok_normal, ok_surge,
-        ok: ok_normal && ok_surge,
+        sigma_normal,
+        ok_normal,
+        ok: ok_normal,
         formula: '\\sigma = \\frac{P \\times D_o}{2t} \\leq \\sigma_a',
       },
       step2: {
@@ -384,7 +390,6 @@ export function calcSteelPipe(inputs) {
     },
     verdict: {
       hoopNormal:  { label: '내압응력 (상시)', value: sigma_normal,      allow: sigmaA_normal,   unit: 'MPa', ok: ok_normal },
-      hoopSurge:   { label: '내압응력 (수격)', value: sigma_surge,       allow: sigmaA_surge,    unit: 'MPa', ok: ok_surge },
       bending:     { label: '링 휨응력',       value: sigma_b,           allow: sigmaA_bend,     unit: 'MPa', ok: ok_bending },
       deflection:  { label: '처짐율',          value: deflectionRatio,   allow: maxDeflection,   unit: '%',   ok: ok_deflection },
       buckling:    { label: '좌굴 안전율',     value: bucklingFS_actual, allow: mat.bucklingFS,  unit: '',    ok: ok_buckling },

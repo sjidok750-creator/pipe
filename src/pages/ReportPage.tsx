@@ -137,7 +137,7 @@ export default function ReportPage() {
         <table style={TABLE}><tbody>
           {([
             ['설계 운전압력 Pd', `${inputs.Pd} MPa`],
-            ['수격압 설계압력 Pd\'', `Pd × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa`],
+            ['최대사용압력 (수격 포함)', `Pd × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa  [압력등급 검토용]`],
             ['관정 매설깊이 H', `${inputs.H} m`],
             ['흙 단위중량 γ', `${inputs.gammaSoil} kN/m³`],
             ['차량하중', inputs.hasTraffic ? 'DB-24 적용 (KDS 24 12 20)' : '미적용'],
@@ -257,14 +257,8 @@ export default function ReportPage() {
               <CalcRow label="상시 후프응력 σh"
                 expr={`Pd × Do / (2t) = ${inputs.Pd} × ${Do} / (2 × ${tAdopt})`}
                 result={s1?.sigma_normal ?? 0} unit="MPa"/>
-              <CalcRow label="허용응력 σa,n" expr={`0.50 × ${fy}`} result={s1?.sigmaA_normal ?? (0.50*fy)} unit="MPa"/>
-              <CalcRow label="판정" expr={`${(s1?.sigma_normal??0).toFixed(3)} ≤ ${(s1?.sigmaA_normal??117.5).toFixed(3)}`} result={s1?.ok_normal ? 'O.K.' : 'N.G.'} unit=""/>
-              <HR/>
-              <CalcRow label="수격 후프응력 σh,surge"
-                expr={`Pd' × Do / (2t) = ${(inputs.Pd*inputs.surgeRatio).toFixed(3)} × ${Do} / (2 × ${tAdopt})`}
-                result={s1?.sigma_surge ?? 0} unit="MPa"/>
-              <CalcRow label="허용응력 σa,s" expr="0.75 × 235" result={s1?.sigmaA_surge ?? 176.25} unit="MPa"/>
-              <CalcRow label="판정" expr={`${(s1?.sigma_surge??0).toFixed(3)} ≤ ${(s1?.sigmaA_surge??176.25).toFixed(3)}`} result={s1?.ok_surge ? 'O.K.' : 'N.G.'} unit=""/>
+              <CalcRow label="허용응력 σa" expr="상수도시설기준(2004) 참고표-4.2.5" result={s1?.sigmaA_normal ?? 140} unit="MPa"/>
+              <CalcRow label="판정" expr={`${(s1?.sigma_normal??0).toFixed(3)} ≤ ${(s1?.sigmaA_normal??140).toFixed(3)}`} result={s1?.ok_normal ? 'O.K.' : 'N.G.'} unit=""/>
             </>
           ) : (
             <>
@@ -437,12 +431,9 @@ export default function ReportPage() {
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
           {pipeType === 'steel' ? (
             <>
-              <CalcRow label="내압 최소두께 (상시)"
-                expr={`Pd × Do / (2 × σa,n) = ${inputs.Pd} × ${Do} / (2 × ${(s1?.sigmaA_normal??117.5).toFixed(1)})`}
+              <CalcRow label="내압 최소두께"
+                expr={`Pd × Do / (2 × σa) = ${inputs.Pd} × ${Do} / (2 × ${(s1?.sigmaA_normal??140).toFixed(1)})`}
                 result={s1?.tp_normal ?? 0} unit="mm"/>
-              <CalcRow label="내압 최소두께 (수격)"
-                expr={`Pd' × Do / (2 × σa,s) = ${(inputs.Pd*inputs.surgeRatio).toFixed(3)} × ${Do} / (2 × ${(s1?.sigmaA_surge??176.25).toFixed(1)})`}
-                result={s1?.tp_surge ?? 0} unit="mm"/>
               <CalcRow label="취급 최소두께"
                 expr={`Do / 288 = ${Do} / 288`}
                 result={s1?.tHandling ?? 0} unit="mm"/>

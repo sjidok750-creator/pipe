@@ -28,13 +28,9 @@ function buildCalcLines(stepKey: string, step: StepData, pipeType: string): stri
     const s = step as any
     lines.push(`─── 채택 두께: KS D 3565 ${s.pnGrade} → t = ${s.tAdopt} mm ───`)
     lines.push(`허용응력 σ_a (상시) = 0.50 × 235 = ${s.sigmaA_normal?.toFixed(1)} MPa`)
-    lines.push(`허용응력 σ_a (수격) = 0.75 × 235 = ${s.sigmaA_surge?.toFixed(1)} MPa`)
-    lines.push(`Pd (수격) = ${s.Pd} × ${s.surgeRatio} = ${s.Psurge?.toFixed(3)} MPa`)
     lines.push(`σ (상시) = Pd × Do / (2t) = ${s.Pd} × ${s.Do} / (2 × ${s.tAdopt}) = ${s.sigma_normal?.toFixed(2)} MPa ≤ ${s.sigmaA_normal?.toFixed(1)} MPa → ${s.ok_normal ? 'OK' : 'NG'}`)
-    lines.push(`σ (수격) = Psurge × Do / (2t) = ${s.Psurge?.toFixed(3)} × ${s.Do} / (2 × ${s.tAdopt}) = ${s.sigma_surge?.toFixed(2)} MPa ≤ ${s.sigmaA_surge?.toFixed(1)} MPa → ${s.ok_surge ? 'OK' : 'NG'}`)
     lines.push(`─── 참고: 최소 소요 두께 역산 ───`)
     lines.push(`t_p (상시) = ${s.Pd} × ${s.Do} / (2 × ${s.sigmaA_normal?.toFixed(1)}) = ${s.tp_normal?.toFixed(2)} mm`)
-    lines.push(`t_p (수격) = ${s.Psurge?.toFixed(3)} × ${s.Do} / (2 × ${s.sigmaA_surge?.toFixed(1)}) = ${s.tp_surge?.toFixed(2)} mm`)
     lines.push(`t_handling = Do / 288 = ${s.Do} / 288 = ${s.tHandling?.toFixed(2)} mm`)
     lines.push(`t_required (부식여유 포함) = ${s.tCalcMin?.toFixed(2)} + 1.5 = ${s.tRequired?.toFixed(2)} mm`)
   } else if (stepKey === 'step1' && pipeType === 'ductile') {
