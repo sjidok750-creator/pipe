@@ -144,8 +144,53 @@ export default function ResultPage() {
           }))}/>
         </EngPanel>
 
+        {/* Ⅰ. 현행 KDS 기준 적합성 검토 */}
+        {result?.kdsCompliance && (
+          <EngPanel title="Ⅰ. 기준 적합성 검토 — 현행 KDS 57 10 00 : 2022">
+            <div style={{ fontSize: '10.5px', color: T.textMuted, background: T.bgRowAlt,
+              padding: '6px 8px', borderRadius: 3, marginBottom: 8, lineHeight: 1.6 }}>
+              현행 KDS는 관두께를 계산으로 규정하지 않고 <strong>KS·KWWA 인증 압력관 사용</strong>으로
+              갈음합니다(해설편 p.543). 아래는 KDS가 조항으로 정량 규정하는 항목입니다.
+            </div>
+            <EngTable rows={[
+              ...(result.kdsCompliance.items.cover.applicable ? [{
+                label: '매설깊이 H',
+                formula: result.kdsCompliance.items.cover.basis,
+                value: result.kdsCompliance.items.cover.H,
+                unit: 'm',
+                limit: result.kdsCompliance.items.cover.H_min,
+                ok: result.kdsCompliance.items.cover.ok,
+              }] : []),
+              {
+                label: '최대사용압력 (수격 포함)',
+                formula: `Pd × ${result.kdsCompliance.items.grade.surgeRatio}`,
+                value: result.kdsCompliance.items.grade.Pmax,
+                unit: 'MPa',
+                limit: result.kdsCompliance.items.grade.maxAllow,
+                ok: result.kdsCompliance.items.grade.ok,
+              },
+            ]}/>
+            <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.7 }}>
+              {result.kdsCompliance.items.cover.applicable ? (
+                <>※ 매설깊이 — {result.kdsCompliance.items.cover.basis} [{result.kdsCompliance.items.cover.ref}]<br/></>
+              ) : (
+                <>※ {result.kdsCompliance.items.cover.note} [{result.kdsCompliance.items.cover.ref}]<br/></>
+              )}
+              {result.kdsCompliance.items.cover.note && result.kdsCompliance.items.cover.applicable && (
+                <span style={{ color: '#b45309' }}>※ {result.kdsCompliance.items.cover.note}<br/></span>
+              )}
+              ※ 소요 압력등급 <strong style={{ color: T.textAccent }}>
+                {result.kdsCompliance.items.grade.requiredGrade ?? '—'}
+              </strong> (최대허용압력 {result.kdsCompliance.items.grade.maxAllow ?? '—'} MPa)
+              · 여유 {result.kdsCompliance.items.grade.margin?.toFixed(3) ?? '—'} MPa
+              [{result.kdsCompliance.items.grade.ref}]<br/>
+              ※ 허용응력은 압력등급을 정하는 단계에 이미 반영되어 있습니다(해설편 p.215 — KS B 1501).
+            </div>
+          </EngPanel>
+        )}
+
         {/* 내압 검토 */}
-        <EngPanel title="(a) 내압 검토 — 후프응력">
+        <EngPanel title="Ⅱ-(a) 구조 검토: 내압 — 후프응력">
           <EngTable rows={pressureRows}/>
           {result?.hoopAllowSource && (
             <div style={{ fontSize: '10.5px', color: '#b45309', marginTop: 6, lineHeight: 1.6 }}>
@@ -155,7 +200,7 @@ export default function ResultPage() {
         </EngPanel>
 
         {/* 링 휨 · 처짐 · 좌굴 */}
-        <EngPanel title="(b) 링 휨 · 처짐 · 좌굴 검토">
+        <EngPanel title="Ⅱ-(b) 구조 검토: 링 휨 · 처짐 · 좌굴">
           {(result?.appliedCodeLabel || result?.allowSource) && (
             <div style={{
               fontSize: '10.5px', color: T.textMuted, background: T.bgRowAlt,
@@ -179,7 +224,7 @@ export default function ResultPage() {
 
         {/* 주철관 조합응력 검토 (KWW2004) */}
         {result?.combined && (
-          <EngPanel title="(b-2) 조합응력 검토 — 상수도시설기준(2004)">
+          <EngPanel title="Ⅱ-(c) 구조 검토: 조합응력 — 상수도시설기준(2004)">
             <EngTable rows={[
               { label: '인장응력 σts (정수압)', formula: 'Ps·d/(2t)',  value: result.combined.sigma_ts, unit: 'MPa' },
               { label: '인장응력 σtd (수격압)', formula: 'Pd·d/(2t)',  value: result.combined.sigma_td, unit: 'MPa' },
@@ -203,7 +248,7 @@ export default function ResultPage() {
 
         {/* 병기(倂記) 판정 — 두 기준 동시 비교 */}
         {dual && (
-          <EngPanel title="(b-2) 기준별 병기 판정 — 구 기준(2004) vs 현행(KDS 2022)">
+          <EngPanel title="Ⅱ-(d) 산정식 병기 비교 — 2004 방식 vs AWWA M11 방식">
             <div style={{ marginBottom: 8 }}>
               <span style={{
                 display: 'inline-block', padding: '4px 12px', borderRadius: 3,

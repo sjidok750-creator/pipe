@@ -241,6 +241,19 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   // ── 각주 ──
   b.note('※ 토피하중: Prism Load We = γs × H × Do [AWWA M11 Ch.5]')
   b.note('※ 차량하중: DB-24 + AASHTO Boussinesq 분산 + 충격계수 IF [KDS 24 12 20]')
+  // Ⅰ. 현행 KDS 기준 적합성
+  if (result?.kdsCompliance) {
+    const kc = result.kdsCompliance
+    const cv = kc.items.cover, gr = kc.items.grade
+    b.note('※ [Ⅰ] 기준 적합성 검토 — 현행 KDS 57 10 00 : 2022')
+    if (cv.applicable) {
+      b.note(`   · 매설깊이 H = ${cv.H} m ≥ ${cv.H_min} m (${cv.basis}) [${cv.ref}] → ${cv.ok ? 'O.K.' : 'N.G.'}`)
+    } else {
+      b.note(`   · 매설깊이 — ${cv.note} [${cv.ref}]`)
+    }
+    b.note(`   · 최대사용압력 ${gr.Pmax.toFixed(3)} MPa ≤ ${gr.requiredGrade ?? '—'} 최대허용 ${gr.maxAllow ?? '—'} MPa [${gr.ref}] → ${gr.ok ? 'O.K.' : 'N.G.'}`)
+    b.note('   ※ 현행 KDS는 관두께를 계산으로 규정하지 않고 KS·KWWA 인증 압력관 사용으로 갈음함 (해설편 p.543)')
+  }
   if (result?.hoopAllowSource) b.note(`※ 내압 허용응력 근거: ${result.hoopAllowSource}`)
   b.note(`※ 적용 설계기준: ${result?.appliedCodeLabel ?? 'KDS 57 10 00 : 2022 / AWWA M11'}`)
   if (result?.appliedFormula) b.note(`※ 링휨 적용식: ${result.appliedFormula}`)

@@ -6,6 +6,7 @@
 import { PIPE_MATERIAL, DI_THICKNESS, BEDDING, DI_COMBINED_2004 } from './constants.js'
 import { calcEarthLoad } from './earthLoad.js'
 import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
+import { checkKdsCompliance } from './kdsCompliance.js'
 
 /**
  * 덕타일 주철관 전체 구조안전성 검토 (4단계)
@@ -163,6 +164,7 @@ export function calcDuctileIron(inputs) {
       ? '상수도시설기준(2004) 덕타일 주철관 조합응력 — S = 420 MPa (GCD400 인장강도, KS D 4311)'
       : 'DIPRA / AWWA C150 (0.5·fu = 210 MPa) — KDS 57 10 00에 명시 조항 없음',
     combined,
+    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, surgeRatio, pipeDimManual }),
     steps: {
       step1: {
         title: '내압 검토',

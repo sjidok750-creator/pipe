@@ -9,6 +9,7 @@ import {
   STEEL_DEFLECTION_2004, MARSTON_2004, TRAFFIC_2004, BEDDING_2004_ALLOWED,
 } from './constants.js'
 import { calcEarthLoad, calcEarthLoadMarston, calcTrafficLoad2004 } from './earthLoad.js'
+import { checkKdsCompliance } from './kdsCompliance.js'
 import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 
 // kgf/cm² → MPa
@@ -312,6 +313,7 @@ export function calcSteelPipe(inputs) {
       : 'σb = Kb · W_total · Do / t²',
     allowSource: allow.source,
     hoopAllowSource,
+    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, surgeRatio, pipeDimManual }),
     allowRatioLabel: allow.ratio,
     steelGradeLegacy: codeStandard === 'KWW2004' ? allow.gradeUsed : null,
     allowIsFallback: allow.isFallback,

@@ -138,6 +138,34 @@ export const TRAFFIC_2004 = {
   n: 2, P: 9600, L: 1.75, C: 1.0, b: 0.5, a: 0.2, theta: 45,
 }
 
+// ============================================================
+// [현행 KDS] 기준 적합성 검토 — 구조계산과 별개 축
+// 현행 KDS 57 10 00은 관두께를 계산으로 규정하지 않고
+// "KS·KWWA 인증 압력관 사용"으로 갈음하되(해설편 p.543),
+// 매설깊이·압력등급 등은 정량적으로 규정한다.
+// ============================================================
+
+// KDS 57 10 00 §4.1.6 매설위치 및 깊이
+// "관경 900mm 이하는 120cm 이상, 관경 1,000mm 이상은 150cm 이상"
+// "도로하중을 고려해야 할 위치에 대구경 관 부설 시 매설깊이를 관경보다 크게"
+export const MIN_COVER_KDS = {
+  small:  { DN_max: 900,  H_min: 1.20 },
+  large:  { DN_min: 1000, H_min: 1.50 },
+  ref: 'KDS 57 10 00 §4.1.6 (2)',
+}
+
+// 상수도설계기준 해설편(2025) p.216 — 호칭압력별 최대허용압력 (MPa)
+// ※ 사용압력 0.74 MPa 이하: 상수도계 압력기준(4.5K·7.5K)
+//   0.74 MPa 초과: KS B 1501 압력기준(10K·16K·20K)
+export const PRESSURE_GRADE_KDS = [
+  { key: '4.5K', working: 0.44, maxAllow: 0.98 },
+  { key: '7.5K', working: 0.74, maxAllow: 1.27 },
+  { key: '10K',  working: 0.98, maxAllow: 1.37 },
+  { key: '16K',  working: null, maxAllow: 2.16 },
+  { key: '20K',  working: null, maxAllow: 2.75 },
+]
+export const PRESSURE_GRADE_REF = '상수도설계기준 해설편(2025) p.216 표 4.4.4-1'
+
 // E' 값 테이블 (kPa) — AWWA M11 Table 5-3 SI 환산
 export const E_PRIME = {
   SC1:   { 80: 1400, 85: 2700, 90: 6900 },  // 조립토 (자갈, 모래)
