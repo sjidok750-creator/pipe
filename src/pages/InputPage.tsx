@@ -71,9 +71,9 @@ export default function InputPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
               <EngSegment
                 options={[
-                  { value: 'KWW2004', label: '2004 단독' },
-                  { value: 'KDS2022', label: 'AWWA 단독' },
-                  { value: 'BOTH',    label: '병기 검토' },
+                  { key: 'KWW2004', label: '상수도기준 2004', sub: 'E′ 포함식' },
+                  { key: 'KDS2022', label: 'KDS 2022',       sub: 'AWWA M11' },
+                  { key: 'BOTH',    label: '병행 검토',       sub: '두 방식 비교' },
                 ]}
                 value={inputs.reviewMode ?? inputs.codeStandard ?? 'KDS2022'}
                 onChange={v => { handleChange('reviewMode', v); if (v !== 'BOTH') handleChange('codeStandard', v) }}
@@ -87,8 +87,8 @@ export default function InputPage() {
                   </div>
                   <EngSegment
                     options={[
-                      { value: 'KWW2004', label: '상수도시설기준(2004)' },
-                      { value: 'KDS2022', label: 'AWWA M11 방식' },
+                      { key: 'KWW2004', label: '상수도기준 2004' },
+                      { key: 'KDS2022', label: 'KDS 2022' },
                     ]}
                     value={inputs.primaryCode ?? 'KWW2004'}
                     onChange={v => handleChange('primaryCode', v)}
@@ -138,31 +138,20 @@ export default function InputPage() {
           </EngRow>
 
           {inputs.pipeType === 'steel' && (
-            <EngRow label="링휨 허용응력 강종">
+            <EngRow label="허용응력 (참고표-4.2.5)">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {[['STWW290', 100], ['STWW370', 125], ['STWW400', 140], ['SS400', 140], ['SM400', 140]].map(([k, v]) => {
-                    const active = (inputs.steelGradeLegacy ?? 'STWW400') === k
-                    return (
-                      <button key={String(k)} onClick={() => handleChange('steelGradeLegacy', k)}
-                        style={{
-                          padding: '5px 10px', fontSize: '11px', cursor: 'pointer', borderRadius: 3,
-                          border: `1px solid ${active ? T.accent : T.border}`,
-                          background: active ? T.accent : T.bgPanel,
-                          color: active ? '#fff' : T.text,
-                          fontWeight: active ? T.fw.bold : T.fw.normal,
-                        }}>
-                        {k} <span style={{ opacity: 0.8 }}>({v})</span>
-                      </button>
-                    )
-                  })}
-                </div>
-                <div style={{ fontSize: '11px', color: T.textMuted }}>
-                  링휨 허용응력 <strong style={{ color: T.textAccent }}>
-                    {({ STWW290: 100, STWW370: 125, STWW400: 140, SS400: 140, SM400: 140 } as Record<string, number>)[inputs.steelGradeLegacy ?? 'STWW400'] ?? 125} MPa
-                  </strong> — 상수도시설기준(2004) 참고표-4.2.5<br/>
-                  <span style={{ color: '#b45309' }}>※ 현행 KDS 57 10 00은 링휨 허용응력을 규정하지 않으므로
-                  두 기준 모두 이 값을 사용합니다. (종전 0.50×fy = 117.5 MPa는 근거 문서가 없어 폐지)</span>
+                <EngSegment
+                  options={[
+                    { key: 'STWW290', label: '100 MPa', sub: 'STWW290' },
+                    { key: 'STWW370', label: '125 MPa', sub: 'STWW370' },
+                    { key: 'STWW400', label: '140 MPa', sub: 'STWW400 · SS400 · SM400' },
+                  ]}
+                  value={['STWW290','STWW370'].includes(inputs.steelGradeLegacy ?? '') ? inputs.steelGradeLegacy : 'STWW400'}
+                  onChange={v => handleChange('steelGradeLegacy', v)}
+                />
+                <div style={{ fontSize: '10.5px', color: T.textMuted, lineHeight: 1.5 }}>
+                  <strong>내압·링휨 공용</strong> — 원문 참고표-4.2.5는 관두께 계산 전체에 적용되는 단일표입니다.<br/>
+                  <span style={{ color: '#b45309' }}>※ 종전 0.50×fy(=117.5)·0.75×fy(=176.3)는 근거 문서가 없어 폐지</span>
                 </div>
               </div>
             </EngRow>
