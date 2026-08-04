@@ -147,6 +147,11 @@ export default function ResultPage() {
         {/* 내압 검토 */}
         <EngPanel title="(a) 내압 검토 — 후프응력">
           <EngTable rows={pressureRows}/>
+          {result?.hoopAllowSource && (
+            <div style={{ fontSize: '10.5px', color: '#b45309', marginTop: 6, lineHeight: 1.6 }}>
+              ※ {result.hoopAllowSource}
+            </div>
+          )}
         </EngPanel>
 
         {/* 링 휨 · 처짐 · 좌굴 */}

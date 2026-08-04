@@ -241,6 +241,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   // ── 각주 ──
   b.note('※ 토피하중: Prism Load We = γs × H × Do [AWWA M11 Ch.5]')
   b.note('※ 차량하중: DB-24 + AASHTO Boussinesq 분산 + 충격계수 IF [KDS 24 12 20]')
+  if (result?.hoopAllowSource) b.note(`※ 내압 허용응력 근거: ${result.hoopAllowSource}`)
   b.note(`※ 적용 설계기준: ${result?.appliedCodeLabel ?? 'KDS 57 10 00 : 2022 / AWWA M11'}`)
   if (result?.appliedFormula) b.note(`※ 링휨 적용식: ${result.appliedFormula}`)
   if (result?.allowSource)    b.note(`※ 링휨 허용응력 근거: ${result.allowSource}`)

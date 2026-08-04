@@ -15,30 +15,41 @@ import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 const KGF_TO_MPA = 0.098067
 
 /**
- * 허용응력 결정 — codeStandard 에서 단일 지점으로 파생
- * 이 함수를 통해서만 허용응력을 얻도록 하여 금지 조합(SET_B식 + 0.6fy)을 구조적으로 차단한다.
- * @returns {{ value: number, source: string, ratio: string }}
+ * 링휨 허용응력 결정 — 단일 지점
+ *
+ * ※ 두 경로 모두 상수도시설기준(2004) 참고표-4.2.5 의 강종별 고정 허용응력을 사용한다.
+ *   현행 KDS 57 10 00은 링휨 검토를 요구하지도, 허용응력을 규정하지도 않는다
+ *   (해설편 1,363쪽에 "링휨" 0회 / 관두께는 "KS·KWWA 인증 압력관 사용"으로 갈음, p.543).
+ *   따라서 종전의 0.50×fy(= 117.5 MPa)는 어느 기준 문서에도 근거가 없어 폐지하고,
+ *   원문에 실재하는 유일한 링휨 허용응력인 2004 참고표-4.2.5 값으로 통일한다.
+ *
+ * ※ 산정식은 codeStandard 에 따라 계속 달라진다(SET_A: E′ 포함 / SET_B: E′ 미포함).
+ *   KDS2022 경로는 산정식만 현행이고 허용값은 2004 표이므로 출처를 분리해 명시한다.
+ *
+ * @returns {{ value, source, ratio, gradeUsed, isFallback }}
  */
 function resolveAllowable(codeStandard, { fy, steelGradeLegacy }) {
+  const key = STEEL_ALLOW_2004[steelGradeLegacy] != null
+    ? steelGradeLegacy
+    : STEEL_ALLOW_2004_FALLBACK
+  const value = STEEL_ALLOW_2004[key]
+  const isFallback = STEEL_ALLOW_2004[steelGradeLegacy] == null
+
   if (codeStandard === 'KWW2004') {
-    const key = STEEL_ALLOW_2004[steelGradeLegacy] != null
-      ? steelGradeLegacy
-      : STEEL_ALLOW_2004_FALLBACK
     return {
-      value: STEEL_ALLOW_2004[key],
+      value,
       source: `상수도시설기준(2004) 참고표-4.2.5 — ${key}`,
       ratio: '강종별 고정표 (≈0.6·fy)',
-      gradeUsed: key,
-      isFallback: STEEL_ALLOW_2004[steelGradeLegacy] == null,
+      gradeUsed: key, isFallback,
     }
   }
-  // KDS2022 — 기존 로직 유지 (0.5·fy)
+  // KDS2022 — 산정식은 AWWA M11, 허용값은 2004 표 (현행 기준에 링휨 허용응력 규정 없음)
   return {
-    value: PIPE_MATERIAL.steel.allowRatio_normal * fy,
-    source: 'AWWA M11 §5.3 기반 허용응력설계법 (안전율 2.0 관행) — KDS 57 10 00에 명시 조항 없음',
-    ratio: '0.50 × fy',
-    gradeUsed: null,
-    isFallback: false,
+    value,
+    source: `허용응력: 상수도시설기준(2004) 참고표-4.2.5 — ${key} `
+          + '(현행 KDS 57 10 00은 링휨 허용응력을 규정하지 않음) / 산정식: AWWA M11 §5.3',
+    ratio: '강종별 고정표 (≈0.6·fy)',
+    gradeUsed: key, isFallback,
   }
 }
 
@@ -146,8 +157,13 @@ export function calcSteelPipe(inputs) {
   // 근거: AWWA M11 Eq.3-1 (Barlow) / KS D 3565  ※KDS 57 10 00에 명시 조항 없음
   // 채택된 두께로 실제 응력 계산 후 허용응력과 비교
   // ────────────────────────────────────────
+  // ⚠ 내압(후프) 허용응력 0.50/0.75 fy 는 KDS 57 10 00 · 2004 기준 어느 쪽에도
+  //   명시 조항이 없다(2004 참고표-4.2.5는 링휨 전용). 허용응력설계법의 관행값이다.
+  //   링휨과 달리 대체할 원문 근거가 없어 값은 유지하되, 출처를 결과에 명시한다.
   const sigmaA_normal = mat.allowRatio_normal * fy  // MPa: 0.50 × fy
   const sigmaA_surge  = mat.allowRatio_surge  * fy  // MPa: 0.75 × fy
+  const hoopAllowSource = '허용응력설계법 관행 (상시 0.50·fy / 수격 0.75·fy) — '
+    + 'KDS 57 10 00 및 상수도시설기준(2004) 모두 내압 허용응력 명시 조항 없음'
   const Psurge = Pd * surgeRatio                        // MPa
 
   // Barlow 공식: σ = P × Do / (2t)
@@ -295,6 +311,7 @@ export function calcSteelPipe(inputs) {
       ? "σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.06146·Kb − 0.08303·Kx)·E'·R⁵] / [E·I + 0.061·E'·R³]"
       : 'σb = Kb · W_total · Do / t²',
     allowSource: allow.source,
+    hoopAllowSource,
     allowRatioLabel: allow.ratio,
     steelGradeLegacy: codeStandard === 'KWW2004' ? allow.gradeUsed : null,
     allowIsFallback: allow.isFallback,

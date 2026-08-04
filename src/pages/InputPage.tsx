@@ -82,7 +82,7 @@ export default function InputPage() {
                   inputs.pipeType === 'steel' ? (
                   <>
                     <strong style={{ color: T.textAccent }}>구 상수도시설기준(2004) [참고-4.2.1]</strong><br/>
-                    링휨식에 흙 반력계수 E′를 포함(지반-관 상호작용 반영) · 허용응력은 강종별 고정표(참고표-4.2.5)<br/>
+                    링휨식에 흙 반력계수 E′를 포함(지반-관 상호작용 반영)<br/>
                     토압: H≤2.0m 연직토압 / H&gt;2.0m Marston · 지지각 60·90·120·150°만 사용 가능
                   </>
                   ) : (
@@ -95,7 +95,7 @@ export default function InputPage() {
                 ) : (
                   <>
                     <strong style={{ color: T.textAccent }}>현행 KDS 57 10 00 : 2022 / AWWA M11</strong><br/>
-                    링휨식에 E′ 미포함(관체 단독 부담, 보수적) · 허용응력 0.50×fy<br/>
+                    링휨식에 E′ 미포함(관체 단독 부담, 보수적)<br/>
                     토압: Prism(γ·H·Do) · 차량하중: DB-24 Boussinesq
                   </>
                 )}
@@ -107,8 +107,8 @@ export default function InputPage() {
             </div>
           </EngRow>
 
-          {inputs.pipeType === 'steel' && (inputs.codeStandard ?? 'KDS2022') === 'KWW2004' && (
-            <EngRow label="강종 (2004)">
+          {inputs.pipeType === 'steel' && (
+            <EngRow label="링휨 허용응력 강종">
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {[['STWW290', 100], ['STWW370', 125], ['STWW400', 140], ['SS400', 140], ['SM400', 140]].map(([k, v]) => {
@@ -128,9 +128,11 @@ export default function InputPage() {
                   })}
                 </div>
                 <div style={{ fontSize: '11px', color: T.textMuted }}>
-                  허용응력 <strong style={{ color: T.textAccent }}>
+                  링휨 허용응력 <strong style={{ color: T.textAccent }}>
                     {({ STWW290: 100, STWW370: 125, STWW400: 140, SS400: 140, SM400: 140 } as Record<string, number>)[inputs.steelGradeLegacy ?? 'STWW400'] ?? 125} MPa
-                  </strong> — 상수도시설기준(2004) 참고표-4.2.5 (≈0.6·fy)
+                  </strong> — 상수도시설기준(2004) 참고표-4.2.5<br/>
+                  <span style={{ color: '#b45309' }}>※ 현행 KDS 57 10 00은 링휨 허용응력을 규정하지 않으므로
+                  두 기준 모두 이 값을 사용합니다. (종전 0.50×fy = 117.5 MPa는 근거 문서가 없어 폐지)</span>
                 </div>
               </div>
             </EngRow>
