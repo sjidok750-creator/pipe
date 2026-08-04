@@ -8,6 +8,30 @@
 - base path: `/pipe/` (vite.config.ts)
 - "배포해줘" 요청 시 `git push origin main` 실행 (Actions가 자동으로 빌드+배포, 2~4분 소요)
 
+## ⚠ 근거로 인용 가능한 문서 (이 3개뿐)
+
+1. `상수도설계기준.PDF` — **KDS 57 00 00 : 2022** 관보 원문 (199쪽, 텍스트 추출 가능)
+2. `상수도+시설기준+2004.pdf` — 구 상수도시설기준 2004 (1,095쪽, **스캔본**)
+3. `상수도설계기준_해설편(2025)_개정2판.pdf` — 2025 해설편 (1,363쪽, 텍스트 추출 가능)
+
+**그 외 저장소의 모든 PDF는 파생 참고문서이며 공신력이 없다. 근거로 인용 금지.**
+
+### 2004 스캔본 판독 방법
+`extract_text()`가 0바이트를 반환하지만 **읽을 수 없는 것이 아니다.**
+페이지를 이미지로 추출해 직접 판독할 것:
+
+```python
+from pypdf import PdfReader
+from PIL import Image
+import io
+r = PdfReader('상수도+시설기준+2004.pdf')
+im = Image.open(io.BytesIO(list(r.pages[203].images)[0].data)).convert('L')
+im = im.resize((im.width*2, im.height*2), Image.LANCZOS)   # 2배 확대 시 선명
+im.save('out.png')
+```
+※ **PDF 페이지 = 인쇄 페이지 + 29** (예: 인쇄 p.175 = PDF p.204)
+※ 관로 구조검토 [참고-4.2.1]은 인쇄 p.171~175 (PDF p.200~204)
+
 ## ⚠ 인용 금지 문서
 
 `강관_주철관_설계기준_변천_분석.pdf` — **근거로 인용하지 말 것.**
