@@ -435,5 +435,17 @@ export function calcSteelPipeDual(inputs) {
     verdictNote = '구 기준 초과·현행 기준 만족 — 통상 발생하지 않는 조합. 입력값 확인 필요.'
   }
 
-  return { A, B, verdict, verdictLabel, verdictNote }
+  // 주기준(primaryCode)이 정식 판정, 나머지는 참고값
+  const primaryCode = inputs.primaryCode ?? 'KWW2004'
+  const primary   = primaryCode === 'KWW2004' ? A : B
+  const reference = primaryCode === 'KWW2004' ? B : A
+  const primaryLabel   = primaryCode === 'KWW2004' ? '상수도시설기준(2004)' : 'AWWA M11 방식'
+  const referenceLabel = primaryCode === 'KWW2004' ? 'AWWA M11 방식' : '상수도시설기준(2004)'
+  const primaryOK = primaryCode === 'KWW2004' ? aOK : bOK
+
+  return {
+    A, B, verdict, verdictLabel, verdictNote,
+    primaryCode, primary, reference,
+    primaryLabel, referenceLabel, primaryOK,
+  }
 }

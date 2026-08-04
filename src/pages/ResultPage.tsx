@@ -246,38 +246,59 @@ export default function ResultPage() {
 
         {/* 병기(倂記) 판정 — 두 기준 동시 비교 */}
         {dual && (
-          <EngPanel title="Ⅱ-(d) 산정식 병기 비교 — 2004 방식 vs AWWA M11 방식">
+          <EngPanel title={`Ⅱ-(d) 병기 검토 — 주기준: ${dual.primaryLabel}`}>
             <div style={{ marginBottom: 8 }}>
               <span style={{
                 display: 'inline-block', padding: '4px 12px', borderRadius: 3,
                 fontSize: '12px', fontWeight: T.fw.bold, color: '#fff',
+                background: dual.primaryOK ? '#15803d' : '#b91c1c',
+              }}>{dual.primaryOK ? '판정: O.K.' : '판정: N.G.'}</span>
+              <span style={{ marginLeft: 8, fontSize: '11px', color: T.textMuted }}>
+                {dual.primaryLabel} 기준
+              </span>
+              <span style={{
+                display: 'inline-block', marginLeft: 10, padding: '3px 10px', borderRadius: 3,
+                fontSize: '11px', color: '#fff',
                 background: dual.verdict === 'PASS' ? '#15803d'
                   : dual.verdict === 'CHECK_BACKFILL' ? '#b45309'
                   : dual.verdict === 'REINFORCE' ? '#b91c1c' : '#6d28d9',
               }}>{dual.verdictLabel}</span>
-              <span style={{ marginLeft: 10, fontSize: '11px', color: T.textMuted }}>{dual.verdictNote}</span>
             </div>
-            <EngTable rows={[
-              {
-                label: '구 기준 (2004, E′ 반영)',
-                formula: 'σb = (2/(f·Z))·(Wv+Wt)·[…E′…]',
-                value: dual.A?.setA?.sigma_b,
-                unit: 'MPa',
-                limit: dual.A?.setA?.sigmaA_bend,
-                ok: dual.A?.setA?.ok_bending,
-              },
-              {
-                label: '현행 KDS (E′ 미반영)',
-                formula: 'σb = Kb·Wtotal·Do/t²',
-                value: dual.B?.steps?.step4?.sigma_b,
-                unit: 'MPa',
-                limit: dual.B?.steps?.step4?.sigmaA_bend,
-                ok: dual.B?.steps?.step4?.ok,
-              },
-            ]}/>
+            <div style={{ fontSize: '11px', color: T.textMuted, marginBottom: 8 }}>{dual.verdictNote}</div>
+
+            <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textAccent, marginBottom: 3 }}>
+              ▶ 정식 판정 — {dual.primaryLabel}
+            </div>
+            <EngTable rows={[{
+              label: '링 휨응력 σb',
+              formula: dual.primaryCode === 'KWW2004'
+                ? "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]" : 'σb = Kb·Wtotal·Do/t²',
+              value: dual.primaryCode === 'KWW2004'
+                ? dual.A?.setA?.sigma_b : dual.B?.steps?.step4?.sigma_b,
+              unit: 'MPa',
+              limit: dual.primaryCode === 'KWW2004'
+                ? dual.A?.setA?.sigmaA_bend : dual.B?.steps?.step4?.sigmaA_bend,
+              ok: dual.primaryOK,
+            }]}/>
+
+            <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textMuted, margin: '10px 0 3px' }}>
+              ▷ 참고값 — {dual.referenceLabel} <span style={{ fontWeight: T.fw.normal }}>(판정에 사용하지 않음)</span>
+            </div>
+            <EngTable rows={[{
+              label: '링 휨응력 σb (참고)',
+              formula: dual.primaryCode === 'KWW2004'
+                ? 'σb = Kb·Wtotal·Do/t²' : "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]",
+              value: dual.primaryCode === 'KWW2004'
+                ? dual.B?.steps?.step4?.sigma_b : dual.A?.setA?.sigma_b,
+              unit: 'MPa',
+              limit: dual.primaryCode === 'KWW2004'
+                ? dual.B?.steps?.step4?.sigmaA_bend : dual.A?.setA?.sigmaA_bend,
+            }]}/>
+
             <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
-              ※ 두 기준은 산정식·허용응력이 세트로 다릅니다. 구 기준은 지반 반력(E′)이 응력을 낮추고 허용응력도 높아
-              일반적으로 더 관대합니다. 현행 기준 초과·구 기준 만족 시에는 되메움 다짐도(E′) 확보 여부를 확인하십시오.
+              ※ 두 방식은 토압(Marston/Prism)·링휨식(E′ 포함/미포함)이 달라 <strong>토피가 깊을수록 차이가 커집니다</strong>.
+              허용응력은 공통(참고표-4.2.5)입니다.<br/>
+              ※ 참고값이 초과하고 주기준이 만족하는 경우, 관 결함이 아니라 되메움 다짐도(E′) 확보 여부를 확인하십시오.
             </div>
           </EngPanel>
         )}

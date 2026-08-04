@@ -7,7 +7,7 @@
 import { createWorkbook, downloadWorkbook, addCoverSheet, SW } from './xlsxCore.js'
 import { DB24_PRESSURE, GW_RW, STEEL_BEDDING, BEDDING } from '../../engine/constants.js'
 
-export async function exportStructuralXlsx({ inputs, result, projectName, facilityName }) {
+export async function exportStructuralXlsx({ inputs, result, dual, projectName, facilityName }) {
   const wb = await createWorkbook()
   const isSteel = result.pipeType === 'steel'
   const rs = result.steps
@@ -173,6 +173,13 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
   ck.sec(`3.2 링 휨응력 검토 — ${result?.appliedCodeLabel ?? 'AWWA M11 §5.3'}`).head()
   if (result?.appliedFormula) ck.note(`적용식: ${result.appliedFormula}`)
   if (result?.allowSource)    ck.note(`허용응력 근거: ${result.allowSource}`)
+  if (dual) {
+    const P = dual.primaryCode === 'KWW2004' ? dual.A?.setA : dual.B?.steps?.step4
+    const R = dual.primaryCode === 'KWW2004' ? dual.B?.steps?.step4 : dual.A?.setA
+    ck.note(`[병기 검토] 주기준: ${dual.primaryLabel} — σb ${P?.sigma_b?.toFixed(2)} ≤ ${P?.sigmaA_bend} MPa → ${dual.primaryOK ? 'O.K.' : 'N.G.'}`)
+    ck.note(`[참고값] ${dual.referenceLabel} — σb ${R?.sigma_b?.toFixed(2)} MPa (판정 미사용)`)
+    ck.note(`[종합] ${dual.verdictLabel} — ${dual.verdictNote}`)
+  }
   const rSab = ck.item({ label: '허용응력', sym: 'σ_a,b', result: s4?.sigmaA_bend, unit: 'MPa', note: result?.allowRatioLabel ?? (isSteel ? '0.50 × f_y' : '0.50 × f_u') })
   const rSb = ck.item({ label: '링 휨응력', sym: 'σ_b', formula: `In_Kb*${rWt}*In_Do/In_t^2`, result: s4?.sigma_b, unit: 'MPa', note: 'σ_b = K_b · W_total · D₀ / t²  (kN/m·mm/mm² = MPa)' })
   okRefs.push(ck.verdict({ formula: `IF(${rSb}<=${rSab},"O.K.","N.G.")`, result: s4?.ok ? 'O.K.' : 'N.G.', note: 'σ_b ≤ σ_a,b' }))

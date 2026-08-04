@@ -37,7 +37,7 @@ function HR() {
 
 export default function ReportPage() {
   const navigate = useNavigate()
-  const { result, inputs } = useStore()
+  const { result, inputs, dual } = useStore()
   const projectName = useProjectStore((s: any) => s.projectName)
   const facilityName = useProjectStore((s: any) => s.activeFacilityName)
 
@@ -86,11 +86,11 @@ export default function ReportPage() {
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: T.bgActive, color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           인쇄 / PDF 저장
         </button>
-        <button onClick={() => { exportStructuralXlsx({ inputs, result, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
+        <button onClick={() => { exportStructuralXlsx({ inputs, result, dual, projectName, facilityName }).catch((e: any) => alert('엑셀 생성 실패: ' + (e?.message ?? e))) }}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1a6b3a', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           엑셀(.xlsx) 다운로드
         </button>
-        <button onClick={() => { exportStructuralHwpx({ inputs, result, projectName, facilityName }).catch((e: any) => alert('한글 생성 실패: ' + (e?.message ?? e))) }}
+        <button onClick={() => { exportStructuralHwpx({ inputs, result, dual, projectName, facilityName }).catch((e: any) => alert('한글 생성 실패: ' + (e?.message ?? e))) }}
           style={{ padding: '5px 16px', fontSize: 12, cursor: 'pointer', background: '#1B3A66', color: 'white', border: 'none', borderRadius: 2, fontFamily: F }}>
           한글(.hwpx) 다운로드
         </button>

@@ -10,7 +10,7 @@ import { fmtNum } from '../format'
 const f = v => (v == null ? '—' : fmtNum(v))
 const ok = b => (b ? 'O.K.' : 'N.G.')
 
-export async function exportStructuralHwpx({ inputs, result, projectName, facilityName }) {
+export async function exportStructuralHwpx({ inputs, result, dual, projectName, facilityName }) {
   const isSteel = result.pipeType === 'steel'
   const rs = result.steps
   const s1 = rs.step1
@@ -247,6 +247,17 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
     }
     b.note(`   · 최대사용압력 ${gr.Pmax.toFixed(3)} MPa ≤ ${gr.requiredGrade ?? '—'} 최대허용 ${gr.maxAllow ?? '—'} MPa [${gr.ref}] → ${gr.ok ? 'O.K.' : 'N.G.'}`)
     b.note('   ※ 현행 KDS는 관두께를 계산으로 규정하지 않고 KS·KWWA 인증 압력관 사용으로 갈음함 (해설편 p.543)')
+  }
+  // 병기 검토 — 주기준 판정 + 참고값
+  if (dual) {
+    b.note('')
+    b.note(`※ [Ⅱ-d] 병기 검토 — 주기준: ${dual.primaryLabel}`)
+    const P = dual.primaryCode === 'KWW2004' ? dual.A?.setA : dual.B?.steps?.step4
+    const R = dual.primaryCode === 'KWW2004' ? dual.B?.steps?.step4 : dual.A?.setA
+    b.note(`   · [정식 판정] ${dual.primaryLabel}  σb = ${f(P?.sigma_b)} MPa ≤ ${f(P?.sigmaA_bend)} MPa → ${dual.primaryOK ? 'O.K.' : 'N.G.'}`)
+    b.note(`   · [참고값] ${dual.referenceLabel}  σb = ${f(R?.sigma_b)} MPa (판정에 사용하지 않음)`)
+    b.note(`   · 종합: ${dual.verdictLabel} — ${dual.verdictNote}`)
+    b.note('   ※ 두 방식은 토압(Marston/Prism)·링휨식(E′ 포함/미포함)이 달라 토피가 깊을수록 차이가 커짐. 허용응력은 공통(참고표-4.2.5)')
   }
   if (result?.hoopAllowSource) b.note(`※ 내압 허용응력 근거: ${result.hoopAllowSource}`)
   b.note(`※ 적용 설계기준: ${result?.appliedCodeLabel ?? 'KDS 57 10 00 : 2022 / AWWA M11'}`)

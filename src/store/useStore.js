@@ -8,9 +8,12 @@ import { calcDuctileIron } from '../engine/ductileIron.js'
 import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 
 const DEFAULT_INPUTS = {
-  // 적용 설계기준 — 'KDS2022'(현행, 기본) | 'KWW2004'(구 상수도시설기준)
-  // ※ 기존 저장 프로젝트는 이 필드가 없으므로 KDS2022로 기본 처리됨 (회귀 방지)
-  codeStandard: 'KDS2022',
+  // 검토 방식 — 'KWW2004'(2004 단독) | 'KDS2022'(AWWA 단독) | 'BOTH'(병기)
+  // BOTH 선택 시 primaryCode 가 정식 판정 기준이 되고 다른 쪽은 참고값으로 표시된다.
+  // ※ 기존 저장 프로젝트는 이 필드가 없으므로 KDS2022 단독으로 처리됨 (회귀 방지)
+  reviewMode: 'KDS2022',
+  primaryCode: 'KWW2004',   // BOTH 모드에서 정식 판정에 쓸 기준
+  codeStandard: 'KDS2022',  // 실제 계산에 넘기는 기준 (reviewMode에서 파생)
   steelGradeLegacy: 'STWW400',   // KWW2004 모드 강종 (참고표-4.2.5)
   pipeType: 'steel',
   DN: 600,
@@ -110,16 +113,25 @@ export const useStore = create((set, get) => ({
   calcResult: () => {
     const { inputs } = get()
     try {
+      // 검토 방식 → 실제 계산 기준 파생
+      //   KWW2004 / KDS2022 : 해당 기준 단독
+      //   BOTH               : 두 기준 모두 계산, primaryCode 가 정식 판정
+      const mode = inputs.reviewMode ?? inputs.codeStandard ?? 'KDS2022'
+      const primary = mode === 'BOTH' ? (inputs.primaryCode ?? 'KWW2004') : mode
+      const calcInputs = { ...inputs, codeStandard: primary }
+
       let result
       let dual = null
       if (inputs.pipeType === 'steel') {
-        result = calcSteelPipe(inputs)
-        // 병기 판정: 강관에 한해 두 기준을 동시 계산해 비교 제공
-        try { dual = calcSteelPipeDual(inputs) } catch { dual = null }
+        result = calcSteelPipe(calcInputs)
+        // 병기 모드에서만 두 기준 동시 계산 (강관 한정)
+        if (mode === 'BOTH') {
+          try { dual = calcSteelPipeDual({ ...calcInputs, primaryCode: primary }) } catch { dual = null }
+        }
       } else {
-        result = calcDuctileIron(inputs)
+        result = calcDuctileIron(calcInputs)
       }
-      set({ result, dual, calcError: null })
+      set({ result, dual, reviewMode: mode, primaryCode: primary, calcError: null })
       return result
     } catch (e) {
       set({ result: null, dual: null, calcError: e.message })

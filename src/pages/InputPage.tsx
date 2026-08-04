@@ -67,18 +67,47 @@ export default function InputPage() {
 
         {/* ① 관종 및 기본조건 */}
         <EngPanel title="① 관종 및 설계 조건">
-          <EngRow label="적용 설계기준">
+          <EngRow label="검토 방식">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
               <EngSegment
                 options={[
-                  { value: 'KDS2022', label: 'KDS 57 10 00 (현행)' },
-                  { value: 'KWW2004', label: '상수도시설기준 (2004)' },
+                  { value: 'KWW2004', label: '2004 단독' },
+                  { value: 'KDS2022', label: 'AWWA 단독' },
+                  { value: 'BOTH',    label: '병기 검토' },
                 ]}
-                value={inputs.codeStandard ?? 'KDS2022'}
-                onChange={v => handleChange('codeStandard', v)}
+                value={inputs.reviewMode ?? inputs.codeStandard ?? 'KDS2022'}
+                onChange={v => { handleChange('reviewMode', v); if (v !== 'BOTH') handleChange('codeStandard', v) }}
               />
+
+              {(inputs.reviewMode ?? '') === 'BOTH' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '6px 8px',
+                  background: T.bgRowAlt, borderRadius: 3 }}>
+                  <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textAccent }}>
+                    정식 판정 기준 (주기준)
+                  </div>
+                  <EngSegment
+                    options={[
+                      { value: 'KWW2004', label: '상수도시설기준(2004)' },
+                      { value: 'KDS2022', label: 'AWWA M11 방식' },
+                    ]}
+                    value={inputs.primaryCode ?? 'KWW2004'}
+                    onChange={v => handleChange('primaryCode', v)}
+                  />
+                  <div style={{ fontSize: '10.5px', color: T.textMuted, lineHeight: 1.5 }}>
+                    주기준으로 O.K./N.G.를 판정하고, 다른 방식은 <strong>참고값</strong>으로 병기합니다.
+                  </div>
+                </div>
+              )}
               <div style={{ fontSize: '11px', color: T.textMuted, lineHeight: 1.5 }}>
-                {(inputs.codeStandard ?? 'KDS2022') === 'KWW2004' ? (
+                {(inputs.reviewMode ?? '') === 'BOTH' ? (
+                  <>
+                    <strong style={{ color: T.textAccent }}>병기 검토 — 두 방식 동시 산정</strong><br/>
+                    두 방식은 토압(Marston/Prism)·링휨식(E′ 포함/미포함)·처짐식(DL 유무)이 달라
+                    토피가 깊을수록 결과 차이가 커집니다.<br/>
+                    주기준으로 판정하고 다른 방식은 참고값으로 병기하므로,
+                    설계 당시 기준과 현행 방식을 나란히 제시할 때 사용합니다.
+                  </>
+                ) : (inputs.codeStandard ?? 'KDS2022') === 'KWW2004' ? (
                   inputs.pipeType === 'steel' ? (
                   <>
                     <strong style={{ color: T.textAccent }}>구 상수도시설기준(2004) [참고-4.2.1]</strong><br/>
@@ -101,8 +130,9 @@ export default function InputPage() {
                 )}
               </div>
               <div style={{ fontSize: '10.5px', color: T.textMuted, background: T.bgRowAlt, padding: '6px 8px', borderRadius: 3, lineHeight: 1.5 }}>
-                ※ 허용응력은 응력 산정식과 1:1로 묶입니다. 기준을 바꾸면 산정식·허용응력·토압·차량하중이 함께 전환되며,
-                교차 조합(예: 현행식 + 2004 허용응력)은 이중 관대가 되어 차단되어 있습니다.
+                ※ 산정식은 방식별로 다르지만 <strong>허용응력은 공통</strong>입니다 —
+                현행 KDS에 링휨 허용응력 규정이 없어 두 방식 모두 상수도시설기준(2004) 참고표-4.2.5를 사용합니다.
+                (내압 140 / 링휨 140, STWW400 기준)
               </div>
             </div>
           </EngRow>
