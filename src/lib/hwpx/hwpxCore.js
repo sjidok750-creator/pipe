@@ -14,6 +14,28 @@ const CHAR = { normal: 0, bold: 11, small: 2, smallBold: 9, tiny: 13, title: 10,
 const PARA = { left: 22, center: 20, right: 21, justify: 0 }
 const BF = { cell: 3, headerShade: 5, none: 6, shadeBox: 7 }
 
+// ── 표 테두리 규약 (안 0.12mm / 바깥 0.4mm) ──
+// 참고 보고서(설계·진단보고서 표준 양식)와 동일한 12종 체계.
+// band: head(머리행·음영) / body(본문행) / foot(끝행) / single(1행짜리 표)
+// pos : first(첫 열) / mid(중간 열) / last(끝 열)
+const BF_GRID = {
+  head:   { first: 8,  mid: 9,  last: 10 },
+  body:   { first: 11, mid: 12, last: 13 },
+  foot:   { first: 14, mid: 15, last: 16 },
+  single: { first: 17, mid: 18, last: 19 },
+}
+
+/** 셀 위치 → borderFill id (병합 후 위치로 판정) */
+function gridBf(ri, ci, nRow, nCol, hasHeader) {
+  const pos = ci === 0 ? 'first' : (ci === nCol - 1 ? 'last' : 'mid')
+  let band
+  if (nRow === 1) band = 'single'
+  else if (hasHeader && ri === 0) band = 'head'
+  else if (ri === nRow - 1) band = 'foot'
+  else band = 'body'
+  return BF_GRID[band][pos]
+}
+
 const PAGE_USABLE_W = 42520   // HWPUNIT (pagePr width 59528 − 좌우 여백 8504×2)
 const ROW_H = 1600            // 셀 최소 높이 (내용에 따라 한글이 자동 확장)
 
@@ -58,18 +80,20 @@ function equationXml(script) {
 }
 
 // ── 문단 ──
-function paraXml(runs, { align = 'left' } = {}) {
+function paraXml(runs, { align = 'left', pageBreak = false } = {}) {
   const paraId = PARA[align] ?? PARA.left
   const rs = (runs.length ? runs : [{ text: '' }]).map(runXml).join('')
-  return `<hp:p id="${nextId()}" paraPrIDRef="${paraId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0">${rs}</hp:p>`
+  const pb = pageBreak ? 1 : 0
+  return `<hp:p id="${nextId()}" paraPrIDRef="${paraId}" styleIDRef="0" pageBreak="${pb}" columnBreak="0" merged="0">${rs}</hp:p>`
 }
 
 // ── 표 셀 ──
 // cell: string | { text, runs?, bold, small, tiny, align, eq, shade, bf }
-function cellXml(cell, colAddr, rowAddr, cellW, tableBf) {
+function cellXml(cell, colAddr, rowAddr, cellW, tableBf, gridBfId) {
   const c = typeof cell === 'object' && cell !== null ? cell : { text: cell }
   const align = c.align || 'left'
-  const bfId = c.bf != null ? c.bf : (c.shade ? BF.headerShade : tableBf)
+  // 우선순위: 셀 지정(bf) > 위치 기반 규약(gridBfId) > 표 기본값
+  const bfId = c.bf != null ? c.bf : (gridBfId != null ? gridBfId : (c.shade ? BF.headerShade : tableBf))
   const runs = c.runs ? c.runs : (c.eq ? [{ eq: c.eq }] : [{ text: c.text ?? '', bold: c.bold, small: c.small, tiny: c.tiny, char: c.char }])
   const p = paraXml(runs, { align })
   return `<hp:tc name="" header="${c.shade ? 1 : 0}" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="${bfId}">`
@@ -100,8 +124,13 @@ function tableXml({ headers, rows, weights, borderless, shadeBox }) {
   rows.forEach(row => allRows.push(row))
   const rowCnt = allRows.length
 
+  // 테두리 없는 표(borderless/shadeBox)는 규약을 적용하지 않는다
+  const useGrid = !borderless && !shadeBox
   const trs = allRows.map((row, ri) =>
-    `<hp:tr>${row.map((cell, ci) => cellXml(cell, ci, ri, colW[ci], tableBf)).join('')}</hp:tr>`
+    `<hp:tr>${row.map((cell, ci) => cellXml(
+      cell, ci, ri, colW[ci], tableBf,
+      useGrid ? gridBf(ri, ci, rowCnt, nCol, !!headers) : null,
+    )).join('')}</hp:tr>`
   ).join('')
 
   const tbl = `<hp:tbl id="${nextId()}" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="${headers ? 1 : 0}" rowCnt="${rowCnt}" colCnt="${nCol}" cellSpacing="0" borderFillIDRef="${tableBf}" noAdjust="0">`
@@ -135,8 +164,52 @@ export class HwpxBuilder {
     this.spacer()
     return this
   }
-  heading(text) { this.body.push(paraXml([{ text, char: 'section' }], { align: 'left' })); return this }
+  // ── 절 제목 ──────────────────────────────────────────────
+  // 지침 1) 0.0절(대절)이 바뀔 때는 쪽을 바꿔도 된다 → 기본 쪽 나눔
+  //   ※ 문서 첫 절은 앞이 비어 있으므로 쪽 나눔을 넣지 않는다(빈 쪽 방지).
+  // 지침 2) 0.0.0절(소절)은 쪽을 바꾸지 않고 이어 쓴다.
+  heading(text, opts = {}) {
+    const first = this.body.length === 0
+    const brk = opts.pageBreak != null ? opts.pageBreak : !first
+    // 쪽 나눔 직전의 빈 문단은 빈 쪽을 만들므로 제거 (지침서 §11)
+    if (brk) this._dropTrailingEmpty()
+    this.body.push(paraXml([{ text, char: 'section' }], { align: 'left', pageBreak: brk }))
+    return this
+  }
+  /** 소절 제목 — 쪽을 바꾸지 않고 이어 쓴다 (지침 2) */
+  subheading(text) {
+    this.body.push(paraXml([{ text, bold: true }], { align: 'left' }))
+    return this
+  }
   sub(text) { this.body.push(paraXml([{ text, bold: true }], { align: 'left' })); return this }
+
+  /** 직전 빈 문단들을 제거 (연속 빈 문단·쪽 나눔 앞 빈 문단 방지) */
+  _dropTrailingEmpty() {
+    const EMPTY = /<hp:t><\/hp:t>|<hp:t\/>/
+    while (this.body.length) {
+      const last = this.body[this.body.length - 1]
+      if (last.includes('<hp:tbl ') || last.includes('<hp:pic ')) break
+      if (!EMPTY.test(last)) break
+      this.body.pop()
+    }
+    return this
+  }
+
+  // ── 표·그림 제목 ─────────────────────────────────────────
+  // 지침 6) 표제목은 항상 표 위    지침 3) 제목과 개체가 갈라지지 않게 붙여 넣는다
+  /** 표제목 + 표를 한 묶음으로 (제목이 앞 쪽에 홀로 남지 않도록 함께 배치) */
+  tableWithCaption(caption, spec) {
+    this.body.push(paraXml([{ text: caption, char: 'smallBold' }], { align: 'center' }))
+    this.body.push(tableXml(spec))
+    return this
+  }
+  // 지침 7) 그림제목은 항상 그림 밑
+  /** 그림(개체 XML) + 그림제목을 한 묶음으로 */
+  figureWithCaption(figureXml, caption) {
+    this.body.push(figureXml)
+    this.body.push(paraXml([{ text: caption, char: 'smallBold' }], { align: 'center' }))
+    return this
+  }
   para(text, opts) { this.body.push(paraXml([{ text }], opts)); return this }
   note(text) { this.body.push(paraXml([{ text, tiny: true }], { align: 'left' })); return this }
   runs(runs, opts) { this.body.push(paraXml(runs, opts)); return this }

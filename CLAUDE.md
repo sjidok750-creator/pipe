@@ -8,6 +8,33 @@
 - base path: `/pipe/` (vite.config.ts)
 - "배포해줘" 요청 시 `git push origin main` 실행 (Actions가 자동으로 빌드+배포, 2~4분 소요)
 
+## 한글(.hwpx) 문서 작성 표준
+
+앱에서 생성하는 **모든** 한글문서에 적용한다.
+서식 견본: `D:\2026년 과업\A. 인천광역시 송수관로 정밀안전진단\제3장 안전성 및 내진성능평가 결과(인천 송수관로).hwpx`
+상세 지침: 구글드라이브 「한글문서(HWPX) 편집 작업지침 v2.md」
+
+| # | 지침 | 구현 |
+|---|---|---|
+| 1 | **0.0절**이 바뀔 때는 쪽을 바꿔도 됨 | `b.heading()` — 자동 쪽 나눔 (문서 첫 절은 제외) |
+| 2 | **0.0.0절**은 쪽을 바꾸지 말고 이어 씀 | `b.subheading()` — 쪽 나눔 없음 |
+| 3 | 표·그림 제목이 개체와 갈라지지 않게 | `b.tableWithCaption()` / `b.figureWithCaption()` |
+| 4 | 표가 넘치면 머리행과 함께 다음 쪽으로 분리 | `pageBreak="CELL"` + `repeatHeader="1"` (기본) |
+| 5 | 표 선두께 — **안 0.12mm / 바깥(테두리) 0.4mm** | `BF_GRID` 12종 (borderFill id 8~19) |
+| 6 | **표제목은 항상 표 위** | `tableWithCaption()` |
+| 7 | **그림제목은 항상 그림 밑** | `figureWithCaption()` |
+
+### 반드시 지킬 것 (지침서 v2 요약)
+- 셀 `lineWrap="BREAK"` — `SQUEEZE`는 글자가 겹친다
+- 글자를 바꾼 문단은 `linesegarray`를 **제거**(한글이 재계산) — 남기면 줄이 겹쳐 그려진다
+- `zOrder`는 0..N-1 고유, `hp:tbl id`/`instid`도 고유
+- 쪽 나눔 직전 빈 문단·연속 빈 문단 제거 → 빈 쪽 생김 (`_dropTrailingEmpty()`)
+- borderFill·스타일은 **새로 만들지 말고 템플릿 것을 재사용**
+  (신설 시 id는 연속 번호 + `itemCnt` 갱신 — 한글은 IDRef를 배열 인덱스로 해석)
+- `mimetype`은 zip 첫 항목·무압축(STORED)
+
+단위: 1mm ≈ 283.465 HWPUNIT, 1pt = 100 HWPUNIT, A4 = 59528 × 84188
+
 ## ⚠ 근거로 인용 가능한 문서 (이 3개뿐)
 
 1. `상수도설계기준.PDF` — **KDS 57 00 00 : 2022** 관보 원문 (199쪽, 텍스트 추출 가능)

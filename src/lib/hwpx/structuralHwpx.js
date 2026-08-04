@@ -77,7 +77,7 @@ export async function exportStructuralHwpx({ inputs, result, dual, projectName, 
   b.heading('3. 계산 수식 및 과정')
 
   // 3.1 하중 산정
-  b.sub('3.1 하중 산정')
+  b.subheading('3.1 하중 산정')
   b.eqBox([{ label: '① 토피하중 (Prism Load)', eq: 'W _{e} = gamma _{s} times H times D _{o}', text: '  [AWWA M11 Ch.5]' }])
   b.calcRows([
     { label: '흙 단위중량 γs', expr: '', value: `${inputs.gammaSoil} kN/m³` },
@@ -106,7 +106,7 @@ export async function exportStructuralHwpx({ inputs, result, dual, projectName, 
   ])
 
   // 3.2 내압 검토
-  b.sub(`3.2 내압 검토 (후프응력, Barlow 공식)`)
+  b.subheading(`3.2 내압 검토 (후프응력, Barlow 공식)`)
   if (isSteel) {
     b.eqBox([
       { label: '강관 Barlow 공식', text: '[AWWA M11 Eq.3-1 / KS D 3565]' },
@@ -132,7 +132,7 @@ export async function exportStructuralHwpx({ inputs, result, dual, projectName, 
   }
 
   // 3.3 링 휨응력
-  b.sub('3.3 링 휨응력 검토')
+  b.subheading('3.3 링 휨응력 검토')
   b.eqBox([
     { label: '링휨 공식', text: `[${isSteel ? 'AWWA M11 §5.3' : 'DIPRA / AWWA C150'}]` },
     { eq: `sigma _{b} = K _{b} times {W _{total} times D _{o}} over {t ^{2}} , ~~ sigma _{a,b} = 0.50 f _{${isSteel ? 'y' : 'u'}}`, text: '  (단위: kN/m × mm / mm² = MPa)' },
@@ -146,7 +146,7 @@ export async function exportStructuralHwpx({ inputs, result, dual, projectName, 
   ])
 
   // 3.4 처짐
-  b.sub('3.4 처짐 검토 (수정 Iowa식)')
+  b.subheading('3.4 처짐 검토 (수정 Iowa식)')
   b.eqBox([
     { label: '수정 Iowa 공식', text: `[${isSteel ? 'AWWA M11 Eq.5-4' : 'AWWA C150'}]` },
     { eq: isSteel
@@ -171,7 +171,7 @@ export async function exportStructuralHwpx({ inputs, result, dual, projectName, 
 
   // 3.5 좌굴 (강관)
   if (isSteel && s6) {
-    b.sub('3.5 외압 좌굴 검토 (강관 전용)')
+    b.subheading('3.5 외압 좌굴 검토 (강관 전용)')
     b.eqBox([
       { label: 'AWWA M11 Eq.5-5', text: '[AWWA M11 좌굴식]' },
       { eq: "P _{cr} = {1} over {FS} sqrt {32 R _{w} B ' E ' {EI} over {D _{o} ^{3}}} ~~ ( FS = " + (s6.FS_allow ?? 2.5) + ' )' },
