@@ -27,7 +27,7 @@ export const ductileFlow: FlowSpec = {
       x: 145, y: 194, w: 200, h: 42,
       title: '① 토압  We (Prism Load)',
       sub: 'We = γs · H · Do',
-      codeRef: 'DIPRA §3.2',
+      codeRef: 'DIPRA / AWWA C150',
     },
     {
       id: 's1b', kind: 'process',

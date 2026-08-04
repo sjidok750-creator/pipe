@@ -86,11 +86,12 @@ export const KIND_INDEX = {
 
 // 지반상태 지수 EARTH
 export const EARTH_INDEX = {
-  S5: { score: 2.0, label: '연약지반 및 지층변화 심한 지반 (S5,S6)' },
-  S6: { score: 2.0, label: '연약지반 및 지층변화 심한 지반 (S5,S6)' },
-  S3: { score: 1.5, label: '연약한 지반 (S3,S4)' },
-  S4: { score: 1.5, label: '연약한 지반 (S3,S4)' },
-  S2: { score: 1.3, label: '단단한 지반 (S2,S4 단단)' },
+  // 근거: 평가요령 <해설표 3.4.1> 및 취약도지수표
+  S6: { score: 2.0, label: '연약지반 및 지층변화 심한 지반 (S6)' },
+  S3: { score: 1.5, label: '연약한 지반 (S3,S5)' },
+  S5: { score: 1.5, label: '연약한 지반 (S3,S5)' },
+  S2: { score: 1.3, label: '단단한 지반 (S2,S4)' },
+  S4: { score: 1.3, label: '단단한 지반 (S2,S4)' },
   S1: { score: 1.0, label: '강성 지반 (S1)' },
 }
 

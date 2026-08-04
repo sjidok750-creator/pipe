@@ -47,28 +47,28 @@ export const steelFlow: FlowSpec = {
       x: 130, y: 348, w: 178, h: 46,
       title: '③ 내압 검토',
       sub: 'σ = Pd · Do / (2t)',
-      codeRef: 'KDS §3.2',
+      codeRef: 'AWWA M11 Eq.3-1',
     },
     {
       id: 's3', kind: 'process',
       x: 390, y: 348, w: 178, h: 46,
       title: '④ 링 휨응력',
       sub: 'σb = Kb · W · Do / t²',
-      codeRef: 'KDS §3.4',
+      codeRef: 'AWWA M11 §5.3',
     },
     {
       id: 's4', kind: 'process',
       x: 130, y: 428, w: 178, h: 46,
       title: '⑤ 처짐 (Iowa)',
       sub: 'Δy/Do = DL·Kx·W / …',
-      codeRef: 'KDS §3.5',
+      codeRef: 'AWWA M11 Eq.5-4',
     },
     {
       id: 's5', kind: 'process',
       x: 390, y: 428, w: 178, h: 46,
       title: '⑥ 좌굴 (AWWA)',
       sub: 'qa = (1/FS) · √(…)',
-      codeRef: 'KDS §3.6',
+      codeRef: 'AWWA M11 Eq.5-5',
     },
 
     {
@@ -82,7 +82,7 @@ export const steelFlow: FlowSpec = {
       x: 260, y: 600, w: 300, h: 44,
       title: '⑦ 최소 소요두께 역산',
       sub: 't_req = max(t_p, t_surge, t_H) + CA',
-      codeRef: 'KDS §3.3',
+      codeRef: 'KDS 24 12 20',
     },
     {
       id: 'd6', kind: 'decision',

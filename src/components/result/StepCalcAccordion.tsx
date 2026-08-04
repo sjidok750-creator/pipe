@@ -76,7 +76,7 @@ function buildCalcLines(stepKey: string, step: StepData, pipeType: string): stri
   } else if (stepKey === 'step4' && pipeType === 'steel') {
     const s = step as any
     lines.push(`기초지지각: ${s.beddingLabel}`)
-    lines.push(`Kb = ${s.Kb_steel} (AWWA M11 Table 5-1 / KDS 57 10 00 §3.4)`)
+    lines.push(`Kb = ${s.Kb_steel} (AWWA M11 Table 5-1 / 상수도시설기준 참고표-4.2.4)`)
     lines.push(`허용응력 σ_ba = 0.5 × fy = 0.5 × 235 = ${s.sigmaA_bend?.toFixed(1)} MPa`)
     lines.push(`─── 계산 ───`)
     lines.push(`W_total = ${s.Wtotal?.toFixed(3)} kN/m`)

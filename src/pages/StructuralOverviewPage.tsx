@@ -24,26 +24,26 @@ const tdMono: React.CSSProperties = {
 
 // ── 강관 설계기준 ────────────────────────────────────────────
 const steelCriteria = [
-  { step: 'S1 — 토압 (Prism Load)',   kds: 'KDS 57 10 00 §3.3', ref: 'AWWA M11 §5.2',          limit: '하중 산정 (안전측 가정)' },
+  { step: 'S1 — 토압 (Prism Load)',   kds: 'AWWA M11 Ch.5', ref: 'Prism Load',          limit: '하중 산정 (안전측 가정)' },
   { step: 'S1 — 차량하중 (DB-24)',     kds: 'KDS 24 12 20',      ref: 'Boussinesq 분산 / AASHTO', limit: 'IF 충격계수 적용' },
-  { step: 'S2 — 내압 (Barlow)',        kds: 'KDS 57 10 00 §3.2', ref: 'AWWA M11 Eq.3-1',         limit: 'σ_a = 0.50·fy (상시),  0.75·fy (수격)' },
-  { step: 'S3 — 링 휨응력',            kds: 'KDS 57 10 00 §3.4', ref: 'AWWA M11 §5.3 / DIPRA',   limit: 'σ_ba = 0.50·fy' },
-  { step: 'S4 — 처짐 (수정 Iowa)',     kds: 'KDS 57 10 00 §3.5', ref: 'AWWA M11 Eq.5-4',         limit: '3.0% (라이닝 有),  5.0% (라이닝 無)' },
-  { step: 'S5 — 좌굴 ⟨강관만⟩',       kds: 'KDS 57 10 00 §3.6', ref: 'AWWA M11 Eq.5-7',         limit: 'FS ≥ 2.5' },
-  { step: 'S6 — 최소관두께',           kds: 'KDS 57 10 00 §3.3', ref: 'KS D 3565 / AWWA M11 Ch.4', limit: 't_채택 ≥ t_req + CA (부식여유)' },
-  { step: '재료 — 강종별 fy',          kds: 'KS D 3565',         ref: '—',                        limit: 'SGP: 175,  SPS400: 235,  SPS490: 315 MPa' },
-  { step: '침상계수 Kb / Kx',          kds: '—',                 ref: 'AWWA M11 Table 5-5',       limit: '침상각 60°/90°/120°/180°' },
+  { step: 'S2 — 내압 (Barlow)',        kds: 'AWWA M11 Eq.3-1', ref: 'KS D 3565',         limit: 'σ_a = 0.50·fy (상시),  0.75·fy (수격)' },
+  { step: 'S3 — 링 휨응력',            kds: 'AWWA M11 §5.3', ref: 'DIPRA',   limit: 'σ_ba = 0.50·fy' },
+  { step: 'S4 — 처짐 (수정 Iowa)',     kds: 'AWWA M11 Eq.5-4', ref: 'Modified Iowa',         limit: '3.0% (라이닝 有),  5.0% (라이닝 無)' },
+  { step: 'S5 — 좌굴 ⟨강관만⟩',       kds: 'AWWA M11 Eq.5-5', ref: '좌굴',         limit: 'FS ≥ 2.5' },
+  { step: 'S6 — 최소관두께',           kds: 'KS D 3565', ref: 'AWWA M11 Ch.4', limit: 't_채택 ≥ t_req + CA (부식여유)' },
+  { step: '재료 — 강종별 fy',          kds: 'KS D 3565',         ref: '—',                        limit: 'SGP: 245,  STPG38: 215,  SPS400: 235,  SPS490: 315 MPa' },
+  { step: '침상계수 Kb / Kx',          kds: '—',                 ref: 'AWWA M11 Table 5-5',       limit: '지지각 0°~150° (2004 기준: 60~150°)' },
   { step: '탄성지반반력계수 E\'',      kds: '—',                 ref: 'AWWA M11 Table 5-3',       limit: '토질 × 다짐도별 SI 환산' },
 ]
 
 // ── 주철관 설계기준 ──────────────────────────────────────────
 const ductileCriteria = [
-  { step: 'S1 — 토압 (Prism Load)',   kds: 'KDS 57 10 00 §3.3', ref: 'DIPRA §3.2',     limit: '하중 산정 (Prism Load 가정)' },
+  { step: 'S1 — 토압 (Prism Load)',   kds: 'AWWA M11 Ch.5', ref: 'Prism Load',     limit: '하중 산정 (Prism Load 가정)' },
   { step: 'S1 — 차량하중 (DB-24)',     kds: 'KDS 24 12 20',      ref: 'DB-24',          limit: 'IF 충격계수 적용' },
-  { step: 'S2 — 내압 (Barlow, Di 기반)', kds: 'KDS 57 10 00 §3.2', ref: 'DIPRA §4',    limit: 'σ_a = fu/3 = 140 MPa (안전율 3.0)' },
-  { step: 'S3 — 링 휨응력',            kds: 'KDS 57 10 00 §3.4', ref: 'DIPRA §5',       limit: 'σ_ba = 0.5·fu = 210 MPa' },
-  { step: 'S4 — 처짐 (Iowa)',          kds: 'KDS 57 10 00 §3.5', ref: 'DIPRA §6',       limit: 'Δy/Do ≤ 3.0%' },
-  { step: 'S5 — 최소두께',             kds: 'KDS 57 10 00 §3.3', ref: 'KS D 4311 K등급표 / DIPRA §7', limit: 't_class ≥ t_req + 서비스여유' },
+  { step: 'S2 — 내압 (Barlow, Di 기반)', kds: 'KS D 4311', ref: 'DIPRA',    limit: 'σ_a = fu/3 = 140 MPa (안전율 3.0)' },
+  { step: 'S3 — 링 휨응력',            kds: 'DIPRA / AWWA C150', ref: 'DIPRA',       limit: 'σ_ba = 0.5·fu = 210 MPa' },
+  { step: 'S4 — 처짐 (Iowa)',          kds: 'AWWA C150', ref: 'Modified Iowa',       limit: 'Δy/Do ≤ 3.0%' },
+  { step: 'S5 — 최소두께',             kds: 'KS D 4311 K등급표', ref: 'DIPRA', limit: 't_class ≥ t_req + 서비스여유' },
   { step: '재료 — 인장강도',           kds: 'KS D 4311',         ref: 'ISO 2531',       limit: 'fu = 420 MPa 고정' },
   { step: '침상계수 Kb / Kd',          kds: '—',                 ref: 'DIPRA Table 5-1', limit: 'Type 1~5 침상 조건' },
   { step: '탄성지반반력계수 E\'',      kds: '—',                 ref: 'AWWA M11 Table 5-3', limit: '토질 × 다짐도별 SI 환산' },
@@ -52,7 +52,7 @@ const ductileCriteria = [
 // ── 입력/산출 매트릭스 (강관) ────────────────────────────────
 const steelInputs = [
   { cat: '관 제원', params: 'DN, Do (mm), t (mm), 강종 (fy)', ref: 'KS D 3565' },
-  { cat: '내압',   params: 'Pd (MPa), 수격계수 ksurge',       ref: 'KDS §3.2' },
+  { cat: '내압',   params: 'Pd (MPa), 수격계수 ksurge',       ref: 'AWWA M11 Eq.3-1' },
   { cat: '하중',   params: 'H (m), 차량하중 유무 (DB-24)',     ref: 'KDS 24 12 20' },
   { cat: '지반',   params: 'γs (kN/m³), 토질분류, 다짐도',    ref: 'AWWA M11 §5.3' },
   { cat: '이음',   params: 'E\' (MPa), 침상각, 라이닝, GWL',  ref: 'AWWA M11 §5.3' },
@@ -70,7 +70,7 @@ const steelOutputs = [
 // ── 입력/산출 매트릭스 (주철관) ─────────────────────────────
 const ductileInputs = [
   { cat: '관 제원', params: 'DN, Do (mm), K등급, fu=420 MPa',  ref: 'KS D 4311' },
-  { cat: '내압',   params: 'Pd (MPa), ksurge',                ref: 'KDS §3.2' },
+  { cat: '내압',   params: 'Pd (MPa), ksurge',                ref: 'AWWA M11 Eq.3-1' },
   { cat: '하중',   params: 'H (m), 차량하중 유무',              ref: 'KDS 24 12 20' },
   { cat: '지반',   params: 'γs, 토질, 다짐도, E\'',            ref: 'DIPRA Ch.3' },
   { cat: '이음',   params: '침상 Type 1~5, GWL',               ref: 'DIPRA Table 3-1' },

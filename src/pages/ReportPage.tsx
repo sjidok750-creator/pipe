@@ -167,7 +167,7 @@ export default function ReportPage() {
           <FormulaRow>
             <strong>① 토피하중 (Prism Load)</strong>&nbsp;&nbsp;
             W<Sub>e</Sub> = γ<Sub>s</Sub> × H × D<Sub>o</Sub>
-            &nbsp;[KDS 57 10 00 §3.3]
+            &nbsp;[AWWA M11 Ch.5]
           </FormulaRow>
         </FormulaBlock>
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
@@ -219,7 +219,7 @@ export default function ReportPage() {
           {pipeType === 'steel' ? (
             <>
               <FormulaRow>
-                <strong>강관 Barlow 공식</strong>&nbsp;[KDS 57 10 00 §3.2 / AWWA M11 Eq.3-1]
+                <strong>강관 Barlow 공식</strong>&nbsp;[AWWA M11 / AWWA M11 Eq.3-1]
               </FormulaRow>
               <FormulaRow>
                 {G.sigma}<Sub>h</Sub> = <Frac top={<>P<Sub>d</Sub> × D<Sub>o</Sub></>} bot="2t"/> (상시)&nbsp;,&nbsp;
@@ -281,7 +281,7 @@ export default function ReportPage() {
         <div style={SUB}>3.3 링 휨응력 검토</div>
         <FormulaBlock>
           <FormulaRow>
-            <strong>DIPRA 링휨 공식</strong>&nbsp;[{pipeType === 'steel' ? 'KDS 57 10 00 §3.4 / AWWA M11 §5.3' : 'DIPRA §2.3 / KDS 57 10 00 §3.4'}]
+            <strong>DIPRA 링휨 공식</strong>&nbsp;[{pipeType === 'steel' ? 'AWWA M11 / AWWA M11 §5.3' : 'DIPRA §2.3 / AWWA M11'}]
           </FormulaRow>
           <FormulaRow>
             {G.sigma}<Sub>b</Sub> = K<Sub>b</Sub> × <Frac top={<>W<Sub>total</Sub> × D<Sub>o</Sub></>} bot={<>t{G.sq}</>}/>
@@ -308,7 +308,7 @@ export default function ReportPage() {
         <div style={SUB}>3.4 처짐 검토 (수정 Iowa식)</div>
         <FormulaBlock>
           <FormulaRow>
-            <strong>수정 Iowa 공식</strong>&nbsp;[{pipeType === 'steel' ? 'AWWA M11 Eq.5-4 / KDS 57 10 00 §3.5' : 'AWWA C150 / DIPRA §2.4'}]
+            <strong>수정 Iowa 공식</strong>&nbsp;[{pipeType === 'steel' ? 'AWWA M11 Eq.5-4 / AWWA M11' : 'AWWA C150 / DIPRA §2.4'}]
           </FormulaRow>
           <FormulaRow>
             <Frac top={<>{G.Delta}y</>} bot="D"/> =&nbsp;
@@ -355,7 +355,7 @@ export default function ReportPage() {
             <div style={SUB}>3.5 외압 좌굴 검토 (강관 전용)</div>
             <FormulaBlock>
               <FormulaRow>
-                <strong>AWWA M11 Eq.5-5</strong>&nbsp;[KDS 57 10 00 §3.6]
+                <strong>AWWA M11 Eq.5-5</strong>&nbsp;[AWWA M11 좌굴식]
               </FormulaRow>
               <FormulaRow>
                 P<Sub>cr</Sub> = <Frac top="1" bot="FS"/> ×&nbsp;
@@ -431,7 +431,7 @@ export default function ReportPage() {
         <div style={rh}>5. 최소관두께 검토 (참고)</div>
         <div style={NOTE}>
           {pipeType === 'steel'
-            ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값. 부식여유는 필요 시 별도 가산. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+            ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값. 부식여유는 필요 시 별도 가산. 기준: AWWA M11 Eq.3-1 / KS D 3565'
             : '주철관: KS D 4311 Di기반 Barlow 역산(내압) + 링휨 역산(외압) 중 최댓값. KS D 4311에 취급두께·부식여유 별도 규정 없음.'}
         </div>
         <div style={{ background: '#f8fafc', border: '1px solid #dde8f5', borderRadius: 2, padding: '8px 12px', marginBottom: 6, fontSize: 11 }}>
@@ -473,11 +473,11 @@ export default function ReportPage() {
 
         {/* 각주 */}
         <div style={{ marginTop: 20, borderTop: `1px solid ${T.borderLight}`, paddingTop: 8, fontSize: 10, color: T.textMuted, fontFamily: F, lineHeight: 1.9 }}>
-          ※ 토피하중: Prism Load  We = γs × H × Do  [KDS 57 10 00 §3.3]<br/>
+          ※ 토피하중: Prism Load  We = γs × H × Do  [AWWA M11 Ch.5]<br/>
           ※ 차량하중: DB-24 + AASHTO Boussinesq 분산 + 충격계수 IF  [KDS 24 12 20]<br/>
-          ※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy)  [KDS 57 10 00 §3.2]<br/>
-          ※ 링휨·처짐: DIPRA링휨 + 수정Iowa처짐  [KDS 57 10 00 §3.4~3.5 / AWWA M11]<br/>
-          ※ 외압좌굴: Modified AWWA M11 (강관 전용, FS = 2.5)  [KDS 57 10 00 §3.6]
+          ※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy)  [AWWA M11]<br/>
+          ※ 링휨·처짐: DIPRA링휨 + 수정Iowa처짐  [DIPRA·AWWA C150 / AWWA M11 Eq.5-4]<br/>
+          ※ 외압좌굴: Modified AWWA M11 (강관 전용, FS = 2.5)  [AWWA M11 좌굴식]
         </div>
       </div>
     </div>

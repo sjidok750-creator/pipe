@@ -3,11 +3,15 @@
 // ============================================================
 
 import { create } from 'zustand'
-import { calcSteelPipe } from '../engine/steelPipe.js'
+import { calcSteelPipe, calcSteelPipeDual } from '../engine/steelPipe.js'
 import { calcDuctileIron } from '../engine/ductileIron.js'
 import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 
 const DEFAULT_INPUTS = {
+  // 적용 설계기준 — 'KDS2022'(현행, 기본) | 'KWW2004'(구 상수도시설기준)
+  // ※ 기존 저장 프로젝트는 이 필드가 없으므로 KDS2022로 기본 처리됨 (회귀 방지)
+  codeStandard: 'KDS2022',
+  steelGradeLegacy: 'STWW400',   // KWW2004 모드 강종 (참고표-4.2.5)
   pipeType: 'steel',
   DN: 600,
   pnGrade: 'PN10',         // 강관 PN 등급 (사용자 선택)
@@ -71,6 +75,7 @@ const saveHistory = (history) => {
 export const useStore = create((set, get) => ({
   inputs: { ...DEFAULT_INPUTS },
   result: null,
+  dual: null,
   calcError: null,
   history: loadHistory(),
 
@@ -106,15 +111,18 @@ export const useStore = create((set, get) => ({
     const { inputs } = get()
     try {
       let result
+      let dual = null
       if (inputs.pipeType === 'steel') {
         result = calcSteelPipe(inputs)
+        // 병기 판정: 강관에 한해 두 기준을 동시 계산해 비교 제공
+        try { dual = calcSteelPipeDual(inputs) } catch { dual = null }
       } else {
         result = calcDuctileIron(inputs)
       }
-      set({ result, calcError: null })
+      set({ result, dual, calcError: null })
       return result
     } catch (e) {
-      set({ result: null, calcError: e.message })
+      set({ result: null, dual: null, calcError: e.message })
       return null
     }
   },
@@ -143,7 +151,12 @@ export const useStore = create((set, get) => ({
     const { history } = get()
     const entry = history.find((h) => h.id === id)
     if (entry) {
-      set({ inputs: entry.inputs, result: entry.result, calcError: null })
+      // 이전 dual 결과가 남지 않도록 초기화 후, 강관이면 재계산
+      let dual = null
+      if (entry.inputs?.pipeType === 'steel') {
+        try { dual = calcSteelPipeDual(entry.inputs) } catch { dual = null }
+      }
+      set({ inputs: entry.inputs, result: entry.result, dual, calcError: null })
     }
   },
 
@@ -154,7 +167,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetInputs: () => {
-    set({ inputs: { ...DEFAULT_INPUTS }, result: null, calcError: null })
+    set({ inputs: { ...DEFAULT_INPUTS }, result: null, dual: null, calcError: null })
   },
 
   getAutoEprime,

@@ -67,6 +67,75 @@ export default function InputPage() {
 
         {/* ① 관종 및 기본조건 */}
         <EngPanel title="① 관종 및 설계 조건">
+          <EngRow label="적용 설계기준">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+              <EngSegment
+                options={[
+                  { value: 'KDS2022', label: 'KDS 57 10 00 (현행)' },
+                  { value: 'KWW2004', label: '상수도시설기준 (2004)' },
+                ]}
+                value={inputs.codeStandard ?? 'KDS2022'}
+                onChange={v => handleChange('codeStandard', v)}
+              />
+              <div style={{ fontSize: '11px', color: T.textMuted, lineHeight: 1.5 }}>
+                {(inputs.codeStandard ?? 'KDS2022') === 'KWW2004' ? (
+                  inputs.pipeType === 'steel' ? (
+                  <>
+                    <strong style={{ color: T.textAccent }}>구 상수도시설기준(2004) [참고-4.2.1]</strong><br/>
+                    링휨식에 흙 반력계수 E′를 포함(지반-관 상호작용 반영) · 허용응력은 강종별 고정표(참고표-4.2.5)<br/>
+                    토압: H≤2.0m 연직토압 / H&gt;2.0m Marston · 지지각 60·90·120·150°만 사용 가능
+                  </>
+                  ) : (
+                  <>
+                    <strong style={{ color: T.textAccent }}>구 상수도시설기준(2004) — 덕타일 주철관</strong><br/>
+                    조합응력 검토 추가: 2.5σts + 2.0σtd + 1.4σb ≤ S (=420 MPa, GCD400 인장강도)<br/>
+                    링휨 단독 허용치(0.5·fu=210 MPa) 검토도 함께 수행됩니다.
+                  </>
+                  )
+                ) : (
+                  <>
+                    <strong style={{ color: T.textAccent }}>현행 KDS 57 10 00 : 2022 / AWWA M11</strong><br/>
+                    링휨식에 E′ 미포함(관체 단독 부담, 보수적) · 허용응력 0.50×fy<br/>
+                    토압: Prism(γ·H·Do) · 차량하중: DB-24 Boussinesq
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: '10.5px', color: T.textMuted, background: T.bgRowAlt, padding: '6px 8px', borderRadius: 3, lineHeight: 1.5 }}>
+                ※ 허용응력은 응력 산정식과 1:1로 묶입니다. 기준을 바꾸면 산정식·허용응력·토압·차량하중이 함께 전환되며,
+                교차 조합(예: 현행식 + 2004 허용응력)은 이중 관대가 되어 차단되어 있습니다.
+              </div>
+            </div>
+          </EngRow>
+
+          {inputs.pipeType === 'steel' && (inputs.codeStandard ?? 'KDS2022') === 'KWW2004' && (
+            <EngRow label="강종 (2004)">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[['STWW290', 100], ['STWW370', 125], ['STWW400', 140], ['SS400', 140], ['SM400', 140]].map(([k, v]) => {
+                    const active = (inputs.steelGradeLegacy ?? 'STWW400') === k
+                    return (
+                      <button key={String(k)} onClick={() => handleChange('steelGradeLegacy', k)}
+                        style={{
+                          padding: '5px 10px', fontSize: '11px', cursor: 'pointer', borderRadius: 3,
+                          border: `1px solid ${active ? T.accent : T.border}`,
+                          background: active ? T.accent : T.bgPanel,
+                          color: active ? '#fff' : T.text,
+                          fontWeight: active ? T.fw.bold : T.fw.normal,
+                        }}>
+                        {k} <span style={{ opacity: 0.8 }}>({v})</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                <div style={{ fontSize: '11px', color: T.textMuted }}>
+                  허용응력 <strong style={{ color: T.textAccent }}>
+                    {({ STWW290: 100, STWW370: 125, STWW400: 140, SS400: 140, SM400: 140 } as Record<string, number>)[inputs.steelGradeLegacy ?? 'STWW400'] ?? 125} MPa
+                  </strong> — 상수도시설기준(2004) 참고표-4.2.5 (≈0.6·fy)
+                </div>
+              </div>
+            </EngRow>
+          )}
+
           <EngRow label="관종">
             <EngSegment
               options={[
@@ -85,7 +154,7 @@ export default function InputPage() {
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>도복장강관 (KS D 3565)</strong><br/>
                 항복강도 fy = 235 MPa (SGP 기준). 내압·링휨·처짐·외압좌굴 6단계 검토.<br/>
-                KDS 57 10 00 §3.2~§3.6 적용. 좌굴 안전율 FS = 2.5 (AWWA M11).
+                AWWA M11~§3.6 적용. 좌굴 안전율 FS = 2.5 (AWWA M11).
               </div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
                 <strong>덕타일 주철관 (KS D 4311)</strong><br/>
@@ -120,7 +189,7 @@ export default function InputPage() {
                     <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
                     <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
                     <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>KDS 57 10 00 §3.2 허용응력</strong><br/>
+                      <strong>AWWA M11 허용응력</strong><br/>
                       상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
                       fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
                     </div>
@@ -199,7 +268,7 @@ export default function InputPage() {
                   → KS 규격이 강도값을 단일 고정값으로 지정하므로 강종별 선택이 불필요하다.
                 </div>
                 <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                  <strong>KDS 57 10 00 : 2022 §3.2 주철관 허용응력</strong><br/>
+                  <strong>KDS 57 10 00 : 2022 주철관 허용응력</strong><br/>
                   "덕타일 주철관의 허용인장응력은 인장강도(fu)에 안전계수를 적용하여 산정한다:<br/>
                   상시 σ_a = fu / 3 = 140 MPa,&nbsp; 링휨 σ_a = 0.5 × fu = 210 MPa"<br/>
                   → 강관과 달리 <em>항복강도가 아닌 인장강도(fu) 기반</em> 안전계수법을 적용한다.
@@ -212,8 +281,8 @@ export default function InputPage() {
                 </div>
                 <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
                   <strong>강관과의 허용응력 체계 비교</strong><br/>
-                  강관 (KDS §3.2): σ_a = 0.50 × fy → <em>항복</em> 기준 (연성파괴 방지)<br/>
-                  주철관 (KDS §3.2): σ_a = fu / 3 → <em>인장강도</em> 기준 (취성파괴 안전계수)<br/>
+                  강관 (AWWA M11): σ_a = 0.50 × fy → <em>항복</em> 기준 (연성파괴 방지)<br/>
+                  주철관 (AWWA M11): σ_a = fu / 3 → <em>인장강도</em> 기준 (취성파괴 안전계수)<br/>
                   주철 계열은 fy/fu 비가 상대적으로 작고 연성이 제한되므로, 취성파괴에 대한 보수적 여유를 확보하기 위해 fu 기반 설계가 더 적합하다.
                 </div>
               </EngPopover>
@@ -465,10 +534,10 @@ export default function InputPage() {
             <EngInput value={inputs.H} onChange={v => handleChange('H', parseFloat(v) || 1)} min={0.5} max={20} step={0.1} width={90}/>
             {errors.H && <span style={{ fontSize: '10px', color: T.textNG }}>{errors.H}</span>}
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>관정 매설깊이 H — KDS 57 10 00 §3.3</div>
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>관정 매설깊이 H — AWWA M11 Ch.5</div>
               <p style={{ marginTop: 0 }}>관 상단(관정)부터 지표면까지의 깊이입니다. 토압 및 차량하중 계산의 핵심 변수입니다.</p>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>토압 산정 (Prism Load — KDS 57 10 00 §3.3)</strong><br/>
+                <strong>토압 산정 (Prism Load — AWWA M11 Ch.5)</strong><br/>
                 We = γ × H × Do [kN/m]<br/>
                 이 앱은 항상 Prism Load를 사용합니다. 구기준(2004)의 Marston 공식과 달리 매설깊이에 관계없이 동일 식을 적용합니다. KDS 2022가 채택한 방식입니다.
               </div>
@@ -492,7 +561,7 @@ export default function InputPage() {
             <EngPopover title="차량하중 산정 방식 — KDS 24 12 20 / 내진성능 평가요령 부록C" width={450}>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>방식 A — DB-24 Boussinesq (기본)</strong><br/>
-                KDS 24 12 20 / KDS 57 10 00 §3.3<br/>
+                KDS 24 12 20 / AWWA M11<br/>
                 매설깊이별 등가 수직압력 테이블 보간 후 충격계수 적용.<br/>
                 WL = PL × IF × Do [kN/m]
               </div>
@@ -573,7 +642,7 @@ export default function InputPage() {
           </EngRow>
           {inputs.pipeType === 'steel' && (
             <EngRow label="모르타르 라이닝" popover={
-              <EngPopover title="시멘트 모르타르 라이닝 — KDS 57 10 00 §3.5 / AWWA M11">
+              <EngPopover title="시멘트 모르타르 라이닝 — AWWA M11 Eq.5-4">
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                   <strong>AWWA M11 — 라이닝에 따른 허용처짐 기준</strong><br/>
                   라이닝 있음: 허용처짐 Δy/D ≤ 3.0%<br/>
@@ -713,7 +782,7 @@ export default function InputPage() {
               )}
             </div>
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>탄성지반반력 E' — KDS 57 10 00 §3.5 / AWWA M11</div>
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>탄성지반반력 E' — AWWA M11 Eq.5-4</div>
               <p style={{ marginTop: 0 }}>E'(Modulus of Soil Reaction)는 관 주변 지반의 탄성 저항 특성을 나타내는 설계 정수입니다. 처짐·좌굴 계산에서 지반 지지력을 표현합니다.</p>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>수정 Iowa 처짐 공식에서의 역할</strong><br/>
@@ -862,7 +931,7 @@ export default function InputPage() {
             <EngInput value={inputs.gammaSoil} onChange={v => handleChange('gammaSoil', parseFloat(v) || 18)}
               min={10} max={25} step={0.5} width={90}/>
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>흙 단위중량 γ — KDS 57 10 00 §3.3</div>
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>흙 단위중량 γ — AWWA M11 Ch.5</div>
               <p style={{ marginTop: 0 }}>관 위에 작용하는 토압(Prism Load) 산정에 직접 사용됩니다. We = γ × H × Do</p>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>일반적인 흙 단위중량 기준값</strong><br/>

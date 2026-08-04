@@ -78,6 +78,66 @@ export const STEEL_PN_GRADES = ['PN6', 'PN10', 'PN16']
 // KS D 4311 K등급 목록 (K7: 특수용도, K9 이상 일반)
 export const DI_K_GRADES = ['K7', 'K9', 'K10', 'K12']
 
+// ============================================================
+// 상수도시설기준(2004) 참고표-4.2.5 — 강관 허용응력
+// ※ 원문 표기 단위 kN/mm² 는 오기이며 N/mm²(=MPa)가 맞음
+// 140 MPa ≈ 0.6·fy (fy 235~245) — 국내 강구조 허용응력설계법 휨 허용응력과 정합
+// 반드시 SET_A(2004 E' 포함식)와 세트로만 사용할 것 (SET_B와 교차 조합 금지)
+// ============================================================
+export const STEEL_ALLOW_2004 = {
+  STWW290: 100,
+  STWW370: 125,
+  STWW400: 140,   // 기본값
+  SS400:   140,
+  SM400:   140,
+}
+
+// KWW2004 모드에서 허용되는 지지각 (참고표-4.2.4 원문에 존재하는 값만)
+export const BEDDING_2004_ALLOWED = ['deg60', 'deg90', 'deg120', 'deg150']
+
+// 강종 미확인 시 보수적 fallback (STWW370)
+export const STEEL_ALLOW_2004_FALLBACK = 'STWW370'
+
+// 2004 기준 강관 탄성계수 (원문값). 현행 KDS2022 경로는 PIPE_MATERIAL.steel.Es(206,000) 사용
+export const STEEL_ES_2004 = 200000  // MPa
+
+// 상수도시설기준(2004) 참고표-4.2.6 — 허용 편평률
+// ※ 2004 기준에도 라이닝 구분이 이미 존재함 (현행에서 새로 생긴 것이 아님)
+export const STEEL_DEFLECTION_2004 = {
+  coating: 5.0,   // % — 내면도장
+  mortar:  3.0,   // % — 모르타르 라이닝
+}
+
+// 2004 기준 Marston 토압 상수 (참고-4.2.1)
+export const MARSTON_2004 = {
+  kmu:    0.19245,  // kμ'
+  B_add:  0.40,     // m — 굴착폭 B = Do + 0.40 m
+  H_prism_limit: 2.0, // m — 이하 연직토압(γt·H), 초과 Marston
+}
+
+// ============================================================
+// 상수도시설기준(2004) — 덕타일 주철관 조합응력 검토
+// 판정: 2.5·σts + 2.0·σtd + 1.4·σb ≤ S   (S = 인장강도)
+//   정수압 2.5 / 수격압 2.0 / 토압·노면하중 2.0
+//   1.4 = 2.0 × 0.7   (0.7 = 굽힘 → 인장 환산계수)
+//
+// ⚠ S/1.4 = 300 MPa 를 단독 허용치로 노출하지 말 것.
+//   GCD400 항복강도(300 MPa)와 같아 여유가 없으며, 조합검토를 전제로 한 값이다.
+// ⚠ AWWA C150 의 331 MPa(48 ksi)는 국내 근거 없음 — 사용 금지.
+// ============================================================
+export const DI_COMBINED_2004 = {
+  S: 420,           // MPa — GCD400 인장강도 (KS D 4311)
+  FS_static: 2.5,   // 정수압
+  FS_surge: 2.0,    // 수격압
+  FS_bend: 1.4,     // 굽힘 (= 2.0 × 0.7 환산)
+  bendConv: 0.7,    // 굽힘 → 인장 환산계수
+}
+
+// 2004 기준 차량하중 상수 (참고-4.2.1)
+export const TRAFFIC_2004 = {
+  n: 2, P: 9600, L: 1.75, C: 1.0, b: 0.5, a: 0.2, theta: 45,
+}
+
 // E' 값 테이블 (kPa) — AWWA M11 Table 5-3 SI 환산
 export const E_PRIME = {
   SC1:   { 80: 1400, 85: 2700, 90: 6900 },  // 조립토 (자갈, 모래)
@@ -154,12 +214,12 @@ export const DI_DN_LIST = [100, 150, 200, 250, 300, 350, 400, 450, 500, 600, 700
 
 // KDS 기준 출처 라벨
 export const REFERENCES = {
-  earthLoad:    'KDS 57 10 00 §3.1 / AWWA M11 Ch.5',
+  earthLoad:    'AWWA M11 Ch.5 (Prism Load)',
   trafficLoad:  'KDS 24 12 20 (DB-24) / Boussinesq',
-  hoopStress:   'KDS 57 10 00 / AWWA M11 Eq.3-1',
+  hoopStress:   'AWWA M11 Eq.3-1 (Barlow) / KS D 3565',
   deflection:   'AWWA M11 Eq.5-4 (Modified Iowa)',
   buckling:     'AWWA M11 Eq.5-5',
-  diHoop:       'KS D 4311 §5',
-  diBending:    'KDS 57 10 00 §3.4',
-  diDeflection: 'AWWA C150 / KDS 57 10 00 §3.5',
+  diHoop:       'KS D 4311 (내압 fu/3)',
+  diBending:    'DIPRA 링휨 / AWWA C150 (KDS 57 10 00에 명시 조항 없음)',
+  diDeflection: 'AWWA C150 (Modified Iowa)',
 }

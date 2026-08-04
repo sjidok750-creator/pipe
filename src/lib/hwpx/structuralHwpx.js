@@ -78,7 +78,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
 
   // 3.1 하중 산정
   b.sub('3.1 하중 산정')
-  b.eqBox([{ label: '① 토피하중 (Prism Load)', eq: 'W _{e} = gamma _{s} times H times D _{o}', text: '  [KDS 57 10 00 §3.3]' }])
+  b.eqBox([{ label: '① 토피하중 (Prism Load)', eq: 'W _{e} = gamma _{s} times H times D _{o}', text: '  [AWWA M11 Ch.5]' }])
   b.calcRows([
     { label: '흙 단위중량 γs', expr: '', value: `${inputs.gammaSoil} kN/m³` },
     { label: '매설깊이 H', expr: '', value: `${inputs.H} m` },
@@ -109,7 +109,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   b.sub(`3.2 내압 검토 (후프응력, Barlow 공식)`)
   if (isSteel) {
     b.eqBox([
-      { label: '강관 Barlow 공식', text: '[KDS 57 10 00 §3.2 / AWWA M11 Eq.3-1]' },
+      { label: '강관 Barlow 공식', text: '[AWWA M11 Eq.3-1 / KS D 3565]' },
       { eq: 'sigma _{h} = {P _{d} times D _{o}} over {2 t} ~ rm { ( 상시 ) } , ~~ sigma _{a,n} = 0.50 f _{y}' },
       { eq: "sigma _{h,surge} = {P _{d} ' times D _{o}} over {2 t} ~ rm { ( 수격 ) } , ~~ sigma _{a,s} = 0.75 f _{y}" },
     ])
@@ -139,7 +139,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   // 3.3 링 휨응력
   b.sub('3.3 링 휨응력 검토')
   b.eqBox([
-    { label: 'DIPRA 링휨 공식', text: `[KDS 57 10 00 §3.4${isSteel ? ' / AWWA M11 §5.3' : ' / DIPRA §2.3'}]` },
+    { label: '링휨 공식', text: `[${isSteel ? 'AWWA M11 §5.3' : 'DIPRA / AWWA C150'}]` },
     { eq: `sigma _{b} = K _{b} times {W _{total} times D _{o}} over {t ^{2}} , ~~ sigma _{a,b} = 0.50 f _{${isSteel ? 'y' : 'u'}}`, text: '  (단위: kN/m × mm / mm² = MPa)' },
   ])
   b.calcRows([
@@ -153,7 +153,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   // 3.4 처짐
   b.sub('3.4 처짐 검토 (수정 Iowa식)')
   b.eqBox([
-    { label: '수정 Iowa 공식', text: `[${isSteel ? 'AWWA M11 Eq.5-4 / KDS 57 10 00 §3.5' : 'AWWA C150 / DIPRA §2.4'}]` },
+    { label: '수정 Iowa 공식', text: `[${isSteel ? 'AWWA M11 Eq.5-4' : 'AWWA C150'}]` },
     { eq: isSteel
       ? "{DELTA y} over {D} = {D _{L} times K _{x} times P _{total}} over {{EI} over {r ^{3}} + 0.061 E '} times 100 ~ ( % )"
       : "{DELTA y} over {D} = {K _{d} times P _{total}} over {{EI} over {r ^{3}} + 0.061 E '} times 100 ~ ( % )" },
@@ -178,7 +178,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   if (isSteel && s6) {
     b.sub('3.5 외압 좌굴 검토 (강관 전용)')
     b.eqBox([
-      { label: 'AWWA M11 Eq.5-5', text: '[KDS 57 10 00 §3.6]' },
+      { label: 'AWWA M11 Eq.5-5', text: '[AWWA M11 좌굴식]' },
       { eq: "P _{cr} = {1} over {FS} sqrt {32 R _{w} B ' E ' {EI} over {D _{o} ^{3}}} ~~ ( FS = " + (s6.FS_allow ?? 2.5) + ' )' },
       { eq: "B ' = {1} over {1 + 4 e ^{-0.065 H / D}} ~ rm { ( 탄성토지지계수 ) }" },
     ])
@@ -222,7 +222,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   // ── 5. 최소관두께 (참고) ──
   b.heading('5. 최소관두께 검토 (참고)')
   b.note(isSteel
-    ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값. 부식여유는 필요 시 별도 가산. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+    ? '강관: 내압(Barlow), 취급(Do/288) 중 최댓값. 부식여유는 필요 시 별도 가산. 기준: AWWA M11 Eq.3-1 / KS D 3565'
     : '주철관: KS D 4311 Di기반 Barlow 역산(내압) + 링휨 역산(외압) 중 최댓값.')
   b.calcRows(isSteel ? [
     { label: '내압 최소두께 (상시)', expr: `Pd × Do / (2 × σa,n)`, value: `${f(s1?.tp_normal)} mm` },
@@ -239,11 +239,14 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
   b.spacer()
 
   // ── 각주 ──
-  b.note('※ 토피하중: Prism Load We = γs × H × Do [KDS 57 10 00 §3.3]')
+  b.note('※ 토피하중: Prism Load We = γs × H × Do [AWWA M11 Ch.5]')
   b.note('※ 차량하중: DB-24 + AASHTO Boussinesq 분산 + 충격계수 IF [KDS 24 12 20]')
-  b.note('※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy) [KDS 57 10 00 §3.2]')
-  b.note('※ 링휨·처짐: DIPRA링휨 + 수정Iowa처짐 [KDS 57 10 00 §3.4~3.5 / AWWA M11]')
-  if (isSteel) b.note('※ 외압좌굴: Modified AWWA M11 (강관 전용, FS = 2.5) [KDS 57 10 00 §3.6]')
+  b.note(`※ 적용 설계기준: ${result?.appliedCodeLabel ?? 'KDS 57 10 00 : 2022 / AWWA M11'}`)
+  if (result?.appliedFormula) b.note(`※ 링휨 적용식: ${result.appliedFormula}`)
+  if (result?.allowSource)    b.note(`※ 링휨 허용응력 근거: ${result.allowSource}`)
+  b.note('※ 내압: 허용응력법 (상시 σa = 0.50fy, 수격 σa = 0.75fy) [AWWA M11 Eq.3-1 / KS D 3565]')
+  b.note('※ 링휨·처짐: DIPRA링휨 + 수정Iowa처짐 [DIPRA·AWWA C150 / AWWA M11 Eq.5-4]')
+  if (isSteel) b.note('※ 외압좌굴: Modified AWWA M11 (강관 전용, FS = 2.5) [AWWA M11 좌굴식]')
 
   const dn = result.pipeDimManual ? `D${Do}` : `DN${result.DN}`
   await downloadHwpx(b, `구조안전성검토_${dn}_${new Date().toISOString().slice(0, 10)}.hwpx`,

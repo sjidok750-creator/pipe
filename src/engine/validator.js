@@ -2,7 +2,8 @@
 // 입력값 유효성 검사
 // ============================================================
 
-import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES } from './constants.js'
+import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES,
+         STEEL_ALLOW_2004, STEEL_ALLOW_2004_FALLBACK, BEDDING_2004_ALLOWED } from './constants.js'
 
 /**
  * 입력값 전체 유효성 검사
@@ -12,7 +13,22 @@ import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES } from './c
 export function validateInputs(inputs) {
   const errors = {}
 
-  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade, pipeDimManual, DoManual, tManual } = inputs
+  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade, pipeDimManual, DoManual, tManual,
+          codeStandard, steelGradeLegacy, steelBeddingType } = inputs
+
+  // 적용 설계기준
+  if (codeStandard && !['KDS2022', 'KWW2004'].includes(codeStandard)) {
+    errors.codeStandard = "적용 설계기준은 'KDS2022' 또는 'KWW2004'여야 합니다."
+  }
+  if (codeStandard === 'KWW2004') {
+    if (steelGradeLegacy && STEEL_ALLOW_2004[steelGradeLegacy] == null) {
+      errors.steelGradeLegacy = `미확인 강종입니다. 보수적으로 ${STEEL_ALLOW_2004_FALLBACK}(${STEEL_ALLOW_2004[STEEL_ALLOW_2004_FALLBACK]} MPa)가 적용됩니다.`
+    }
+    // 참고표-4.2.4 원문에 없는 지지각 — 계산은 deg60으로 보정되나 사용자에게 알림
+    if (steelBeddingType && !BEDDING_2004_ALLOWED.includes(steelBeddingType)) {
+      errors.steelBeddingType = '2004 기준은 지지각 60·90·120·150°만 규정합니다. 60°로 보정되어 계산됩니다.'
+    }
+  }
 
   if (pipeDimManual) {
     if (!DoManual || DoManual < 50 || DoManual > 4000) {

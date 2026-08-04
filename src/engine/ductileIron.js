@@ -3,7 +3,7 @@
 // 근거: KS D 4311 / KDS 57 10 00 / AWWA C150
 // ============================================================
 
-import { PIPE_MATERIAL, DI_THICKNESS, BEDDING } from './constants.js'
+import { PIPE_MATERIAL, DI_THICKNESS, BEDDING, DI_COMBINED_2004 } from './constants.js'
 import { calcEarthLoad } from './earthLoad.js'
 import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 
@@ -15,10 +15,11 @@ import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
  */
 export function calcDuctileIron(inputs) {
   const {
-    DN, Pd, H,
+    DN, Pd, H, surgeRatio = 1.5,
     gammaSoil, Eprime,
     hasTraffic, beddingType,
     diKGrade = 'K9',
+    codeStandard = 'KDS2022',
     pipeDimManual = false, DoManual, tManual,
     E_pipeManual = false, E_pipe = null,
     // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)
@@ -80,7 +81,7 @@ export function calcDuctileIron(inputs) {
 
   // ────────────────────────────────────────
   // STEP 3: 링 휨응력 검토
-  // 근거: KDS 57 10 00 §3.4
+  // 근거: DIPRA 링휨 / AWWA C150  ※KDS 57 10 00에 명시 조항 없음
   // σ_b = Kb × W_total[kN/m] × Do[mm] / t²[mm²]  (MPa)
   // 단위: kN/m × mm / mm² = N/mm = MPa  ✓
   // 허용응력: σ_ba = 0.5 × fu = 210 MPa  (KS D 4311 GCD400)
@@ -89,8 +90,46 @@ export function calcDuctileIron(inputs) {
   const ok_bending  = sigma_b_MPa <= sigmaA_bend
 
   // ────────────────────────────────────────
+  // STEP 3-2: [KWW2004] 조합응력 검토
+  // 근거: 상수도시설기준(2004) — 덕타일 주철관
+  //   σt = (Ps + Pd)·d / (2t)                      인장응력 (내압)
+  //   σb = 6·(Kf·Wf + Kt·Wt)·R² / t²               휨응력 (탄성단면 Z = b·t²/6)
+  //   판정: 2.5·σts + 2.0·σtd + 1.4·σb ≤ S         (S = 인장강도 420 MPa)
+  //
+  // ※ 현행 KDS2022 경로의 단독 허용치(0.5·fu = 210 MPa)는 그대로 유지되며,
+  //   본 검토는 codeStandard='KWW2004' 일 때만 추가로 수행된다.
+  // ※ S/1.4 = 300 MPa 를 단독 허용치로 노출하지 않는다 (조합검토 전제값).
+  // ────────────────────────────────────────
+  let combined = null
+  if (codeStandard === 'KWW2004') {
+    const C = DI_COMBINED_2004
+    // 인장응력: 정수압(상시) / 수격압 분리
+    const sigma_ts = (Pd * Di) / (2 * tAdopt)                    // MPa — 정수압분
+    const sigma_td = (Pd * (surgeRatio - 1) * Di) / (2 * tAdopt) // MPa — 수격 증분
+    // 휨응력 σb = 6·(Kf·Wf + Kt·Wt)·R² / t²   (탄성단면 Z = t²/6)
+    // 2004 원식에서 W는 단위면적당 하중(압력)이므로 Ptotal[kPa]을 사용한다.
+    //   M = Kb·P·R²  [kPa·mm²],  Z = t²/6  [mm²]  →  σ = M/Z [kPa] → /1000 → MPa
+    // 결과적으로 DIPRA 링휨식(Kb·W·Do/t²)의 정확히 1.5배가 되며,
+    // 이는 탄성단면계수(t²/6) 대 DIPRA식의 계수 차이에 해당한다.
+    const R_mm = Do / 2
+    const sigma_b_elastic = 6 * Kb * Ptotal * R_mm ** 2 / (tAdopt ** 2) / 1000  // MPa
+
+    const demand = C.FS_static * sigma_ts + C.FS_surge * sigma_td + C.FS_bend * sigma_b_elastic
+    combined = {
+      sigma_ts, sigma_td, sigma_b: sigma_b_elastic,
+      FS_static: C.FS_static, FS_surge: C.FS_surge, FS_bend: C.FS_bend,
+      demand, S: C.S,
+      utilization: demand / C.S,
+      ok: demand <= C.S,
+      formula: '2.5\\sigma_{ts} + 2.0\\sigma_{td} + 1.4\\sigma_b \\leq S',
+      ref: '상수도시설기준(2004) 덕타일 주철관 조합응력',
+      note: `S = ${C.S} MPa (GCD400 인장강도, KS D 4311)`,
+    }
+  }
+
+  // ────────────────────────────────────────
   // STEP 4: 처짐량 검토 (Modified Iowa)
-  // 근거: AWWA C150 / KDS 57 10 00 §3.5
+  // 근거: AWWA C150 (Modified Iowa)
   // ────────────────────────────────────────
   const t_m  = tAdopt / 1000
   const Do_m = Do / 1000
@@ -105,7 +144,7 @@ export function calcDuctileIron(inputs) {
   // ────────────────────────────────────────
   // 최종 결과 조립
   // ────────────────────────────────────────
-  const overallOK = ok_hoop && ok_bending && ok_deflection
+  const overallOK = ok_hoop && ok_bending && ok_deflection && (combined ? combined.ok : true)
 
   return {
     pipeType: 'ductile',
@@ -113,6 +152,17 @@ export function calcDuctileIron(inputs) {
     DN: pipeDimManual ? null : DN,
     Do, Di, tAdopt, tRequired,
     selectedGrade: pipeDimManual ? null : diKGrade,
+    appliedCode: codeStandard,
+    appliedCodeLabel: codeStandard === 'KWW2004'
+      ? '상수도시설기준(2004) — 조합응력 검토'
+      : 'DIPRA 링휨 / AWWA C150',
+    appliedFormula: codeStandard === 'KWW2004'
+      ? '2.5·σts + 2.0·σtd + 1.4·σb ≤ S (=420 MPa)'
+      : 'σb = Kb · W_total · Do / t²',
+    allowSource: codeStandard === 'KWW2004'
+      ? '상수도시설기준(2004) 덕타일 주철관 조합응력 — S = 420 MPa (GCD400 인장강도, KS D 4311)'
+      : 'DIPRA / AWWA C150 (0.5·fu = 210 MPa) — KDS 57 10 00에 명시 조항 없음',
+    combined,
     steps: {
       step1: {
         title: '내압 검토',
@@ -126,8 +176,8 @@ export function calcDuctileIron(inputs) {
       step2: {
         title: '토압 및 차량하중 산정',
         ref: trafficMethod === 'wm'
-          ? '내진성능 평가요령 부록C 해설식(5.3.3) / KDS 57 10 00 §3.1'
-          : 'KDS 57 10 00 §3.1 / KDS 24 12 20',
+          ? '내진성능 평가요령 부록C 해설식(5.3.3)'
+          : 'AWWA M11 Ch.5 / KDS 24 12 20',
         gammaSoil, H, Do,
         We, PLraw, IF, PL, WL, Wtotal, Ptotal,
         trafficMethod,
@@ -138,7 +188,7 @@ export function calcDuctileIron(inputs) {
       },
       step3: {
         title: '링 휨응력 검토',
-        ref: 'KDS 57 10 00 §3.4',
+        ref: 'DIPRA 링휨 / AWWA C150',
         Kb, Wtotal, Do, tAdopt,
         sigma_b: sigma_b_MPa, sigmaA_bend,
         ok: ok_bending,
@@ -146,7 +196,7 @@ export function calcDuctileIron(inputs) {
       },
       step4: {
         title: '처짐량 검토 (Modified Iowa)',
-        ref: 'AWWA C150 / KDS 57 10 00 §3.5',
+        ref: 'AWWA C150 (Modified Iowa)',
         Kd, r, I, EI, EI_r3, Eprime,
         Ptotal, denominator, deflectionRatio,
         maxDeflection: mat.maxDeflection,

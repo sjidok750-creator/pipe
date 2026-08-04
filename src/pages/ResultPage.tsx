@@ -24,7 +24,7 @@ const DIAGRAM_TABS = [
 
 export default function ResultPage() {
   const navigate = useNavigate()
-  const { result, inputs } = useStore()
+  const { result, inputs, dual } = useStore()
   const [diagTab, setDiagTab] = useState('cross')
 
   if (!result) {
@@ -151,15 +151,95 @@ export default function ResultPage() {
 
         {/* 링 휨 · 처짐 · 좌굴 */}
         <EngPanel title="(b) 링 휨 · 처짐 · 좌굴 검토">
+          {(result?.appliedCodeLabel || result?.allowSource) && (
+            <div style={{
+              fontSize: '10.5px', color: T.textMuted, background: T.bgRowAlt,
+              padding: '6px 8px', borderRadius: 3, marginBottom: 8, lineHeight: 1.6,
+            }}>
+              <div><strong style={{ color: T.textAccent }}>적용 기준</strong> · {result.appliedCodeLabel}</div>
+              {result.appliedFormula && <div style={{ fontFamily: 'monospace', fontSize: '10px' }}>{result.appliedFormula}</div>}
+              {result.allowSource && <div><strong>허용응력 근거</strong> · {result.allowSource}</div>}
+              {result.allowIsFallback && (
+                <div style={{ color: '#b45309' }}>⚠ 미확인 강종 — 보수적 기본값이 적용되었습니다.</div>
+              )}
+              {result.beddingCoerced && (
+                <div style={{ color: '#b45309' }}>
+                  ⚠ 지지각 {result.beddingCoerced} 은 2004 기준 표에 없어 60°로 보정되었습니다.
+                </div>
+              )}
+            </div>
+          )}
           <EngTable rows={structRows}/>
         </EngPanel>
+
+        {/* 주철관 조합응력 검토 (KWW2004) */}
+        {result?.combined && (
+          <EngPanel title="(b-2) 조합응력 검토 — 상수도시설기준(2004)">
+            <EngTable rows={[
+              { label: '인장응력 σts (정수압)', formula: 'Ps·d/(2t)',  value: result.combined.sigma_ts, unit: 'MPa' },
+              { label: '인장응력 σtd (수격압)', formula: 'Pd·d/(2t)',  value: result.combined.sigma_td, unit: 'MPa' },
+              { label: '휨응력 σb',            formula: '6·Kb·P·R²/t²', value: result.combined.sigma_b,  unit: 'MPa' },
+              {
+                label: '조합응력 (좌변)',
+                formula: '2.5σts + 2.0σtd + 1.4σb',
+                value: result.combined.demand,
+                unit: 'MPa',
+                limit: result.combined.S,
+                ok: result.combined.ok,
+              },
+            ]}/>
+            <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
+              ※ S = {result.combined.S} MPa (GCD400 인장강도, KS D 4311) · 이용률 {(result.combined.utilization * 100).toFixed(1)}%<br/>
+              ※ 안전율 — 정수압 2.5 / 수격압 2.0 / 토압·노면하중 2.0 (굽힘은 인장환산 0.7 적용 → 1.4)<br/>
+              ※ 본 검토는 조합응력 전제이며, 단독 허용치로 환산해 사용하지 마십시오.
+            </div>
+          </EngPanel>
+        )}
+
+        {/* 병기(倂記) 판정 — 두 기준 동시 비교 */}
+        {dual && (
+          <EngPanel title="(b-2) 기준별 병기 판정 — 구 기준(2004) vs 현행(KDS 2022)">
+            <div style={{ marginBottom: 8 }}>
+              <span style={{
+                display: 'inline-block', padding: '4px 12px', borderRadius: 3,
+                fontSize: '12px', fontWeight: T.fw.bold, color: '#fff',
+                background: dual.verdict === 'PASS' ? '#15803d'
+                  : dual.verdict === 'CHECK_BACKFILL' ? '#b45309'
+                  : dual.verdict === 'REINFORCE' ? '#b91c1c' : '#6d28d9',
+              }}>{dual.verdictLabel}</span>
+              <span style={{ marginLeft: 10, fontSize: '11px', color: T.textMuted }}>{dual.verdictNote}</span>
+            </div>
+            <EngTable rows={[
+              {
+                label: '구 기준 (2004, E′ 반영)',
+                formula: 'σb = (2/(f·Z))·(Wv+Wt)·[…E′…]',
+                value: dual.A?.setA?.sigma_b,
+                unit: 'MPa',
+                limit: dual.A?.setA?.sigmaA_bend,
+                ok: dual.A?.setA?.ok_bending,
+              },
+              {
+                label: '현행 KDS (E′ 미반영)',
+                formula: 'σb = Kb·Wtotal·Do/t²',
+                value: dual.B?.steps?.step4?.sigma_b,
+                unit: 'MPa',
+                limit: dual.B?.steps?.step4?.sigmaA_bend,
+                ok: dual.B?.steps?.step4?.ok,
+              },
+            ]}/>
+            <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
+              ※ 두 기준은 산정식·허용응력이 세트로 다릅니다. 구 기준은 지반 반력(E′)이 응력을 낮추고 허용응력도 높아
+              일반적으로 더 관대합니다. 현행 기준 초과·구 기준 만족 시에는 되메움 다짐도(E′) 확보 여부를 확인하십시오.
+            </div>
+          </EngPanel>
+        )}
 
         {/* 최소관두께 */}
         <EngPanel title="(c) 최소관두께 검토 (참고)">
           <EngTable rows={minThkRows}/>
           <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 6, lineHeight: 1.7, padding: '4px 6px', background: T.bgSection, borderRadius: 2 }}>
             {pipeType === 'steel'
-              ? '강관: AWWA M11 취급최소두께(Do/288) + 부식여유 1.5mm 포함. 기준: KDS 57 10 00 §3.2 / AWWA M11'
+              ? '강관: AWWA M11 취급최소두께(Do/288) + 부식여유 1.5mm 포함. 기준: AWWA M11 Eq.3-1 / KS D 3565'
               : '주철관: KS D 4311 기준 Di기반 Barlow 역산(내압) 및 링휨 역산(외압). KS D 4311에 취급최소두께·부식여유 별도 규정 없으므로 해당 항목 미적용.'}
           </div>
         </EngPanel>

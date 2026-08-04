@@ -102,7 +102,7 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
 
   // ══ 2. 하중산정 시트 ═══════════════════════════════════
   ld.title('2. 설계 하중 산정').blank(0.5)
-  ld.sec('토피하중 (Prism Load) — KDS 57 10 00 §3.3').head()
+  ld.sec('토피하중 (Prism Load) — AWWA M11 Ch.5').head()
   const rWe = ld.item({ label: '토피하중', sym: 'W_e', formula: 'In_gs*In_H*In_Do/1000', result: s2?.We ?? 0, unit: 'kN/m', note: 'W_e = γ_s × H × D₀' })
 
   let rWL
@@ -158,7 +158,7 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
   const okRefs = []
 
   if (isSteel) {
-    ck.sec('3.1 내압 검토 (Barlow) — KDS 57 10 00 §3.2 / AWWA M11 Eq.3-1').head()
+    ck.sec('3.1 내압 검토 (Barlow) — AWWA M11 Eq.3-1 / KS D 3565').head()
     const rSaN = ck.item({ label: '허용응력 (상시)', sym: 'σ_a,n', formula: '0.5*In_fy', result: s1?.sigmaA_normal, unit: 'MPa', note: '0.50 × f_y' })
     const rSaS = ck.item({ label: '허용응력 (수격)', sym: 'σ_a,s', formula: '0.75*In_fy', result: s1?.sigmaA_surge, unit: 'MPa', note: '0.75 × f_y' })
     const rPds = ck.item({ label: '수격 설계압력', sym: "P_d'", formula: 'In_Pd*In_sr', result: inputs.Pd * inputs.surgeRatio, unit: 'MPa' })
@@ -174,12 +174,14 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
     okRefs.push(ck.verdict({ formula: `IF(${rSh}<=${rSa},"O.K.","N.G.")`, result: s1?.ok ? 'O.K.' : 'N.G.', note: 'σ_h ≤ f_u/3' }))
   }
 
-  ck.sec('3.2 링 휨응력 검토 — KDS 57 10 00 §3.4').head()
-  const rSab = ck.item({ label: '허용응력', sym: 'σ_a,b', formula: isSteel ? '0.5*In_fy' : '0.5*In_fu', result: s4?.sigmaA_bend, unit: 'MPa', note: isSteel ? '0.50 × f_y' : '0.50 × f_u' })
+  ck.sec(`3.2 링 휨응력 검토 — ${result?.appliedCodeLabel ?? 'AWWA M11 §5.3'}`).head()
+  if (result?.appliedFormula) ck.note(`적용식: ${result.appliedFormula}`)
+  if (result?.allowSource)    ck.note(`허용응력 근거: ${result.allowSource}`)
+  const rSab = ck.item({ label: '허용응력', sym: 'σ_a,b', result: s4?.sigmaA_bend, unit: 'MPa', note: result?.allowRatioLabel ?? (isSteel ? '0.50 × f_y' : '0.50 × f_u') })
   const rSb = ck.item({ label: '링 휨응력', sym: 'σ_b', formula: `In_Kb*${rWt}*In_Do/In_t^2`, result: s4?.sigma_b, unit: 'MPa', note: 'σ_b = K_b · W_total · D₀ / t²  (kN/m·mm/mm² = MPa)' })
   okRefs.push(ck.verdict({ formula: `IF(${rSb}<=${rSab},"O.K.","N.G.")`, result: s4?.ok ? 'O.K.' : 'N.G.', note: 'σ_b ≤ σ_a,b' }))
 
-  ck.sec('3.3 처짐 검토 (수정 Iowa) — KDS 57 10 00 §3.5 / AWWA M11 Eq.5-4').head()
+  ck.sec('3.3 처짐 검토 (수정 Iowa) — AWWA M11 Eq.5-4 Eq.5-4').head()
   const rr = ck.item({ label: '관 반경', sym: 'r', formula: '(In_Do-In_t)/2000', result: s5?.r, unit: 'm', note: 'r = (D₀−t)/2' })
   const rI = ck.item({ label: '단면2차모멘트', sym: 'I', formula: '(In_t/1000)^3/12', result: s5?.I, unit: 'm⁴/m', note: 'I = t³/12' })
   const rEI = ck.item({ label: '휨강성', sym: 'EI', formula: `In_E*1000*${rI}`, result: s5?.EI, unit: 'kN·m²/m' })
@@ -194,7 +196,7 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
   okRefs.push(ck.verdict({ formula: `IF(${rDef}<=In_dmax,"O.K.","N.G.")`, result: s5?.ok ? 'O.K.' : 'N.G.', note: 'Δy/D ≤ 허용 처짐율' }))
 
   if (isSteel && s6) {
-    ck.sec('3.4 외압 좌굴 검토 — KDS 57 10 00 §3.6 / AWWA M11 Eq.5-5').head()
+    ck.sec('3.4 외압 좌굴 검토 — AWWA M11 / AWWA M11 Eq.5-5').head()
     const rHD = ck.item({ label: '', sym: 'H/D₀', formula: 'In_H/(In_Do/1000)', result: s6.HoverDo })
     const rBp = ck.item({ label: '탄성토지지계수', sym: "B'", formula: `1/(1+4*EXP(-0.065*${rHD}))`, result: s6.Bprime, note: "B' = 1/(1+4e^(−0.065H/D))" })
     const rEID3 = ck.item({ label: '', sym: 'EI/D₀³', formula: `${rEI}/(In_Do/1000)^3`, result: s6.EI_Do3, unit: 'kN/m²' })
