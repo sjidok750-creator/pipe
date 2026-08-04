@@ -73,29 +73,32 @@ export default function ReferencePage() {
         {tab === 'allow' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 허용응력 (KS D 3565 / AWWA M11)</h2>
+              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 허용응력 — 상수도시설기준(2004) 참고표-4.2.5</h2>
               <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', marginBottom: 10, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                ※ 아래 비율(0.50 / 0.75 fy)은 <strong>KDS 57 10 00에 명시 조항이 없습니다</strong>
-                (§3 = &quot;재료 — 내용 없음&quot;). 허용응력설계법의 안전율 2.0 관행에 따른 값이며,
-                실제 산정식 근거는 AWWA M11입니다.<br/>
-                ※ 구 상수도시설기준(2004) 참고표-4.2.5는 강종별 고정 허용응력을 규정합니다:
-                <strong> STWW400 · SS400 · SM400 = 140 MPa</strong>, STWW370 = 125, STWW290 = 100 MPa.
-                이 값은 <strong>E′를 포함한 2004 링휨식과 세트로만</strong> 사용해야 합니다.
+                ※ 원문 인쇄 p.175 〈참고표-4.2.5〉 <strong>허용응력</strong> — 내압(1항)·외압(2항) 검토
+                뒤에 3항으로 놓인 <strong>공용 단일표</strong>이므로 내압·링휨에 동일하게 적용합니다.<br/>
+                ※ 현행 KDS 57 10 00에는 <strong>링휨 검토·허용응력 규정이 없습니다</strong>
+                (§3 = &quot;재료 — 내용 없음&quot;, 해설편 1,363쪽에 &quot;링휨&quot; 0회).
+                관두께는 <strong>KS·KWWA 인증 압력관 사용</strong>으로 갈음합니다(해설편 p.543).<br/>
+                ※ 종전 0.50×fy(=117.5) · 0.75×fy(=176.3)는 어느 기준 문서에도 근거가 없어
+                <strong> 폐지</strong>되었습니다. 수격압은 압력등급 적합성(최대사용압력)으로 검토합니다.
               </div>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: '#003366', color: 'white' }}>
                   <th className="p-3 text-left">항목</th>
-                  <th className="p-3 text-center">기준강도</th>
-                  <th className="p-3 text-center">허용응력 비율</th>
+                  <th className="p-3 text-center">종류의 번호</th>
+                  <th className="p-3 text-center">구분</th>
                   <th className="p-3 text-center">허용응력 (MPa)</th>
                 </tr></thead>
                 <tbody>
                   {[
-                    ['상시 운전압력 (Hoop)', 'fy = 235 MPa', '0.50', '117.5'],
-                    ['수격압 (Hoop)', 'fy = 235 MPa', '0.75', '176.3'],
+                    ['내압 (Hoop)', 'STWW400 / SS400 / SM400', '고정값', '140'],
+                    ['링 휨응력', 'STWW400 / SS400 / SM400', '고정값', '140'],
+                    ['〃 (STWW370)', 'STWW370', '고정값', '125'],
+                    ['〃 (STWW290)', 'STWW290', '고정값', '100'],
                     ['좌굴 안전율', '—', '—', 'F.S. ≥ 2.5'],
-                    ['허용 처짐율 (라이닝)', '—', '—', '3.0%'],
-                    ['허용 처짐율 (무라이닝)', '—', '—', '5.0%'],
+                    ['허용 변형률 (모르타르)', '—', '—', '3.0%'],
+                    ['허용 변형률 (도장)', '—', '—', '5.0%'],
                   ].map(([item, base, ratio, allow], i) => (
                     <tr key={item} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
                       <td className="p-3">{item}</td>

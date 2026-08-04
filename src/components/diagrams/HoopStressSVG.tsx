@@ -9,7 +9,7 @@ interface Props {
   label?: string
 }
 
-export default function HoopStressSVG({ sigma = 30.5, sigmaA = 117.5, Pd = 0.6, Do = 610, t = 8, label = '상시' }: Props) {
+export default function HoopStressSVG({ sigma = 30.5, sigmaA = 140, Pd = 0.6, Do = 610, t = 8, label = '상시' }: Props) {
   const W = 380
   const HH = 280
   const cx = W / 2
