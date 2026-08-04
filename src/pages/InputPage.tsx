@@ -268,10 +268,12 @@ export default function InputPage() {
                   → KS 규격이 강도값을 단일 고정값으로 지정하므로 강종별 선택이 불필요하다.
                 </div>
                 <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                  <strong>KDS 57 10 00 : 2022 주철관 허용응력</strong><br/>
-                  "덕타일 주철관의 허용인장응력은 인장강도(fu)에 안전계수를 적용하여 산정한다:<br/>
-                  상시 σ_a = fu / 3 = 140 MPa,&nbsp; 링휨 σ_a = 0.5 × fu = 210 MPa"<br/>
-                  → 강관과 달리 <em>항복강도가 아닌 인장강도(fu) 기반</em> 안전계수법을 적용한다.
+                  <strong>주철관 허용응력 — DIPRA / AWWA C150 관행</strong><br/>
+                  상시 σ_a = fu / 3 = 140 MPa,&nbsp; 링휨 σ_a = 0.5 × fu = 210 MPa<br/>
+                  → 강관과 달리 <em>항복강도가 아닌 인장강도(fu) 기반</em> 안전계수법을 적용한다.<br/>
+                  <span style={{ color: '#b45309' }}>※ 이 허용치는 <strong>KDS 57 10 00에 명시 조항이 없다</strong>.
+                  DIPRA·AWWA C150 관행값이며, 구 상수도시설기준(2004)은 조합응력식
+                  (2.5σts+2.0σtd+1.4σb ≤ 420 MPa)을 사용한다.</span>
                 </div>
                 <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
                   <strong>DIPRA Design Manual §3 (Pressure Design)</strong><br/>
@@ -497,9 +499,11 @@ export default function InputPage() {
                 수격 포함 최대압력은 <strong>Pd' = Pd × 배율</strong>로 산정됩니다.
               </p>
               <div style={{ background: '#f0f4f8', borderLeft: `3px solid ${T.bgActive}`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>KDS 57 10 00 : 2022 (현행 기준)</strong><br/>
-                § 3.2 상시 하중: σ = Pd·D/(2t) ≤ 0.50 fy (강관) / fu/3 (주철관)<br/>
-                § 3.2 수격 포함: σ = (Pd × 배율)·D/(2t) ≤ 0.75 fy (강관)<br/>
+                <strong>현행 방식 (AWWA M11 Eq.3-1 / KS D 3565)</strong><br/>
+                상시 하중: σ = Pd·D/(2t) ≤ 0.50 fy (강관) / fu/3 (주철관)<br/>
+                수격 포함: σ = (Pd × 배율)·D/(2t) ≤ 0.75 fy (강관)<br/>
+                <span style={{ color: '#b45309' }}>※ 허용응력 비율(0.50/0.75 fy)은 KDS 57 10 00에 명시 조항이 없으며,
+                허용응력설계법의 안전율 2.0 관행에 따른 값이다.</span><br/>
                 배율 1.5는 일반적인 수격압 수준 (±50%)에 해당하며, 수격 해석이 없을 때의 보수적 기본값입니다.
               </div>
               <div style={{ background: '#fff8f0', borderLeft: `3px solid #e8a020`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
@@ -511,10 +515,13 @@ export default function InputPage() {
                 이 방식은 응력 종류별 안전계수를 달리 적용하는 구조로, 현행 KDS의 허용응력법과 개념적으로 다릅니다.
               </div>
               <div style={{ background: '#f4fff4', borderLeft: `3px solid #4caf50`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>이 앱이 KDS 2022 방식을 채택한 이유</strong><br/>
-                현행 발주 기준인 KDS 57 10 00 : 2022가 Pd/수격 분리 입력 + 허용응력 비교 방식을 채택하고 있으며,
-                AWWA M11 (강관), DIPRA Method (주철관) 등 국제 표준과도 동일한 체계입니다.
-                결과 보고서에도 KDS 2022 기준 적용을 명시합니다.
+                <strong>기본 방식 선택</strong><br/>
+                기본값은 AWWA M11(강관)·DIPRA(주철관) 기반의 Pd/수격 분리 입력 + 허용응력 비교 방식입니다.
+                구 기준의 조합응력 방식이 필요하면 상단 <strong>「적용 설계기준」</strong>에서
+                <strong>상수도시설기준(2004)</strong>을 선택하십시오.<br/>
+                <span style={{ color: '#b45309' }}>※ 현행 KDS 57 10 00은 링휨 허용응력을 수식으로 규정하지 않고
+                "KS·KWWA 인증 압력관 사용"으로 갈음합니다(해설편 p.543). 따라서 두 방식 모두
+                KDS 조항을 직접 근거로 제시할 수 없습니다.</span>
               </div>
               <div style={{ color: T.textMuted, fontSize: '11px' }}>
                 <strong>판단 기준:</strong><br/>
@@ -1027,8 +1034,10 @@ export default function InputPage() {
         {/* 적용 기준 참고 */}
         <EngPanel title="적용 기준">
           <div style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.9 }}>
-            <strong style={{ color: T.textAccent }}>KDS 57 10 00 : 2022</strong>  상수도 시설 설계기준 — 관로<br/>
-            내압 검토:  허용응력법  (상시 fy×0.50, 수격 fy×0.75)<br/>
+            <strong style={{ color: T.textAccent }}>적용 산정식 근거</strong><br/>
+            <span style={{ color: '#b45309' }}>※ KDS 57 10 00은 관로 구조계산식·허용응력을 규정하지 않음
+            (§3 = "재료 — 내용 없음"). 아래는 실제 적용 근거임</span><br/>
+            내압 검토:  AWWA M11 Eq.3-1 / KS D 3565  (상시 fy×0.50, 수격 fy×0.75 — 안전율 2.0 관행)<br/>
             링 휨 검토:  Iowa 공식  (Spangler-Watkins 방법)<br/>
             처짐 검토:  수정 Iowa 방식  (Del = Dl·Kb·Wc·Do³/EI+0.061E'Do³)<br/>
             외압 좌굴:  Modified AWWA M11  (강관 전용, FS=2.5)<br/>

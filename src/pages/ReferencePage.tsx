@@ -74,6 +74,14 @@ export default function ReferencePage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 허용응력 (KS D 3565 / AWWA M11)</h2>
+              <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', marginBottom: 10, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
+                ※ 아래 비율(0.50 / 0.75 fy)은 <strong>KDS 57 10 00에 명시 조항이 없습니다</strong>
+                (§3 = &quot;재료 — 내용 없음&quot;). 허용응력설계법의 안전율 2.0 관행에 따른 값이며,
+                실제 산정식 근거는 AWWA M11입니다.<br/>
+                ※ 구 상수도시설기준(2004) 참고표-4.2.5는 강종별 고정 허용응력을 규정합니다:
+                <strong> STWW400 · SS400 · SM400 = 140 MPa</strong>, STWW370 = 125, STWW290 = 100 MPa.
+                이 값은 <strong>E′를 포함한 2004 링휨식과 세트로만</strong> 사용해야 합니다.
+              </div>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: '#003366', color: 'white' }}>
                   <th className="p-3 text-left">항목</th>
