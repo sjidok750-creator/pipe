@@ -1,454 +1,259 @@
 // ============================================================
-// 강관 구조안전성 검토 — 6단계 (검토 개념: 주어진 두께로 안전성 확인)
-// 근거: AWWA M11 / ASCE / KDS 57 10 00 / KS D 3565
+// 수도용 도복장 강관 구조안전성 검토
+// 근거: 「시설물의 안전 및 유지관리 실시 세부지침(안전점검·진단 편) 해설서」
+//       제11장 상수도 11.5.2 (1) 수도용 도복장 강관 (11-134 ~ 11-136)
+//
+// 지침은 관로 안전성검토 식을「상수도시설기준, 환경부」제시 식 사용을 원칙으로 하며,
+// 토압식·링휨식·허용기준표·관두께 적용규칙을 직접 명시한다.
+//
+// ⚠ 하중 조합 규칙 (11-134 ②):
+//   "외압 작용의 경우 관 내부의 수압이 없는 조건으로 하고,
+//    내압 작용의 경우 외부 하중(노면하중, 토압 등)이 없는 조건으로 한다"
+//   → 내압 검토(STEP 1)와 외압 검토(STEP 3~5)는 분리 산정하며 합산하지 않는다.
+//
+// ⚠ 단위: 전 과정을 지침 원단위계(cm, kg, kg/cm²)로 계산하고 최종만 MPa 환산한다.
+//   SI로 항별 계산하면 f·Z / E·I / E′·R³ 스케일이 달라 잘못된 값이 나온다.
 // ============================================================
 
 import {
-  PIPE_MATERIAL, STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES,
-  STEEL_ALLOW_2004, STEEL_ALLOW_2004_FALLBACK, STEEL_ES_2004,
-  STEEL_DEFLECTION_2004, MARSTON_2004, TRAFFIC_2004, BEDDING_2004_ALLOWED,
+  STEEL_THICKNESS, GW_RW, STEEL_BEDDING, STEEL_GRADES,
+  STEEL_ALLOW, STEEL_MAX_DEFLECTION, BEDDING_ALLOWED,
+  STEEL_E_KGFCM2, EPRIME_KGFCM2, RING_BENDING, BUCKLING,
+  EARTH_LOAD, REFERENCES, GUIDE_LABEL, resolveSafetyGrade,
 } from './constants.js'
-import { calcEarthLoad, calcEarthLoadMarston, calcTrafficLoad2004 } from './earthLoad.js'
+import { calcEarthLoad, calcTrafficLoad } from './earthLoad.js'
 import { checkKdsCompliance } from './kdsCompliance.js'
-import { calcTrafficLoad, calcTrafficLoadWm } from './trafficLoad.js'
 
-// kgf/cm² → MPa
-const KGF_TO_MPA = 0.098067
-
-/**
- * 링휨 허용응력 결정 — 단일 지점
- *
- * ※ 두 경로 모두 상수도시설기준(2004) 참고표-4.2.5 의 강종별 고정 허용응력을 사용한다.
- *   현행 KDS 57 10 00은 링휨 검토를 요구하지도, 허용응력을 규정하지도 않는다
- *   (해설편 1,363쪽에 "링휨" 0회 / 관두께는 "KS·KWWA 인증 압력관 사용"으로 갈음, p.543).
- *   따라서 종전의 0.50×fy(= 117.5 MPa)는 어느 기준 문서에도 근거가 없어 폐지하고,
- *   원문에 실재하는 유일한 링휨 허용응력인 2004 참고표-4.2.5 값으로 통일한다.
- *
- * ※ 산정식은 codeStandard 에 따라 계속 달라진다(SET_A: E′ 포함 / SET_B: E′ 미포함).
- *   KDS2022 경로는 산정식만 현행이고 허용값은 2004 표이므로 출처를 분리해 명시한다.
- *
- * @returns {{ value, source, ratio, gradeUsed, isFallback }}
- */
-function resolveAllowable(codeStandard, { fy, steelGradeLegacy }) {
-  const key = STEEL_ALLOW_2004[steelGradeLegacy] != null
-    ? steelGradeLegacy
-    : STEEL_ALLOW_2004_FALLBACK
-  const value = STEEL_ALLOW_2004[key]
-  const isFallback = STEEL_ALLOW_2004[steelGradeLegacy] == null
-
-  if (codeStandard === 'KWW2004') {
-    return {
-      value,
-      source: `상수도시설기준(2004) 참고표-4.2.5 — ${key}`,
-      ratio: '강종별 고정표 (≈0.6·fy)',
-      gradeUsed: key, isFallback,
-    }
-  }
-  // KDS2022 — 산정식은 AWWA M11, 허용값은 2004 표 (현행 기준에 링휨 허용응력 규정 없음)
-  return {
-    value,
-    source: `허용응력: 상수도시설기준(2004) 참고표-4.2.5 — ${key} `
-          + '(현행 KDS 57 10 00은 링휨 허용응력을 규정하지 않음) / 산정식: AWWA M11 §5.3',
-    ratio: '강종별 고정표 (≈0.6·fy)',
-    gradeUsed: key, isFallback,
-  }
-}
+// kg/cm² → MPa
+const KGF_TO_MPA = 0.0980665
 
 /**
- * [SET_A] 상수도시설기준(2004) 방식 링휨·처짐 계산
- * 근거: 상수도시설기준(2004) pp.171~175 [참고-4.2.1]
+ * 강관 구조안전성 검토
  *
- * σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.06146·Kb − 0.08303·Kx)·E'·R⁵] / [E·I + 0.061·E'·R³]
- *   f = 1.5 (소성단면계수), Z = t²/6, I = t³/12, R = Do/2
+ * 관두께 적용규칙 (11-134 ②):
+ *   "관두께는 관 상세검사에서 측정된 구간별 최소 관두께와
+ *    관경별 기준 관두께(STWW 400) 가운데 작은 값을 적용한다"
  *
- * ※ 전 과정을 2004 단위계(cm, kgf, kgf/cm²)로 계산하고 최종 결과만 MPa로 환산한다.
- *   SI 단위로 항별 계산하면 f·Z / E·I / E'·R³ 의 스케일이 달라 잘못된 값이 나온다.
- * ※ 처짐식은 2004 원문에 명시되어 있지 않아 기존 엑셀(02-1) 구현을 근거로 함:
- *   Δx = 2·Kx·(Wv+Wt)·R⁴ / (E·I + 0.061·E'·R³),  ε = Δx/Do
- */
-function calcSetA({ Do, tAdopt, H, beddingKey, Eprime_MPa, allow, hasLining, gammaSoil_kgfcm3 }) {
-  const Do_cm = Do / 10
-  const t_cm  = tAdopt / 10
-  const R  = Do_cm / 2
-  const I  = t_cm ** 3 / 12
-  const Z  = t_cm ** 2 / 6
-  const f  = 1.5
-
-  // MPa → kgf/cm²
-  const E  = STEEL_ES_2004 / KGF_TO_MPA
-  const Ep = Eprime_MPa / KGF_TO_MPA
-
-  const row = STEEL_BEDDING[beddingKey] || STEEL_BEDDING['deg90']
-  const { Kb, Kx } = row
-
-  const earth = calcEarthLoadMarston({
-    H, Do, gammaSoil_kgfcm3,
-    kmu: MARSTON_2004.kmu, B_add_m: MARSTON_2004.B_add, H_limit: MARSTON_2004.H_prism_limit,
-  })
-  const traffic = calcTrafficLoad2004({ H, ...TRAFFIC_2004 })
-  const Wtotal = earth.Wv + traffic.Wt   // kgf/cm²
-
-  const numerator   = Kb * R ** 2 * E * I + (0.06146 * Kb - 0.08303 * Kx) * Ep * R ** 5
-  const denominator = E * I + 0.061 * Ep * R ** 3
-  const sigma_b_kgf = (2 / (f * Z)) * Wtotal * numerator / denominator
-  const sigma_b     = sigma_b_kgf * KGF_TO_MPA   // MPa
-
-  const deltaX = 2 * Kx * Wtotal * R ** 4 / (E * I + 0.061 * Ep * R ** 3)
-  const deflectionRatio = deltaX / Do_cm * 100   // %
-  const maxDeflection = hasLining ? STEEL_DEFLECTION_2004.mortar : STEEL_DEFLECTION_2004.coating
-
-  return {
-    Wv: earth.Wv, Wt: traffic.Wt, Wtotal, Cd: earth.Cd, B_cm: earth.B_cm,
-    earthMethod: earth.method, impactFactor: traffic.i,
-    Kb, Kx, R, I, Z, f,
-    sigma_b_kgf, sigma_b,
-    sigmaA_bend: allow.value,
-    ok_bending: sigma_b <= allow.value,
-    SF: allow.value / sigma_b,
-    deltaX, deflectionRatio, maxDeflection,
-    ok_deflection: deflectionRatio <= maxDeflection,
-  }
-}
-
-/**
- * 강관 전체 구조안전성 검토 (6단계)
- * 입력 두께(pnGrade)를 채택 두께로 사용하여 안전성을 검토
  * @param {object} inputs
  * @returns {object} 계산 결과 전체
  */
 export function calcSteelPipe(inputs) {
   const {
-    DN, Pd, surgeRatio = 1.5, H,
-    gammaSoil, Eprime,
-    hasTraffic, hasLining, gwLevel,
+    DN, Pd, H,
+    gammaSoil_kgfcm3 = EARTH_LOAD.gamma_t,
+    Eprime_kgfcm2 = EPRIME_KGFCM2,
+    hasTraffic = true, gwLevel = 'below',
     steelBeddingType = 'deg90',
     pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
     steelGrade = 'SPS400', fyManual = 235,
-    // 적용 설계기준: 'KWW2004'(기본) | 'KDS2022'
-    // ※ 기본값을 KWW2004로 변경. KDS2022 경로는 실제로 AWWA M11/ASCE 계열이며
-    //   현행 KDS 57 계열에는 매설관 구조계산 규정이 존재하지 않아 오귀속이다.
-    //   진단업무의 직접 근거는 세부지침(안전점검·진단 편) 제11장 11.5.2.
-    codeStandard = 'KWW2004',
-    steelGradeLegacy = 'STWW400',
-    E_pipeManual = false, E_pipe = null,
-    // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)
-    trafficMethod = 'boussinesq',
-    wmPm = 100, wmC = 3.0, wmA = 0.2, wmTheta = 45,
+    // 실측 최소 관두께 (mm) — 관 상세검사값. 미입력 시 기준 두께 사용 (11-134)
+    tMeasured = null,
+    // 수격압 검토 여부 — 자연유하 구간: 정수압 / 가압구간: 수격압 (11-136)
+    pressureZone = 'gravity',   // 'gravity'(자연유하) | 'pumped'(가압)
+    Psurge = null,              // MPa — 가압구간 수격압(정수압 이상 상승압력)
+    // 주부재 손상(단면손실) 유무 — 등급 a/b 구분 (11-133 표 11.74)
+    hasSectionLoss = false,
   } = inputs
 
-  const mat = PIPE_MATERIAL.steel
-  const Es = (E_pipeManual && E_pipe != null) ? E_pipe : mat.Es
-
-  // fy: 강종 선택 또는 직접입력
   const gradeRow = STEEL_GRADES.find(g => g.key === steelGrade)
-  const fy = steelGrade === 'MANUAL' ? fyManual : (gradeRow?.fy ?? mat.fy)
+  const fy = steelGrade === 'MANUAL' ? fyManual : (gradeRow?.fy ?? 235)
 
-  let Do, tAdopt
+  // ── 관 제원 및 관두께 적용규칙 (11-134) ──
+  let Do, tStandard
   if (pipeDimManual) {
     Do = DoManual
-    tAdopt = tManual
+    tStandard = tManual
   } else {
     const row = STEEL_THICKNESS[DN]
     if (!row) throw new Error(`강관 DN${DN}은 지원하지 않습니다.`)
     Do = row.Do
-    tAdopt = row[pnGrade]
-    if (!tAdopt) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
+    tStandard = row[pnGrade]
+    if (!tStandard) throw new Error(`DN${DN}에서 ${pnGrade} 등급을 찾을 수 없습니다.`)
   }
 
-  // 허용응력 — 반드시 이 단일 지점에서만 결정 (하드코딩 금지)
-  // 내압·링휨 공용 (2004 참고표-4.2.5 구조에 따름)
-  const allow = resolveAllowable(codeStandard, { fy, steelGradeLegacy })
+  // 실측 최소 관두께와 기준 관두께 중 작은 값 (11-134)
+  const hasMeasured = tMeasured != null && Number.isFinite(tMeasured) && tMeasured > 0
+  const tAdopt = hasMeasured ? Math.min(tMeasured, tStandard) : tStandard
+  const thicknessGoverned = hasMeasured
+    ? (tMeasured < tStandard ? 'measured' : 'standard')
+    : 'standard'
 
-  // ────────────────────────────────────────
-  // STEP 1: 내압 검토 (Barlow 공식)
-  // 근거: AWWA M11 Eq.3-1 (Barlow) / KS D 3565  ※KDS 57 10 00에 명시 조항 없음
-  // 채택된 두께로 실제 응력 계산 후 허용응력과 비교
-  // ────────────────────────────────────────
-  // 내압 허용응력 — 상수도시설기준(2004) 인쇄 p.175 〈참고표-4.2.5〉 허용응력
-  //   원문 구성: 2. 강관의 관두께 계산식
-  //             1) 내압에 의한 검토  σt = P·D/(2t)
-  //             2) 외압에 대한 검토  σb = (2/f·Z)···E′···
-  //             3) 허용응력 〈참고표-4.2.5〉   ← 내압·외압 공용 단일표
-  //   즉 참고표-4.2.5는 특정 검토 전용이 아니라 관두께 계산 전체에 적용된다.
-  //   따라서 링휨과 동일한 값(강종별 100/125/140 MPa)을 내압에도 사용한다.
-  //
-  // ※ 종전 0.50×fy(=117.5)는 어느 기준 문서에도 근거가 없어 폐지.
-  // ※ 수격압 별도 허용응력(종전 0.75×fy)은 2004 원문 p.172~175에 존재하지 않는다.
-  //   (수격 ×1.33 완화 규정도 원문에 없음 — 파생 요약 PDF의 오기)
-  //   2004는 내압 검토에 단일 허용응력만 적용하므로 수격 항목을 두지 않는다.
-  //   ⚠ 관내 수격압 자체는 압력등급 적합성(kdsCompliance)에서 최대사용압력으로 검토된다.
-  const sigmaA_normal = allow.value   // MPa — 참고표-4.2.5 강종별 고정값
-  const hoopAllowSource = allow.source
-
-  // Barlow 공식: σ = P × D / (2t)   [2004 원문: D = 관의 내경]
-  const sigma_normal = (Pd * Do) / (2 * tAdopt)  // MPa
-
-  // 참고: 이 두께가 최소 소요 두께를 만족하는지 역산 (정보 제공용)
-  const tp_normal  = (Pd * Do) / (2 * sigmaA_normal)  // mm
-  const tHandling  = Do / mat.handlingDivisor          // mm
-  const tCalcMin   = Math.max(tp_normal, tHandling)
-  const tRequired  = tCalcMin                          // mm (최소 소요 두께, 참고용)
-
-  const ok_normal = sigma_normal <= sigmaA_normal
-
-  // ────────────────────────────────────────
-  // STEP 2: 토압 산정 (Prism Load)
-  // ────────────────────────────────────────
-  const { We, Pe } = calcEarthLoad({ gammaSoil, H, Do })
-
-  // ────────────────────────────────────────
-  // STEP 3: 차량하중 산정
-  // ────────────────────────────────────────
-  const trafficResult = trafficMethod === 'wm'
-    ? calcTrafficLoadWm({ H, Do, hasTraffic, Pm: wmPm, C: wmC, a: wmA, theta: wmTheta })
-    : calcTrafficLoad({ H, Do, hasTraffic })
-  const { PL, WL, IF, PLraw } = trafficResult
-  const Wtotal = We + WL
-  const Ptotal = Wtotal / (Do / 1000)  // kPa
-
-  // ────────────────────────────────────────
-  // STEP 4: 외압 링 휨응력 검토
-  //
-  // [SET_B] KDS2022 / AWWA M11 §5.3 (기본)
-  //   σ_b = Kb × W_total[kN/m] × Do[mm] / t²[mm²]  (MPa),  σ_ba = 0.5 × fy
-  //   ※ KDS 57 10 00에는 링휨 허용응력 명시 조항이 없음. 실제 근거는 AWWA M11 + 안전율 2.0 관행
-  //
-  // [SET_A] KWW2004 — E' 포함식 + 강종별 고정 허용응력 (아래 setA 분기)
-  //
-  // ⚠ 허용응력은 응력 산정식과 1:1로 묶인다. 교차 조합 금지.
-  //   금지: SET_B식 + 0.6fy (이중 관대·위험측) → resolveAllowable()로 구조적 차단
-  // ────────────────────────────────────────
-  // 구버전 저장 데이터 호환: deg180(기준표에 없는 각도, 폐기) → deg150
+  // ── 지지각: 지침 표에 있는 60/90/120/150° 만 사용 가능 (11-135) ──
   let beddingKey = steelBeddingType === 'deg180' ? 'deg150' : steelBeddingType
-
-  // KWW2004: 참고표-4.2.4 원문에 없는 지지각(deg0/deg30)은 사용 불가 → deg60으로 보정
   let beddingCoerced = null
-  if (codeStandard === 'KWW2004' && !BEDDING_2004_ALLOWED.includes(beddingKey)) {
+  if (!BEDDING_ALLOWED.includes(beddingKey)) {
     beddingCoerced = beddingKey
     beddingKey = 'deg60'
   }
+  const beddingRow = STEEL_BEDDING[beddingKey]
+  const { Kb, Kx } = beddingRow
 
-  const beddingRow = STEEL_BEDDING[beddingKey] || STEEL_BEDDING['deg90']
-  const Kb_steel   = beddingRow.Kb
-  const Kx_steel   = beddingRow.Kx
-
-
-  let setA = null
-  let sigma_b, sigmaA_bend, ok_bending
-  if (codeStandard === 'KWW2004') {
-    setA = calcSetA({
-      Do, tAdopt, H, beddingKey,
-      Eprime_MPa: Eprime / 1000,          // kPa → MPa
-      allow, hasLining,
-      // kN/m³ → kgf/cm³
-      // 2004 기준은 중력단위계가 원단위로, γt=1.8 t/m³ ↔ 18 kN/m³ 를 등가로 취급한다.
-      // (엄밀 환산 18/9.80665=1.8354 t/m³ 를 쓰면 원문 예제값 대비 약 2% 과대평가됨)
-      gammaSoil_kgfcm3: gammaSoil / 10 * 0.001,
-    })
-    sigma_b     = setA.sigma_b
-    sigmaA_bend = setA.sigmaA_bend
-    ok_bending  = setA.ok_bending
-  } else {
-    sigma_b     = Kb_steel * Wtotal * Do / (tAdopt ** 2)  // MPa
-    sigmaA_bend = allow.value                              // 0.5 × fy MPa
-    ok_bending  = sigma_b <= sigmaA_bend
-  }
+  // 원단위 제원
+  const Do_cm = Do / 10
+  const t_cm  = tAdopt / 10
+  const R     = Do_cm / 2 + t_cm          // cm — R = D/2 + t (11-135 정의부)
+  const I     = t_cm ** 3 / 12            // cm³
+  const Z     = t_cm ** 2 / 6             // cm²
+  const f     = RING_BENDING.f            // 1.5
+  const E     = STEEL_E_KGFCM2            // 2.1e6 kg/cm²
+  const Ep    = Eprime_kgfcm2             // 28 kg/cm²
 
   // ────────────────────────────────────────
-  // STEP 5: 변형량 검토 (Modified Iowa Eq.)
-  // 근거: AWWA M11 Eq.5-4 (Modified Iowa)
+  // STEP 1: 내압에 의한 관의 응력 (11-134 (나))
+  //   σt = P·D / (2t)
+  //   ⚠ 내압 검토는 외부 하중이 없는 조건 — 토압·차량하중과 합산하지 않는다.
+  //   허용: 정수압(상시) 140 MPa / 동수압+수격압(일시) 210 MPa
   // ────────────────────────────────────────
-  const DL = 1.5       // 처짐 지연계수 (Deflection Lag Factor)
-  const K  = Kx_steel  // 침상계수 — 기초지지각에 따른 Kx
+  const sigma_t_static = (Pd * Do) / (2 * tAdopt)          // MPa — 정수압
+  const ok_static = sigma_t_static <= STEEL_ALLOW.normal
 
-  const t_m  = tAdopt / 1000   // mm → m
-  const Do_m = Do / 1000       // mm → m
-  const r    = (Do_m - t_m) / 2
-  const I    = (t_m ** 3) / 12
-
-  // EI: kN·m²/m (Es: MPa = MN/m² → × 1e3 → kN/m²)
-  const EI     = Es * 1e3 * I
-  const EI_r3  = EI / (r ** 3)
-  const denominator = EI_r3 + 0.061 * Eprime
-
-  // SET_A 선택 시 2004 처짐식·허용편평률 사용 (참고표-4.2.6: 도장 5% / 모르타르 3%)
-  const deflectionRatio = setA ? setA.deflectionRatio : (DL * K * Ptotal) / denominator * 100  // %
-  const maxDeflection   = setA
-    ? setA.maxDeflection
-    : (hasLining ? mat.maxDeflection_lined : mat.maxDeflection_plain)
-  const ok_deflection   = deflectionRatio <= maxDeflection
+  // 가압구간에서만 수격압(일시하중) 검토 (11-136)
+  const isPumped = pressureZone === 'pumped'
+  const Psurge_used = isPumped ? (Psurge ?? Pd * 1.5) : null
+  const sigma_t_surge = isPumped ? (Psurge_used * Do) / (2 * tAdopt) : null
+  const ok_surge = isPumped ? sigma_t_surge <= STEEL_ALLOW.surge : true
 
   // ────────────────────────────────────────
-  // STEP 6: 좌굴 검토 (AWWA M11 Eq.5-5)
-  // 근거: AWWA M11 Eq.5-5
+  // STEP 2: 작용 하중(외압) — 상부 토압 + 노면하중 (11-134 (가))
   // ────────────────────────────────────────
-  const Rw = GW_RW[gwLevel] ?? 1.0
-
-  const HoverDo = H / Do_m
-  const Bprime  = 1 / (1 + 4 * Math.exp(-0.065 * HoverDo))
-
-  const EI_Do3 = EI / (Do_m ** 3)
-  const Pcr_theory = Math.sqrt(32 * Rw * Bprime * Eprime * EI_Do3)  // 이론 좌굴압력 (kPa)
-  const Pcr = Pcr_theory / mat.bucklingFS                            // 허용 좌굴압력 (kPa)
-
-  const Pe_ext = Ptotal
-  // 안전율 = 이론 좌굴압력 / 실제 외압. 판정: FS_actual ≥ 2.5 (동치: Pcr(허용) ≥ Pe)
-  // ※ 종전 구현은 허용값(이미 1/FS 적용)에 다시 FS ≥ 2.5를 요구하여 유효 안전율 6.25를
-  //    강제하는 이중 적용 오류가 있었음 — 실무 계산서(02-1.xlsx) 판정 방식과 정합하도록 수정
-  const bucklingFS_actual = Pcr_theory / Pe_ext
-  const ok_buckling = bucklingFS_actual >= mat.bucklingFS
+  const earth = calcEarthLoad({ H, Do, gammaSoil_kgfcm3 })
+  const traffic = hasTraffic ? calcTrafficLoad({ H }) : { Wt: 0, i: 0 }
+  const Wv = earth.Wv
+  const Wt = traffic.Wt
+  const Wtotal = Wv + Wt                  // kg/cm²
 
   // ────────────────────────────────────────
-  // 최종 결과 조립
+  // STEP 3: 외압에 의한 원주방향 휨응력 (11-135 (다))
+  //   σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.061Kb − 0.083Kx)·E′·R⁵]
+  //                          / [E·I + 0.061·E′·R³]
   // ────────────────────────────────────────
-  const overallOK = ok_normal && ok_bending && ok_deflection && ok_buckling
+  const numerator   = Kb * R ** 2 * E * I
+                    + (RING_BENDING.a * Kb - RING_BENDING.b * Kx) * Ep * R ** 5
+  const denominator = E * I + RING_BENDING.a * Ep * R ** 3
+  const sigma_b_kgf = (2 / (f * Z)) * Wtotal * numerator / denominator
+  const sigma_b     = sigma_b_kgf * KGF_TO_MPA              // MPa
+  const ok_bending  = sigma_b <= STEEL_ALLOW.normal
+
+  // ────────────────────────────────────────
+  // STEP 4: 외압에 의한 원주방향 변형률 (11-136 (라))
+  //   ε = 2·Kx·(Wv+Wt)·R⁴ / [E·I + 0.061·E′·R³] × (1/D) × 100
+  //   허용: 관경의 5% 미만 (라이닝 무관)
+  // ────────────────────────────────────────
+  const deltaX = 2 * Kx * Wtotal * R ** 4 / denominator     // cm
+  const deflectionRatio = deltaX / Do_cm * 100              // %
+  const maxDeflection = STEEL_MAX_DEFLECTION                // 5.0 %
+  const ok_deflection = deflectionRatio < maxDeflection
+
+  // ────────────────────────────────────────
+  // STEP 5: 외압에 의한 좌굴하중 (11-136 (마))
+  //   qa = (1/FS)·[32·Rw·B′·E′·EI/D³]^(1/2)
+  //   FS = 2.5 (H/D ≥ 2) / 3.0 (H/D < 2)
+  //   Rw = 1.0,  B′ = 0.15 + 0.041·(H/D)
+  // ────────────────────────────────────────
+  const H_cm = H * 100
+  const HoverD = H_cm / Do_cm
+  const FS_buckling = HoverD >= 2 ? BUCKLING.FS_deep : BUCKLING.FS_shallow
+  const Bprime = BUCKLING.Bprime(HoverD)
+  // 지침 제시값은 Rw = 1.0. 지하수위 선택 시 안전측 보정값 사용 (GW_RW)
+  const Rw = GW_RW[gwLevel] ?? BUCKLING.Rw_default
+  const rwIsGuideline = Rw === BUCKLING.Rw_default
+
+  const EI = E * I                                          // kg·cm
+  const qa = (1 / FS_buckling)
+           * Math.sqrt(32 * Rw * Bprime * Ep * EI / Do_cm ** 3)   // kg/cm²
+  const ok_buckling = Wtotal <= qa
+  const bucklingSF = qa / Wtotal
+
+  // ────────────────────────────────────────
+  // 안전율 및 안전성평가 등급 (11-133 [표 11.74])
+  //   허용응력설계법 : SF = 허용응력 / 발생응력
+  // ────────────────────────────────────────
+  const SF_static  = STEEL_ALLOW.normal / sigma_t_static
+  const SF_surge   = isPumped ? STEEL_ALLOW.surge / sigma_t_surge : Infinity
+  const SF_bending = STEEL_ALLOW.normal / sigma_b
+  const SF_min = Math.min(SF_static, SF_surge, SF_bending, bucklingSF)
+  const safetyGrade = resolveSafetyGrade(SF_min, hasSectionLoss)
+
+  const overallOK = ok_static && ok_surge && ok_bending && ok_deflection && ok_buckling
 
   return {
     pipeType: 'steel',
     pipeDimManual,
     DN: pipeDimManual ? null : DN,
-    Do, tAdopt, tRequired,
+    Do, tAdopt, tStandard, tMeasured, thicknessGoverned, hasMeasured,
     pnGrade: pipeDimManual ? null : pnGrade,
     steelGrade, fy,
 
     // ── 적용 기준 이력 (보고서에 항상 출력) ──
-    appliedCode: codeStandard,
-    appliedCodeLabel: codeStandard === 'KWW2004'
-      ? '상수도시설기준(2004) [참고-4.2.1]'
-      : 'KDS 57 10 00 : 2022 / AWWA M11',
-    appliedFormula: codeStandard === 'KWW2004'
-      ? "σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.06146·Kb − 0.08303·Kx)·E'·R⁵] / [E·I + 0.061·E'·R³]"
-      : 'σb = Kb · W_total · Do / t²',
-    allowSource: allow.source,
-    hoopAllowSource,
-    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, surgeRatio, pipeDimManual }),
-    allowRatioLabel: allow.ratio,
-    steelGradeLegacy: codeStandard === 'KWW2004' ? allow.gradeUsed : null,
-    allowIsFallback: allow.isFallback,
+    appliedCodeLabel: GUIDE_LABEL,
+    appliedFormula: "σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.061Kb − 0.083Kx)·E′·R⁵] / [E·I + 0.061·E′·R³]",
+    allowSource: STEEL_ALLOW.source,
+    allowGrade: STEEL_ALLOW.grade,
+    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, pipeDimManual }),
     beddingCoerced,
-    setA,
+    pressureZone, rwIsGuideline,
+
+    // ── 안전성평가 (11-133 표 11.74) ──
+    SF: SF_min, safetyGrade, hasSectionLoss,
 
     steps: {
       step1: {
-        title: '내압 검토',
-        ref: 'AWWA M11 Eq.3-1 (Barlow) / KS D 3565',
-        Pd,
-        fy, steelGrade,
-        sigmaA_normal,
-        tp_normal, tHandling, tCalcMin, tRequired,
-        tAdopt, pnGrade,
-        sigma_normal,
-        ok_normal,
-        ok: ok_normal,
-        formula: '\\sigma = \\frac{P \\times D_o}{2t} \\leq \\sigma_a',
+        title: '내압에 의한 관의 응력',
+        ref: REFERENCES.hoopStress,
+        Pd, Psurge: Psurge_used, pressureZone, isPumped,
+        sigma_t_static, sigmaA_static: STEEL_ALLOW.normal, ok_static, SF_static,
+        sigma_t_surge, sigmaA_surge: STEEL_ALLOW.surge, ok_surge, SF_surge,
+        tAdopt, tStandard, tMeasured, thicknessGoverned,
+        ok: ok_static && ok_surge,
+        formula: '\\sigma_t = \\frac{P \\cdot D}{2t}',
       },
       step2: {
-        title: '토압 산정 (Prism Load)',
-        ref: 'AWWA M11 Ch.5 / KDS 24 12 20 (DB-24)',
-        gammaSoil, H, Do,
-        We, Pe,
-        formula: 'W_e = \\gamma_s \\times H \\times D_o',
+        title: '작용 하중 (외압)',
+        ref: REFERENCES.earthLoad,
+        H, Do, gammaSoil_kgfcm3,
+        Wv, Cd: earth.Cd, B_cm: earth.B_cm, kmu: earth.kmu, earthMethod: earth.method,
+        Wt, impactFactor: traffic.i, hasTraffic,
+        Wtotal,
+        formula: 'W_v = C_d \\cdot \\gamma_t \\cdot B \\quad (H > 2.0m)',
       },
       step3: {
-        title: trafficMethod === 'wm' ? '차량하중 산정 (Wm 직접계산)' : '차량하중 산정 (DB-24 Boussinesq)',
-        ref: trafficMethod === 'wm'
-          ? '내진성능 평가요령 부록C 해설식(5.3.3)'
-          : 'KDS 24 12 20 §4 (DB-24) / Boussinesq 분산',
-        hasTraffic, H, PLraw, IF, PL,
-        WL, Wtotal, Ptotal,
-        trafficMethod,
-        ...(trafficMethod === 'wm' ? { wmPm, wmC, wmA, wmTheta } : {}),
-        formula: trafficMethod === 'wm'
-          ? 'W_m = \\frac{2P_m D_o}{C(a+2h\\tan\\theta)}(1+i)'
-          : 'W_L = P_L \\times D_o',
+        title: '외압에 의한 원주방향 휨응력',
+        ref: REFERENCES.ringBending,
+        steelBeddingType: beddingKey, beddingLabel: beddingRow.label,
+        Kb, Kx, R, I, Z, f, E, Ep,
+        Wtotal, sigma_b_kgf, sigma_b,
+        sigmaA_bend: STEEL_ALLOW.normal, SF: SF_bending,
+        ok: ok_bending,
+        formula: '\\sigma_b = \\frac{2}{f Z}(W_v+W_t)\\frac{K_b R^2 EI + (0.061K_b - 0.083K_x)E\'R^5}{EI + 0.061E\'R^3}',
       },
       step4: {
-        title: '외압 링 휨응력 검토',
-        ref: 'AWWA M11 §5.3 / KS D 3565',
-        steelBeddingType, Kb_steel,
-        beddingLabel: beddingRow.label,
-        Wtotal, Do, tAdopt,
-        sigma_b, sigmaA_bend,
-        ok: ok_bending,
-        formula: '\\sigma_b = K_b \\cdot \\frac{W_{total} \\cdot D_o}{t^2} \\leq 0.5 f_y',
+        title: '외압에 의한 원주방향 변형률',
+        ref: REFERENCES.deflection,
+        Kx, R, I, E, Ep, Wtotal,
+        deltaX, deflectionRatio, maxDeflection,
+        ok: ok_deflection,
+        formula: '\\varepsilon = \\frac{2K_x(W_v+W_t)R^4}{EI+0.061E\'R^3}\\cdot\\frac{1}{D}\\times 100',
       },
       step5: {
-        title: '변형량 검토 (Modified Iowa)',
-        ref: 'AWWA M11 Eq.5-4 (Modified Iowa)',
-        DL, K, Kx_steel, steelBeddingType,
-        r, I, EI, EI_r3, Eprime,
-        Ptotal, denominator, deflectionRatio, maxDeflection,
-        hasLining, ok: ok_deflection,
-        formula: '\\frac{\\Delta D}{D} = \\frac{D_L \\cdot K_x \\cdot P_{total}}{\\frac{EI}{r^3} + 0.061E\'} \\times 100',
-      },
-      step6: {
-        title: '외압 좌굴 검토',
-        ref: 'AWWA M11 Eq.5-5',
-        gwLevel, Rw, HoverDo, Do_m, H, Bprime, EI_Do3, Eprime,
-        Pcr_theory, Pcr, Pe_ext, bucklingFS_actual, FS_allow: mat.bucklingFS,
+        title: '외압에 의한 좌굴하중',
+        ref: REFERENCES.buckling,
+        gwLevel, Rw, rwIsGuideline, HoverD, Bprime, FS: FS_buckling,
+        E, I, EI, Ep, Do_cm,
+        qa, Wtotal, bucklingSF,
         ok: ok_buckling,
-        formula: 'P_{cr} = \\frac{1}{FS}\\sqrt{32 R_w B\' E\' \\frac{EI}{D_o^3}}',
+        formula: 'q_a = \\frac{1}{FS}\\sqrt{32 R_w B\' E\' \\frac{EI}{D^3}}',
       },
     },
     verdict: {
-      hoopNormal:  { label: '내압응력 (상시)', value: sigma_normal,      allow: sigmaA_normal,   unit: 'MPa', ok: ok_normal },
-      bending:     { label: '링 휨응력',       value: sigma_b,           allow: sigmaA_bend,     unit: 'MPa', ok: ok_bending },
-      deflection:  { label: '처짐율',          value: deflectionRatio,   allow: maxDeflection,   unit: '%',   ok: ok_deflection },
-      buckling:    { label: '좌굴 안전율',     value: bucklingFS_actual, allow: mat.bucklingFS,  unit: '',    ok: ok_buckling },
+      hoopStatic:  { label: '내압응력 (정수압·상시)', value: sigma_t_static, allow: STEEL_ALLOW.normal, unit: 'MPa', ok: ok_static },
+      ...(isPumped ? {
+        hoopSurge: { label: '내압응력 (수격압·일시)', value: sigma_t_surge, allow: STEEL_ALLOW.surge, unit: 'MPa', ok: ok_surge },
+      } : {}),
+      bending:     { label: '외압 휨응력',   value: sigma_b,         allow: STEEL_ALLOW.normal, unit: 'MPa',   ok: ok_bending },
+      deflection:  { label: '관체 변형량',   value: deflectionRatio, allow: maxDeflection,      unit: '%',     ok: ok_deflection },
+      buckling:    { label: '좌굴하중',      value: Wtotal,          allow: qa,                 unit: 'kg/cm²', ok: ok_buckling },
       overallOK,
     },
-  }
-}
-
-/**
- * 병기(倂記) 판정 — SET_A / SET_B 동시 계산 후 비교
- *
- * verdict:
- *   PASS           A=OK, B=OK  → 적합
- *   CHECK_BACKFILL A=OK, B=NG  → 되메움 다짐도(E') 확인 필요. 관 결함 아님
- *   REINFORCE      A=NG, B=NG  → 보강 필요
- *   REVIEW         A=NG, B=OK  → 입력 오류 가능성 (경고)
- *
- * @returns {{ A, B, verdict, verdictLabel, verdictNote }}
- */
-export function calcSteelPipeDual(inputs) {
-  const A = calcSteelPipe({ ...inputs, codeStandard: 'KWW2004' })
-  const B = calcSteelPipe({ ...inputs, codeStandard: 'KDS2022' })
-
-  const aOK = A.steps.step4.ok
-  const bOK = B.steps.step4.ok
-
-  let verdict, verdictLabel, verdictNote
-  if (aOK && bOK) {
-    verdict = 'PASS'
-    verdictLabel = '적합'
-    verdictNote = '두 기준 모두 만족.'
-  } else if (aOK && !bOK) {
-    verdict = 'CHECK_BACKFILL'
-    verdictLabel = '되메움 확인'
-    verdictNote = "구 기준(E' 반영) 만족, 현행 기준(지반지지 무시) 초과. 되메움 다짐도(E') 확인 필요 — 관 결함이 아님."
-  } else if (!aOK && !bOK) {
-    verdict = 'REINFORCE'
-    verdictLabel = '보강 필요'
-    verdictNote = '두 기준 모두 초과. 관두께 상향 또는 보강 검토 필요.'
-  } else {
-    verdict = 'REVIEW'
-    verdictLabel = '검토 요망'
-    verdictNote = '구 기준 초과·현행 기준 만족 — 통상 발생하지 않는 조합. 입력값 확인 필요.'
-  }
-
-  // 주기준(primaryCode)이 정식 판정, 나머지는 참고값
-  const primaryCode = inputs.primaryCode ?? 'KWW2004'
-  const primary   = primaryCode === 'KWW2004' ? A : B
-  const reference = primaryCode === 'KWW2004' ? B : A
-  const primaryLabel   = primaryCode === 'KWW2004' ? '상수도기준 2004' : 'KDS 2022'
-  const referenceLabel = primaryCode === 'KWW2004' ? 'KDS 2022' : '상수도기준 2004'
-  const primaryOK = primaryCode === 'KWW2004' ? aOK : bOK
-
-  return {
-    A, B, verdict, verdictLabel, verdictNote,
-    primaryCode, primary, reference,
-    primaryLabel, referenceLabel, primaryOK,
   }
 }

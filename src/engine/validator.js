@@ -3,30 +3,43 @@
 // ============================================================
 
 import { STEEL_THICKNESS, DI_THICKNESS, STEEL_PN_GRADES, DI_K_GRADES,
-         STEEL_ALLOW_2004, STEEL_ALLOW_2004_FALLBACK, BEDDING_2004_ALLOWED } from './constants.js'
+         BEDDING_ALLOWED, EPRIME_KGFCM2 } from './constants.js'
 
 /**
  * 입력값 전체 유효성 검사
+ * 근거: 세부지침 제11장 11.5.2
  * @param {object} inputs
  * @returns {{ valid: boolean, errors: object }}
  */
 export function validateInputs(inputs) {
   const errors = {}
 
-  const { pipeType, DN, Pd, H, gammaSoil, Eprime, surgeRatio, pnGrade, diKGrade, pipeDimManual, DoManual, tManual,
-          codeStandard, steelGradeLegacy, steelBeddingType } = inputs
+  const { pipeType, DN, Pd, H, gammaSoil_kgfcm3, Eprime_kgfcm2, pnGrade, diKGrade,
+          pipeDimManual, DoManual, tManual, tMeasured,
+          steelBeddingType, pressureZone, Psurge } = inputs
 
-  // 적용 설계기준
-  if (codeStandard && !['KDS2022', 'KWW2004'].includes(codeStandard)) {
-    errors.codeStandard = "적용 설계기준은 'KDS2022' 또는 'KWW2004'여야 합니다."
+  // 지지각 — 지침 11-135 표에 있는 60·90·120·150° 만 사용 가능
+  if (pipeType === 'steel' && steelBeddingType && !BEDDING_ALLOWED.includes(steelBeddingType)) {
+    errors.steelBeddingType = '세부지침은 지지각 60·90·120·150°만 규정합니다. 60°로 보정되어 계산됩니다.'
   }
-  if (codeStandard === 'KWW2004') {
-    if (steelGradeLegacy && STEEL_ALLOW_2004[steelGradeLegacy] == null) {
-      errors.steelGradeLegacy = `미확인 강종입니다. 보수적으로 ${STEEL_ALLOW_2004_FALLBACK}(${STEEL_ALLOW_2004[STEEL_ALLOW_2004_FALLBACK]} MPa)가 적용됩니다.`
+
+  // 실측 최소 관두께 (선택 입력)
+  if (tMeasured != null && tMeasured !== '') {
+    const tm = Number(tMeasured)
+    if (!Number.isFinite(tm) || tm <= 0) {
+      errors.tMeasured = '실측 관두께는 0보다 커야 합니다.'
+    } else if (tm > 100) {
+      errors.tMeasured = '실측 관두께가 너무 큽니다 (최대 100mm).'
     }
-    // 참고표-4.2.4 원문에 없는 지지각 — 계산은 deg60으로 보정되나 사용자에게 알림
-    if (steelBeddingType && !BEDDING_2004_ALLOWED.includes(steelBeddingType)) {
-      errors.steelBeddingType = '2004 기준은 지지각 60·90·120·150°만 규정합니다. 60°로 보정되어 계산됩니다.'
+  }
+
+  // 가압구간 수격압
+  if (pressureZone === 'pumped' && Psurge != null && Psurge !== '') {
+    const ps = Number(Psurge)
+    if (!Number.isFinite(ps) || ps <= 0) {
+      errors.Psurge = '수격압은 0보다 커야 합니다.'
+    } else if (Pd && ps < Pd) {
+      errors.Psurge = '수격압은 정수압 이상이어야 합니다 (정수압 이상 상승압력).'
     }
   }
 
@@ -67,13 +80,6 @@ export function validateInputs(inputs) {
     errors.Pd = '설계압력이 너무 큽니다 (최대 3.0 MPa).'
   }
 
-  // 수격압 배율
-  if (!surgeRatio || surgeRatio < 1.0) {
-    errors.surgeRatio = '수격압 배율은 1.0 이상이어야 합니다.'
-  } else if (surgeRatio > 3.0) {
-    errors.surgeRatio = '수격압 배율이 너무 큽니다 (최대 3.0).'
-  }
-
   // 매설깊이
   if (!H || H <= 0) {
     errors.H = '매설깊이는 0보다 커야 합니다.'
@@ -83,18 +89,18 @@ export function validateInputs(inputs) {
     errors.H = '매설깊이가 너무 큽니다 (최대 20m).'
   }
 
-  // 흙 단위중량
-  if (!gammaSoil || gammaSoil < 10) {
-    errors.gammaSoil = '흙 단위중량은 10 kN/m³ 이상이어야 합니다.'
-  } else if (gammaSoil > 25) {
-    errors.gammaSoil = '흙 단위중량이 너무 큽니다 (최대 25 kN/m³).'
+  // 흙 단위중량 γt (kg/cm³) — 지침 제시값 1.8×10⁻³
+  if (!gammaSoil_kgfcm3 || gammaSoil_kgfcm3 < 1.0e-3) {
+    errors.gammaSoil_kgfcm3 = 'γt는 1.0×10⁻³ kg/cm³ 이상이어야 합니다.'
+  } else if (gammaSoil_kgfcm3 > 2.5e-3) {
+    errors.gammaSoil_kgfcm3 = 'γt가 너무 큽니다 (최대 2.5×10⁻³ kg/cm³).'
   }
 
-  // E' 값
-  if (!Eprime || Eprime <= 0) {
-    errors.Eprime = "E' 값은 0보다 커야 합니다."
-  } else if (Eprime > 20000) {
-    errors.Eprime = "E' 값이 너무 큽니다 (최대 20,000 kPa)."
+  // 흙 반력계수 E′ (kg/cm²) — 지침 제시값 28
+  if (!Eprime_kgfcm2 || Eprime_kgfcm2 <= 0) {
+    errors.Eprime_kgfcm2 = "E′ 값은 0보다 커야 합니다."
+  } else if (Eprime_kgfcm2 > 200) {
+    errors.Eprime_kgfcm2 = `E′ 값이 너무 큽니다 (지침 제시값 ${EPRIME_KGFCM2} kg/cm²).`
   }
 
   return {

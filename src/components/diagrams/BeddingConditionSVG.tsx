@@ -1,19 +1,21 @@
 import React from 'react'
-import { BEDDING } from '../../engine/constants.js'
+import { DI_BEDDING } from '../../engine/constants.js'
 
 interface Props {
-  selected: string  // 'Type1'|'Type2'|'Type3'|'Type4'
+  selected: string  // 'deg40'|'deg60'|'deg90'|'deg120'|'deg180'
 }
 
-const TYPES = ['Type1', 'Type2', 'Type3', 'Type4'] as const
+// 세부지침 11-137 덕타일 주철관 지지각별 계수 (관저 기준)
+const TYPES = ['deg40', 'deg60', 'deg90', 'deg120', 'deg180'] as const
 const ANGLES: Record<string, number> = {
-  Type1: 0, Type2: 120, Type3: 180, Type4: 180
+  deg40: 40, deg60: 60, deg90: 90, deg120: 120, deg180: 180
 }
 const LABELS: Record<string, string[]> = {
-  Type1: ['쇄석기초', '0°'],
-  Type2: ['모래다짐', '120°'],
-  Type3: ['모래전면', '180°'],
-  Type4: ['콘크리트', '전면지지'],
+  deg40:  ['관저 지지', '40°'],
+  deg60:  ['관저 지지', '60°'],
+  deg90:  ['관저 지지', '90°'],
+  deg120: ['관저 지지', '120°'],
+  deg180: ['관저 지지', '180°'],
 }
 
 function TypeDiagram({ type, selected }: { type: string; selected: string }) {
@@ -22,7 +24,7 @@ function TypeDiagram({ type, selected }: { type: string; selected: string }) {
   const R = 28
   const angle = ANGLES[type]
   const isSelected = type === selected
-  const { Kb, Kd } = (BEDDING as any)[type]
+  const { Kf, Kt } = (DI_BEDDING as any)[type]
 
   // 침상 호 경로
   function beddingArc(angleDeg: number) {
@@ -84,7 +86,7 @@ function TypeDiagram({ type, selected }: { type: string; selected: string }) {
 
       {/* 계수 표시 */}
       <text x="45" y="87" textAnchor="middle" fontSize="7.5" fill="#003366">
-        Kb={Kb} Kd={Kd}
+        Kf={Kf} Kt={Kt}
       </text>
 
       {/* 설명 */}

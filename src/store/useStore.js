@@ -3,20 +3,16 @@
 // ============================================================
 
 import { create } from 'zustand'
-import { calcSteelPipe, calcSteelPipeDual } from '../engine/steelPipe.js'
-import { calcDuctileIron, calcDuctileIronDual } from '../engine/ductileIron.js'
-import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
+import { calcSteelPipe } from '../engine/steelPipe.js'
+import { calcDuctileIron } from '../engine/ductileIron.js'
+import { STEEL_GRADES, EPRIME_KGFCM2, EARTH_LOAD } from '../engine/constants.js'
 
+// ============================================================
+// 근거: 세부지침(안전점검·진단 편) 제11장 상수도 11.5.2 — 단일 경로
+// ※ SET_A/SET_B 이원 구조(reviewMode·primaryCode·codeStandard)는 제거되었다.
+//   'KDS2022' 경로는 실제로 AWWA M11/ASCE 계열이며 국내 근거가 없다.
+// ============================================================
 const DEFAULT_INPUTS = {
-  // 검토 방식 — 'KWW2004'(2004 단독) | 'KDS2022'(AWWA 단독) | 'BOTH'(병기)
-  // BOTH 선택 시 primaryCode 가 정식 판정 기준이 되고 다른 쪽은 참고값으로 표시된다.
-  // ※ 기본값을 KWW2004로 변경. KDS2022 경로는 실제로 AWWA M11/ASCE 계열이며
-  //   현행 KDS 57 계열에는 매설관 구조계산 규정이 존재하지 않아 오귀속이다.
-  //   진단업무의 직접 근거는 세부지침(안전점검·진단 편) 제11장 11.5.2.
-  reviewMode: 'KWW2004',
-  primaryCode: 'KWW2004',   // BOTH 모드에서 정식 판정에 쓸 기준
-  codeStandard: 'KWW2004',  // 실제 계산에 넘기는 기준 (reviewMode에서 파생)
-  steelGradeLegacy: 'STWW400',   // KWW2004 모드 강종 (참고표-4.2.5)
   pipeType: 'steel',
   DN: 600,
   pnGrade: 'PN10',         // 강관 PN 등급 (사용자 선택)
@@ -24,44 +20,55 @@ const DEFAULT_INPUTS = {
   steelGrade: 'SPS400',    // 강관 강종 (fy 결정)
   fyManual: 235,           // 직접입력 시 fy 값
   Pd: 0.60,
-  surgeRatio: 1.5,
   H: 1.50,
   hasTraffic: true,
-  trafficMethod: 'boussinesq', // 'boussinesq' | 'wm'
-  wmPm: 100,                   // 후륜 1륜당 하중 (kN)
-  wmC: 3.0,                    // 차량 점유 폭 (m)
-  wmA: 0.2,                    // 접지 폭 (m)
-  wmTheta: 45,                 // 하중분포각 (°)
-  hasLining: true,
-  soilClass: 'SC1',
-  compaction: 85,
-  Eprime: 2700,
-  beddingType: 'Type2',
-  steelBeddingType: 'deg90',
-  gwLevel: 'below',
-  gammaSoil: 18.0,
+  // 흙 반력계수 E′ — 세부지침 11-135 제시값 28 kg/cm² 단일
+  Eprime_kgfcm2: EPRIME_KGFCM2,
   eprimeManual: false,
-  E_pipeManual: false,
-  E_pipe: null,          // null이면 관종 기본값 사용
+  // 흙의 단위중량 γt — 세부지침 11-134 제시값 1.8×10⁻³ kg/cm³
+  gammaSoil_kgfcm3: EARTH_LOAD.gamma_t,
+  steelBeddingType: 'deg90',   // 강관 지지각 (60/90/120/150°)
+  diBeddingType: 'deg90',      // 주철관 지지각 (40/60/90/120/180°)
+  gwLevel: 'below',            // = 지침 제시값 Rw 1.0
+  // 관 상세검사 실측 최소 관두께 (mm) — 미입력 시 기준 두께 사용 (11-134)
+  tMeasured: null,
+  // 자연유하 구간 / 가압구간 (11-136)
+  pressureZone: 'gravity',     // 'gravity' | 'pumped'
+  Psurge: null,                // MPa — 가압구간 수격압
+  // 주부재 손상(단면손실) 유무 — 등급 a/b 구분 (11-133 표 11.74)
+  hasSectionLoss: false,
   pipeDimManual: false,
   DoManual: 610,
   tManual: 8,
 }
 
-function getAutoEprime(soilClass, compaction) {
-  const table = E_PRIME[soilClass]
-  if (!table) return 300
-  if (table.default !== undefined) return table.default
-  const keys = Object.keys(table).map(Number).sort((a, b) => a - b)
-  if (compaction <= keys[0]) return table[keys[0]]
-  if (compaction >= keys[keys.length - 1]) return table[keys[keys.length - 1]]
-  for (let i = 0; i < keys.length - 1; i++) {
-    if (compaction >= keys[i] && compaction <= keys[i + 1]) {
-      const r = (compaction - keys[i]) / (keys[i + 1] - keys[i])
-      return Math.round(table[keys[i]] + r * (table[keys[i + 1]] - table[keys[i]]))
-    }
+/**
+ * 구 버전 저장 입력값 → 세부지침 단일 경로 입력값 이관
+ * 폐지 필드: reviewMode / primaryCode / codeStandard / steelGradeLegacy
+ *            soilClass / compaction / hasLining / beddingType / trafficMethod / wm*
+ * 단위 변경: Eprime(kPa) → Eprime_kgfcm2,  gammaSoil(kN/m³) → gammaSoil_kgfcm3
+ */
+function migrateInputs(saved) {
+  if (!saved) return { ...DEFAULT_INPUTS }
+  const {
+    reviewMode, primaryCode, codeStandard, steelGradeLegacy,
+    soilClass, compaction, hasLining, beddingType,
+    trafficMethod, wmPm, wmC, wmA, wmTheta,
+    surgeRatio, E_pipeManual, E_pipe,
+    Eprime, gammaSoil,
+    ...rest
+  } = saved
+  const out = { ...DEFAULT_INPUTS, ...rest }
+  // 구 지지각(deg0/deg30)은 지침 표에 없음 → 엔진이 deg60으로 보정
+  if (Eprime != null && saved.eprimeManual) {
+    // kPa → kg/cm²  (1 kPa = 0.0101972 kg/cm²)
+    out.Eprime_kgfcm2 = Eprime * 0.0101972
   }
-  return table[keys[keys.length - 1]]
+  if (gammaSoil != null) {
+    // kN/m³ → kg/cm³ : 18.0 kN/m³ ↔ 1.8×10⁻³ kg/cm³ (지침 원단위 등가 취급)
+    out.gammaSoil_kgfcm3 = gammaSoil / 10 * 0.001
+  }
+  return out
 }
 
 const loadHistory = () => {
@@ -80,28 +87,20 @@ const saveHistory = (history) => {
 export const useStore = create((set, get) => ({
   inputs: { ...DEFAULT_INPUTS },
   result: null,
-  dual: null,
   calcError: null,
   history: loadHistory(),
 
   setInputs: (partial) => {
-    set((state) => {
-      const next = { ...state.inputs, ...partial }
-      if (!next.eprimeManual) {
-        next.Eprime = getAutoEprime(next.soilClass, next.compaction)
-      }
-      return { inputs: next, calcError: null }
-    })
+    set((state) => ({ inputs: { ...state.inputs, ...partial }, calcError: null }))
   },
 
+  // E′ 수동 입력 해제 시 지침 제시값(28 kg/cm²)으로 복귀
   setEprimeManual: (manual) => {
     set((state) => ({
       inputs: {
         ...state.inputs,
         eprimeManual: manual,
-        Eprime: manual
-          ? state.inputs.Eprime
-          : getAutoEprime(state.inputs.soilClass, state.inputs.compaction),
+        Eprime_kgfcm2: manual ? state.inputs.Eprime_kgfcm2 : EPRIME_KGFCM2,
       },
     }))
   },
@@ -112,36 +111,17 @@ export const useStore = create((set, get) => ({
     }))
   },
 
+  // 세부지침 단일 경로 — 기준 분기 없음
   calcResult: () => {
     const { inputs } = get()
     try {
-      // 검토 방식 → 실제 계산 기준 파생
-      //   KWW2004 / KDS2022 : 해당 기준 단독
-      //   BOTH               : 두 기준 모두 계산, primaryCode 가 정식 판정
-      // ※ 필드가 없는 기존 저장 프로젝트도 KWW2004로 처리 (안전한 경로가 기본)
-      const mode = inputs.reviewMode ?? inputs.codeStandard ?? 'KWW2004'
-      const primary = mode === 'BOTH' ? (inputs.primaryCode ?? 'KWW2004') : mode
-      const calcInputs = { ...inputs, codeStandard: primary }
-
-      let result
-      let dual = null
-      if (inputs.pipeType === 'steel') {
-        result = calcSteelPipe(calcInputs)
-        // 병기 모드에서만 두 기준 동시 계산 (강관 한정)
-        if (mode === 'BOTH') {
-          try { dual = calcSteelPipeDual({ ...calcInputs, primaryCode: primary }) } catch { dual = null }
-        }
-      } else {
-        result = calcDuctileIron(calcInputs)
-        // 주철관도 동일 구조 — 병행 모드에서 두 기준 동시 계산
-        if (mode === 'BOTH') {
-          try { dual = calcDuctileIronDual({ ...calcInputs, primaryCode: primary }) } catch { dual = null }
-        }
-      }
-      set({ result, dual, reviewMode: mode, primaryCode: primary, calcError: null })
+      const result = inputs.pipeType === 'steel'
+        ? calcSteelPipe(inputs)
+        : calcDuctileIron(inputs)
+      set({ result, calcError: null })
       return result
     } catch (e) {
-      set({ result: null, dual: null, calcError: e.message })
+      set({ result: null, calcError: e.message })
       return null
     }
   },
@@ -166,23 +146,17 @@ export const useStore = create((set, get) => ({
     set({ history: next })
   },
 
+  // 저장 이력 불러오기
+  // ※ 구 버전(SET_A/SET_B 이원 구조) 저장본은 입력 필드 구성이 다르고
+  //   저장된 result 는 폐지된 계산 경로의 산출물이므로 그대로 표시하지 않는다.
+  //   입력값만 이관해 세부지침 경로로 재계산한다.
   loadFromHistory: (id) => {
     const { history } = get()
     const entry = history.find((h) => h.id === id)
-    if (entry) {
-      // 이전 dual 결과가 남지 않도록 초기화 후, 병행 모드였으면 재계산
-      let dual = null
-      const em = entry.inputs?.reviewMode
-      if (em === 'BOTH') {
-        const pc = entry.inputs?.primaryCode ?? 'KWW2004'
-        const ci = { ...entry.inputs, codeStandard: pc, primaryCode: pc }
-        try {
-          dual = entry.inputs.pipeType === 'steel'
-            ? calcSteelPipeDual(ci) : calcDuctileIronDual(ci)
-        } catch { dual = null }
-      }
-      set({ inputs: entry.inputs, result: entry.result, dual, calcError: null })
-    }
+    if (!entry) return
+    const inputs = migrateInputs(entry.inputs)
+    set({ inputs, result: null, calcError: null })
+    get().calcResult()
   },
 
   deleteHistory: (id) => {
@@ -192,8 +166,7 @@ export const useStore = create((set, get) => ({
   },
 
   resetInputs: () => {
-    set({ inputs: { ...DEFAULT_INPUTS }, result: null, dual: null, calcError: null })
+    set({ inputs: { ...DEFAULT_INPUTS }, result: null, calcError: null })
   },
 
-  getAutoEprime,
 }))
