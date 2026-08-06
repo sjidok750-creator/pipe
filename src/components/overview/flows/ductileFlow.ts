@@ -1,7 +1,7 @@
 import type { FlowSpec } from '../FlowChartTypes'
 
 export const ductileFlow: FlowSpec = {
-  title: '덕타일 주철관 구조안전성 검토  —  KDS 57 10 00 : 2022 / DIPRA',
+  title: '수도용 덕타일 주철관 구조안전성 검토  —  세부지침 제11장 11.5.2',
   width: 520,
   height: 760,
   legend: true,
@@ -11,83 +11,83 @@ export const ductileFlow: FlowSpec = {
       id: 'start', kind: 'terminal',
       x: 260, y: 38, w: 340, h: 34,
       title: '주철관 구조안전성 검토 시작',
-      codeRef: 'KDS 57 10 00',
+      codeRef: '세부지침 11-137',
     },
 
     {
       id: 'inputs', kind: 'input',
       x: 260, y: 106, w: 400, h: 48,
       title: '입력 파라미터',
-      sub: 'DN · Do · K등급 · fu  |  Pd · H · γs · E′  |  침상 Type · GWL',
-      codeRef: 'KS D 4311 / DIPRA',
+      sub: 'DN · D · t(실측/기준 최소)  |  P · P′ · H · γt  |  지지각 · 압력구간',
+      codeRef: 'KS D 4311 / 세부지침 11-137',
     },
 
     {
       id: 's1a', kind: 'process',
       x: 145, y: 194, w: 200, h: 42,
-      title: '① 토압  We (Prism Load)',
-      sub: 'We = γs · H · Do',
-      codeRef: 'DIPRA / AWWA C150',
+      title: '① 상부 토압  Wf',
+      sub: 'H≤2m: γt·H  |  H>2m: Cd·γt·B',
+      codeRef: '세부지침 11-134',
     },
     {
       id: 's1b', kind: 'process',
       x: 375, y: 194, w: 200, h: 42,
-      title: '② 차량하중  WL',
-      sub: 'WL = PL · IF · Do  (Boussinesq)',
-      codeRef: 'DB-24',
+      title: '② 노면하중  Wt',
+      sub: '강관의 계산공식과 동일',
+      codeRef: '세부지침 11-134',
     },
     {
       id: 's1c', kind: 'process',
       x: 260, y: 270, w: 300, h: 34,
-      title: '총하중  Wtotal = We + WL  [kN/m]',
+      title: '합계 하중  W = Wf + Wt  [kg/cm²]',
     },
 
     {
       id: 's2', kind: 'process',
       x: 100, y: 346, w: 160, h: 48,
-      title: '③ 내압 검토',
-      sub: 'σ = Pd(Do−t) / 2t',
-      codeRef: 'DIPRA §4',
+      title: '③ 내압 인장응력',
+      sub: 'σts = P·D/(2t), σtd = P′·D/(2t)',
+      codeRef: '세부지침 11-137',
     },
     {
       id: 's3', kind: 'process',
       x: 260, y: 346, w: 160, h: 48,
-      title: '④ 링 휨응력',
-      sub: 'σb = Kb·W·Do / t²',
-      codeRef: 'DIPRA §5',
+      title: '④ 외압 휨응력',
+      sub: 'σb = 6(Kf·Wf + Kt·Wt)R²/t²',
+      codeRef: '세부지침 11-137',
     },
     {
       id: 's4', kind: 'process',
       x: 420, y: 346, w: 160, h: 48,
-      title: '⑤ 처짐 (Iowa)',
-      sub: 'Δy/Do = DL·Kd·W/…',
-      codeRef: 'DIPRA §6',
+      title: '⑤ 조합응력',
+      sub: '2.5σts + 2.0σtd + 1.4σb',
+      codeRef: '세부지침 11-137',
     },
 
     {
       id: 'd_all', kind: 'decision',
       x: 260, y: 436, w: 230, h: 44,
-      title: '전 항목  σ, σb, Δy  합격?',
+      title: '조합 인장응력  <  S (=420 MPa) ?',
     },
 
     {
       id: 's5', kind: 'process',
       x: 260, y: 518, w: 300, h: 44,
-      title: '⑥ 최소 소요두께 역산',
-      sub: 't_req = Pd·Do / (2σ_a) + 서비스 여유',
-      codeRef: 'DIPRA §7',
+      title: '⑥ 안전성평가 등급 판정',
+      sub: 'SF = S / 조합응력 → a~e 등급',
+      codeRef: '세부지침 11-133 [표 11.74]',
     },
     {
       id: 'd5', kind: 'decision',
       x: 260, y: 600, w: 220, h: 40,
-      title: 't_K등급  ≥  t_required ?',
+      title: 'SF ≥ 1.0 ?',
     },
 
     {
       id: 'ng_out', kind: 'output',
       x: 100, y: 678, w: 172, h: 44,
-      title: '재설계 필요  (N.G.)',
-      sub: 'K등급 상향 / 침상 개선',
+      title: '보수·보강 검토  (N.G.)',
+      sub: 'c~e 등급 — 단면손실 여부 확인',
       emphasis: 'ng',
     },
     {

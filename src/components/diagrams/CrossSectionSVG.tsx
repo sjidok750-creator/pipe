@@ -114,12 +114,12 @@ export default function CrossSectionSVG({
           <line x1={pipeCX + pipeR} y1={topY} x2={pipeCX + pipeR} y2={pipeTopY - 5}
                 stroke="#e67e22" strokeWidth="1.5" strokeDasharray="3,2"/>
           <text x={pipeCX} y={pipeTopY - 8} textAnchor="middle" fontSize="8" fill="#e67e22">
-            Prism 범위
+            굴착부 폭 B
           </text>
         </>
       )}
 
-      {/* 토압 화살표 (Prism Load) */}
+      {/* 토압 화살표 (상부 토압 Wv) */}
       {[0.2, 0.4, 0.6, 0.8].map((fr) => {
         const ax = pipeCX - pipeR + fr * pipeR * 2
         return (

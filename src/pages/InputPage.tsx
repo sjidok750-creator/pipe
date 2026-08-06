@@ -97,14 +97,16 @@ export default function InputPage() {
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>관종 선택 — KS D 3565 / KS D 4311</div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>도복장강관 (KS D 3565)</strong><br/>
-                항복강도 fy = 235 MPa (SGP 기준). 내압·링휨·처짐·외압좌굴 6단계 검토.<br/>
-                AWWA M11~§3.6 적용. 좌굴 안전율 FS = 2.5 (AWWA M11).
+                <strong>수도용 도복장강관 (KS D 3565)</strong><br/>
+                내압 · 외압 휨응력 · 변형률 · 좌굴하중 검토 (세부지침 11-134~136).<br/>
+                허용응력: 상시 140 MPa / 일시 210 MPa (STWW 400 기준, 강종별 분기 없음).<br/>
+                좌굴 설계계수 FS = 2.5 (H/D≥2) / 3.0 (H/D&lt;2).
               </div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>덕타일 주철관 (KS D 4311)</strong><br/>
-                인장강도 fu = 420 MPa. 내압·링휨·처짐 4단계 검토 (좌굴 검토 해당 없음).<br/>
-                DIPRA Method 적용. 허용응력: 내압 fu/3 = 140 MPa, 링휨 0.5×fu = 210 MPa.
+                <strong>수도용 덕타일 주철관 (KS D 4311)</strong><br/>
+                인장강도 S = 420 MPa (GCD400). 복합 인장응력으로 단일 판정 (세부지침 11-137).<br/>
+                2.5·σts + 2.0·σtd + 1.4·σb &lt; S — 내압·외압을 분리하지 않고 조합합니다.<br/>
+                ※ 세부지침에 DCIP 변형(편평률) 허용기준은 없습니다.
               </div>
             </EngPopover>
           </EngRow>
@@ -134,9 +136,10 @@ export default function InputPage() {
                     <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>강관 강종 및 항복강도 fy</div>
                     <p style={{ marginTop: 0 }}>fy(항복강도)는 허용응력 산정의 기준값입니다. 강종에 따라 fy가 다르며, 잘못 선택하면 내압·링휨 판정이 달라집니다.</p>
                     <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                      <strong>AWWA M11 허용응력</strong><br/>
-                      상시: σa = 0.50 × fy &nbsp;|&nbsp; 수격: σa = 0.75 × fy<br/>
-                      fy가 높을수록 허용응력 증가 → 동일 두께에서 더 높은 압력 허용
+                      <strong>허용응력 — 세부지침 11-134 [해설 표 11.5.1]</strong><br/>
+                      상시(토압·차량하중·정수압): 140 MPa (1,400 kgf/㎠, STWW 400)<br/>
+                      일시(동수압+수격압): 210 MPa (2,100 kgf/㎠, 상시의 150%)<br/>
+                      <span style={{ color: '#b45309' }}>※ 강종별 분기 없음 — fy는 허용응력 산정에 사용되지 않습니다.</span>
                     </div>
                     <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                       <strong>주요 강종 (KS D 3565)</strong><br/>
@@ -213,24 +216,17 @@ export default function InputPage() {
                   → KS 규격이 강도값을 단일 고정값으로 지정하므로 강종별 선택이 불필요하다.
                 </div>
                 <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                  <strong>주철관 허용응력 — DIPRA / AWWA C150 관행</strong><br/>
-                  상시 σ_a = fu / 3 = 140 MPa,&nbsp; 링휨 σ_a = 0.5 × fu = 210 MPa<br/>
-                  → 강관과 달리 <em>항복강도가 아닌 인장강도(fu) 기반</em> 안전계수법을 적용한다.<br/>
-                  <span style={{ color: '#b45309' }}>※ 이 허용치는 <strong>KDS 57 10 00에 명시 조항이 없다</strong>.
-                  DIPRA·AWWA C150 관행값이며, 구 상수도시설기준(2004)은 조합응력식
-                  (2.5σts+2.0σtd+1.4σb ≤ 420 MPa)을 사용한다.</span>
-                </div>
-                <div style={{ background: '#f0f4f8', borderLeft: '3px solid #1a5c99', padding: '8px 10px', marginBottom: 8, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                  <strong>DIPRA Design Manual §3 (Pressure Design)</strong><br/>
-                  "Allowable working pressure: P_a = 2t·S_a / D,&nbsp; where S_a = f_t / 3.0"<br/>
-                  (f_t = tensile strength = 420 MPa)<br/>
-                  → DIPRA(미국 덕타일주철관연구협회)도 fu 기반 안전계수 체계를 채택. fy는 설계 허용응력 산정에 사용되지 않는다.
+                  <strong>주철관 판정 — 세부지침 11-137 조합응력</strong><br/>
+                  2.5·σts + 2.0·σtd + 1.4·σb &lt; S&nbsp; (S = 420 MPa, GCD400 기준 인장강도)<br/>
+                  σts = P·D/(2t) 정수압 &nbsp;|&nbsp; σtd = P′·D/(2t) 수격압<br/>
+                  σb = 6(Kf·Wf + Kt·Wt)R²/t² 외압 휨응력<br/>
+                  → 강관과 달리 <em>내압·외압을 분리하지 않고 조합</em>하여 단일 판정한다.
                 </div>
                 <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                  <strong>강관과의 허용응력 체계 비교</strong><br/>
-                  강관 (AWWA M11): σ_a = 0.50 × fy → <em>항복</em> 기준 (연성파괴 방지)<br/>
-                  주철관 (AWWA M11): σ_a = fu / 3 → <em>인장강도</em> 기준 (취성파괴 안전계수)<br/>
-                  주철 계열은 fy/fu 비가 상대적으로 작고 연성이 제한되므로, 취성파괴에 대한 보수적 여유를 확보하기 위해 fu 기반 설계가 더 적합하다.
+                  <strong>단독 허용치로 환산하지 말 것</strong><br/>
+                  S/1.4 = 300 MPa 는 GCD400 항복강도와 같아 여유가 없으며,
+                  조합검토를 전제로 한 값이다. 개별 응력에 단독 허용치를 적용하면 위험측이 된다.<br/>
+                  ※ 지지각별 계수 Kf(40°~180°)와 Kt = 0.011 은 <strong>관저 기준</strong>이다.
                 </div>
               </EngPopover>
             </EngRow>
@@ -312,7 +308,7 @@ export default function InputPage() {
                       계산 버튼 클릭 후 결과에서 내압 항목이 N.G.이면 상위 등급으로 변경하십시오.
                     </div>
                   </>) : (<>
-                    <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>K 등급 — KS D 4311 / DIPRA</div>
+                    <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>K 등급 — KS D 4311</div>
                     <p style={{ marginTop: 0 }}>K 등급은 주철관의 두께 분류 기준입니다. 숫자가 클수록 두께가 두껍습니다.</p>
                     <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                       <strong>K 등급 두께 산정식 (KS D 4311)</strong><br/>
@@ -355,12 +351,12 @@ export default function InputPage() {
 
           <EngDivider label="관 탄성계수" />
           <EngRow label="탄성계수 E" unit="MPa" popover={
-            <EngPopover title="관 탄성계수 E — KDS 57 10 00 / AWWA M11">
+            <EngPopover title="관 탄성계수 E — 세부지침 11-135">
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>탄성계수 E가 사용되는 계산 항목</strong><br/>
-                처짐 검토: EI = E × t³/12 (휨강성) → Iowa 공식 분모<br/>
-                좌굴 검토: EI가 허용외압 Pcr에 직접 영향<br/>
-                링휨응력: σ = Kb × Ptotal × Do / (2 × I × E) 에서 I 통해 간접 영향
+                외압 휨응력·변형률: E·I 및 0.061·E′·R³ 항에 직접 반영<br/>
+                좌굴하중: qa = (1/FS)·√(32·Rw·B′·E′·EI/D³)<br/>
+                <span style={{ color: '#b45309' }}>※ 세부지침 11-135 제시값은 E = 2.1×10⁶ kg/cm² 입니다.</span>
               </div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                 <strong>관종별 기본값 (KDS 57 / KS 규격)</strong><br/>
@@ -437,42 +433,30 @@ export default function InputPage() {
             {errors.Pd && <span style={{ fontSize: '10px', color: T.textNG }}>{errors.Pd}</span>}
             <EngPopover>
               <div style={{ fontWeight: 700, fontSize: '13px', marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.border}`, paddingBottom: 6 }}>
-                설계수압 입력 방식 — 현행 KDS 2022 기준
+                내압 입력 — 세부지침 11-134 / 11-136
               </div>
               <p style={{ marginTop: 0 }}>
-                이 앱은 <strong>설계 운전압력 Pd</strong>와 <strong>수격압 배율</strong> 두 값만으로 내압을 설계합니다.
-                수격 포함 최대압력은 <strong>Pd' = Pd × 배율</strong>로 산정됩니다.
+                <strong>정수압 P</strong>를 입력하고, 가압구간인 경우 <strong>수격압 P′</strong>(정수압 이상
+                상승압력)를 추가로 입력합니다.
               </p>
               <div style={{ background: '#f0f4f8', borderLeft: `3px solid ${T.bgActive}`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>현행 방식 (AWWA M11 Eq.3-1 / KS D 3565)</strong><br/>
-                상시 하중: σ = Pd·D/(2t) ≤ 0.50 fy (강관) / fu/3 (주철관)<br/>
-                수격 포함: σ = (Pd × 배율)·D/(2t) ≤ 0.75 fy (강관)<br/>
-                <span style={{ color: '#b45309' }}>※ 허용응력 비율(0.50/0.75 fy)은 KDS 57 10 00에 명시 조항이 없으며,
-                허용응력설계법의 안전율 2.0 관행에 따른 값이다.</span><br/>
-                배율 1.5는 일반적인 수격압 수준 (±50%)에 해당하며, 수격 해석이 없을 때의 보수적 기본값입니다.
+                <strong>내압에 의한 관의 응력 (11-134)</strong><br/>
+                σt = P·D / (2t)<br/>
+                허용기준 — 상시(정수압) 140 MPa / 일시(동수압+수격압) 210 MPa<br/>
+                <span style={{ color: '#b45309' }}>※ 내압 작용의 경우 외부 하중(노면하중, 토압 등)이
+                없는 조건으로 계산합니다. 토압과 합산하지 않습니다.</span>
               </div>
-              <div style={{ background: '#fff8f0', borderLeft: `3px solid #e8a020`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>구 기준 (상수도 시설기준 2004) 방식과의 차이</strong><br/>
-                구 기준에서는 <strong>정수압(Ps), 동수압(Pd), 수격압(Ps + Pd)을 각각 별도 하중으로 입력</strong>하고, 이를 조합한 복합 검토식을 적용했습니다:<br/>
+              <div style={{ background: '#f0f4f8', borderLeft: `3px solid ${T.bgActive}`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
+                <strong>구간 구분 (11-136)</strong><br/>
+                자연유하 구간 → 정수압 적용<br/>
+                가압 구간 → 수격압(정수압 이상 상승압력) 적용
+              </div>
+              <div style={{ background: '#fff8f0', borderLeft: `3px solid #e8a020`, padding: '8px 10px', borderRadius: 2 }}>
+                <strong>덕타일 주철관은 조합 판정</strong><br/>
+                주철관은 내압·외압을 분리하지 않고 조합합니다 (11-137):<br/>
                 <span style={{ fontFamily: 'monospace', fontSize: '11px', display: 'block', marginTop: 4 }}>
-                  2.5·σ_ts + 2.0·σ_td + 1.4·σ_b &lt; 420 MPa
+                  2.5·σts + 2.0·σtd + 1.4·σb &lt; S (=420 MPa)
                 </span>
-                이 방식은 응력 종류별 안전계수를 달리 적용하는 구조로, 현행 KDS의 허용응력법과 개념적으로 다릅니다.
-              </div>
-              <div style={{ background: '#f4fff4', borderLeft: `3px solid #4caf50`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>기본 방식 선택</strong><br/>
-                기본값은 AWWA M11(강관)·DIPRA(주철관) 기반의 Pd/수격 분리 입력 + 허용응력 비교 방식입니다.
-                구 기준의 조합응력 방식이 필요하면 상단 <strong>「적용 설계기준」</strong>에서
-                <strong>상수도시설기준(2004)</strong>을 선택하십시오.<br/>
-                <span style={{ color: '#b45309' }}>※ 현행 KDS 57 10 00은 링휨 허용응력을 수식으로 규정하지 않고
-                "KS·KWWA 인증 압력관 사용"으로 갈음합니다(해설편 p.543). 따라서 두 방식 모두
-                KDS 조항을 직접 근거로 제시할 수 없습니다.</span>
-              </div>
-              <div style={{ color: T.textMuted, fontSize: '11px' }}>
-                <strong>판단 기준:</strong><br/>
-                · 수격 해석 결과가 있는 경우 → 해석값으로 Pd' 역산 후 배율 입력<br/>
-                · 수격 해석 없는 경우 → 배율 1.5 (KDS 기본), 보수적으로 2.0까지 적용 가능<br/>
-                · 정수두만 작용하는 계통 → 배율 1.0 (수격 없음)
               </div>
             </EngPopover>
           </EngRow>
@@ -509,23 +493,24 @@ export default function InputPage() {
             <EngInput value={inputs.H} onChange={v => handleChange('H', parseFloat(v) || 1)} min={0.5} max={20} step={0.1} width={90}/>
             {errors.H && <span style={{ fontSize: '10px', color: T.textNG }}>{errors.H}</span>}
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>관정 매설깊이 H — AWWA M11 Ch.5</div>
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>관정 매설깊이 H — 세부지침 11-134</div>
               <p style={{ marginTop: 0 }}>관 상단(관정)부터 지표면까지의 깊이입니다. 토압 및 차량하중 계산의 핵심 변수입니다.</p>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>토압 산정 (Prism Load — AWWA M11 Ch.5)</strong><br/>
-                We = γ × H × Do [kN/m]<br/>
-                이 앱은 항상 Prism Load를 사용합니다. 구기준(2004)의 Marston 공식과 달리 매설깊이에 관계없이 동일 식을 적용합니다. KDS 2022가 채택한 방식입니다.
+                <strong>상부 토압 (세부지침 11-134)</strong><br/>
+                H ≤ 2.0m : Wv = γt · H (연직 토압)<br/>
+                H &gt; 2.0m : Wv = Cd · γt · B (흙의 Arching 효과 + Marston 토압계수)<br/>
+                굴착부 폭 B = 2D + 100 [cm]
               </div>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>차량하중 (DB-24 — KDS 24 12 20)</strong><br/>
-                H &lt; 0.6m: 차량하중 집중 → 적용 필수<br/>
-                H = 1.5m 이상: Boussinesq 분산으로 차량하중 감소<br/>
-                H ≥ 3m: 차량하중이 사실상 무시 수준
+                <strong>노면하중 (세부지침 11-134)</strong><br/>
+                인접하는 후륜의 단축하중과 그 분포 각(Kögler θ=45°)을 고려하여 계산.<br/>
+                매설깊이가 깊을수록 분산 면적이 커져 하중이 감소합니다.<br/>
+                충격계수는 H &gt; 6.5m 에서 0 이 됩니다.
               </div>
               <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>설계 최소 매설깊이 (KDS 57 10 00)</strong><br/>
-                도로 하부: H ≥ 1.2m 권장 (차량하중 완충)<br/>
-                농지·비도로: H ≥ 0.8m<br/>
+                <strong>설계 최소 매설깊이 (KDS 57 10 00 §4.1.6)</strong><br/>
+                관경 900mm 이하: H ≥ 1.2m &nbsp;|&nbsp; 관경 1,000mm 이상: H ≥ 1.5m<br/>
+                ※ 매설깊이 규정은 기준 적합성 검토 축이며, 구조계산과는 별개입니다.<br/>
                 이 앱 입력 하한: 0.5m
               </div>
             </EngPopover>
@@ -577,40 +562,10 @@ export default function InputPage() {
                 <span style={{ fontSize: '10px', color: T.textMuted }}>(도로 하부 매설 시)</span>
               </label>
               {inputs.hasTraffic && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 4 }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {(['boussinesq', 'wm'] as const).map(m => (
-                      <label key={m} style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                        <input type="radio" name="trafficMethod"
-                          checked={inputs.trafficMethod === m}
-                          onChange={() => handleChange('trafficMethod', m)}
-                          style={{ accentColor: T.bgActive }}/>
-                        <span style={{ fontSize: '11px', color: T.textLabel, fontFamily: T.fontMono }}>
-                          {m === 'boussinesq' ? 'DB-24 Boussinesq' : 'Wm 직접계산 (부록C)'}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                  {inputs.trafficMethod === 'wm' && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 12px', paddingLeft: 2 }}>
-                      {([
-                        { key: 'wmPm', label: 'Pm (kN)', unit: 'kN', tip: '후륜 1륜당 하중' },
-                        { key: 'wmC',  label: 'C (m)',   unit: 'm',  tip: '차량 점유 폭' },
-                        { key: 'wmA',  label: 'a (m)',   unit: 'm',  tip: '접지 폭' },
-                        { key: 'wmTheta', label: 'θ (°)', unit: '°', tip: '하중분포각' },
-                      ] as const).map(({ key, label, unit, tip }) => (
-                        <label key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <span style={{ fontSize: '10px', color: T.textMuted, width: 70 }} title={tip}>{label}</span>
-                          <input type="number" value={inputs[key] ?? ''}
-                            onChange={e => handleChange(key, parseFloat(e.target.value))}
-                            style={{ width: 56, fontSize: '11px', fontFamily: T.fontMono,
-                              background: T.bgInput, color: T.textValue, border: `1px solid ${T.borderInput}`,
-                              borderRadius: T.radiusSm, padding: '2px 4px', textAlign: 'right' }}/>
-                          <span style={{ fontSize: '10px', color: T.textMuted }}>{unit}</span>
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                <div style={{ fontSize: '10.5px', color: T.textMuted, paddingLeft: 4, lineHeight: 1.5 }}>
+                  Wt = 2nP(1+i) / {'{'}[nL+(n−1)C+b+2H·tanθ]·(a+2H·tanθ){'}'}<br/>
+                  P = 9,600kg (DB-24) · L = 175cm · C = 100cm · b = 50cm · a = 20cm · θ = 45°<br/>
+                  충격계수 i : H&lt;1.5 → 0.5 / 1.5&lt;H&lt;6.5 → 0.65−0.10H / 6.5&lt;H → 0
                 </div>
               )}
             </div>
@@ -678,11 +633,11 @@ export default function InputPage() {
             </EngRow>
           )}
 
-          <EngDivider label={inputs.pipeType === 'steel' ? '기초지지각 (강관 침상조건)' : '침상 조건 (DIPRA)'} />
+          <EngDivider label={inputs.pipeType === 'steel' ? '기초지지각 (강관 · 세부지침 11-135)' : '기초지지각 (주철관 · 세부지침 11-137)'} />
           <div style={{ marginBottom: 6 }}>
             <EngPopover>
               <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>
-                {inputs.pipeType === 'steel' ? '기초지지각 — 상수도시설기준 참고표-4.2.4 / AWWA M11' : '침상 조건 (Bedding Type) — DIPRA Method'}
+                {inputs.pipeType === 'steel' ? '기초지지각 — 세부지침 11-135 (Kb, Kx)' : '기초지지각 — 세부지침 11-137 (Kf, Kt · 관저 기준)'}
               </div>
               {inputs.pipeType === 'steel' ? (<>
                 <p style={{ marginTop: 0 }}>강관의 기초지지각은 관 하부 지반이 관을 지지하는 각도입니다. Kb(링휨계수), Kx(처짐계수)에 영향을 미칩니다.</p>
@@ -699,7 +654,7 @@ export default function InputPage() {
                   최상급 다짐 기초: deg150
                 </div>
               </>) : (<>
-                <p style={{ marginTop: 0 }}>DIPRA Method의 침상 조건(Bedding Type)은 덕타일 주철관의 기초 처리 방식입니다. Kb(링휨계수), Kd(처짐계수)에 영향을 미칩니다.</p>
+                <p style={{ marginTop: 0 }}>덕타일 주철관의 지지각별 계수는 관저(管底) 기준입니다. Kf(휨모멘트계수)는 40°~180°로 제시되며, Kt = 0.011 단일값입니다.</p>
                 <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
                   <strong>Type 1</strong>: Kb=0.294, Kd=0.110 — 평기초·다짐 없음 (지지각 0°)<br/>
                   <strong>Type 2</strong>: Kb=0.235, Kd=0.108 — 모래기초 약간 다짐 (지지각 30°, 표준)<br/>
@@ -772,10 +727,10 @@ export default function InputPage() {
               ))}
             </select>
             <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>지하수위 — AWWA M11 (강관 좌굴 검토)</div>
-              <p style={{ marginTop: 0 }}>지하수위는 강관의 외압 좌굴 검토(AWWA M11 Eq.5-5)에서 부력수압계수 Rw 산정에 사용됩니다. 주철관 검토에는 영향 없음.</p>
+              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>지하수위 — 좌굴 검토 부력계수 Rw</div>
+              <p style={{ marginTop: 0 }}>세부지침 11-136은 부력계수 Rw = 1.0 을 제시합니다. 아래 표는 지하수위가 높은 구간을 안전측으로 평가하기 위한 선택적 보정값이며, 기본값(관저 이하)에서는 지침값과 동일합니다. 주철관 검토에는 영향 없음.</p>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>Rw (부력수압계수) — AWWA M11</strong><br/>
+                <strong>Rw (부력계수) — 세부지침 11-136 제시값 1.0</strong><br/>
                 지하수위 관정 이하: Rw = 1.0 (수압 없음 — 보수적)<br/>
                 지하수위 관정~관저: Rw = 0.5~1.0 (부분 수압)<br/>
                 지하수위 관저 이상: Rw = 0.5 (최대 부력)

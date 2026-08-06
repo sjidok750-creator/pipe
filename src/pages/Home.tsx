@@ -507,7 +507,7 @@ export default function Home() {
             KDS 57 00 00 : 2022 — 매설관로 구조·내진 안전성 자동 검토
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {['KDS 57 10 00', 'KDS 57 17 00', 'KS D 3565', 'KS D 4311', 'DB-24', 'AWWA M11', 'DIPRA'].map(b => (
+            {['세부지침 제11장 상수도', 'KDS 57 17 00', 'KS D 3565', 'KS D 4311', '내진성능 평가요령'].map(b => (
               <span key={b} style={{ fontSize: 10, padding: '2px 7px', borderRadius: 3, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(173,198,229,0.25)', color: 'rgba(255,255,255,0.55)', fontFamily: T.fontMono }}>{b}</span>
             ))}
           </div>
