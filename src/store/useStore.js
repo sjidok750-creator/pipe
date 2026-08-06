@@ -10,10 +10,12 @@ import { E_PRIME, STEEL_GRADES } from '../engine/constants.js'
 const DEFAULT_INPUTS = {
   // 검토 방식 — 'KWW2004'(2004 단독) | 'KDS2022'(AWWA 단독) | 'BOTH'(병기)
   // BOTH 선택 시 primaryCode 가 정식 판정 기준이 되고 다른 쪽은 참고값으로 표시된다.
-  // ※ 기존 저장 프로젝트는 이 필드가 없으므로 KDS2022 단독으로 처리됨 (회귀 방지)
-  reviewMode: 'KDS2022',
+  // ※ 기본값을 KWW2004로 변경. KDS2022 경로는 실제로 AWWA M11/ASCE 계열이며
+  //   현행 KDS 57 계열에는 매설관 구조계산 규정이 존재하지 않아 오귀속이다.
+  //   진단업무의 직접 근거는 세부지침(안전점검·진단 편) 제11장 11.5.2.
+  reviewMode: 'KWW2004',
   primaryCode: 'KWW2004',   // BOTH 모드에서 정식 판정에 쓸 기준
-  codeStandard: 'KDS2022',  // 실제 계산에 넘기는 기준 (reviewMode에서 파생)
+  codeStandard: 'KWW2004',  // 실제 계산에 넘기는 기준 (reviewMode에서 파생)
   steelGradeLegacy: 'STWW400',   // KWW2004 모드 강종 (참고표-4.2.5)
   pipeType: 'steel',
   DN: 600,
@@ -116,7 +118,8 @@ export const useStore = create((set, get) => ({
       // 검토 방식 → 실제 계산 기준 파생
       //   KWW2004 / KDS2022 : 해당 기준 단독
       //   BOTH               : 두 기준 모두 계산, primaryCode 가 정식 판정
-      const mode = inputs.reviewMode ?? inputs.codeStandard ?? 'KDS2022'
+      // ※ 필드가 없는 기존 저장 프로젝트도 KWW2004로 처리 (안전한 경로가 기본)
+      const mode = inputs.reviewMode ?? inputs.codeStandard ?? 'KWW2004'
       const primary = mode === 'BOTH' ? (inputs.primaryCode ?? 'KWW2004') : mode
       const calcInputs = { ...inputs, codeStandard: primary }
 

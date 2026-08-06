@@ -20,7 +20,9 @@ export function calcDuctileIron(inputs) {
     gammaSoil, Eprime,
     hasTraffic, beddingType,
     diKGrade = 'K9',
-    codeStandard = 'KDS2022',
+    // 적용 설계기준: 'KWW2004'(기본) | 'KDS2022'
+    // ※ 강관과 동일 사유로 기본값 변경 (steelPipe.js 주석 참조)
+    codeStandard = 'KWW2004',
     pipeDimManual = false, DoManual, tManual,
     E_pipeManual = false, E_pipe = null,
     // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)

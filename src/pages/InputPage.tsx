@@ -75,7 +75,7 @@ export default function InputPage() {
                   { key: 'KDS2022', label: 'KDS 2022',       sub: 'AWWA M11' },
                   { key: 'BOTH',    label: '병행 검토',       sub: '두 방식 비교' },
                 ]}
-                value={inputs.reviewMode ?? inputs.codeStandard ?? 'KDS2022'}
+                value={inputs.reviewMode ?? inputs.codeStandard ?? 'KWW2004'}
                 onChange={v => { handleChange('reviewMode', v); if (v !== 'BOTH') handleChange('codeStandard', v) }}
               />
 
@@ -107,7 +107,7 @@ export default function InputPage() {
                     주기준으로 판정하고 다른 방식은 참고값으로 병기하므로,
                     설계 당시 기준과 현행 방식을 나란히 제시할 때 사용합니다.
                   </>
-                ) : (inputs.codeStandard ?? 'KDS2022') === 'KWW2004' ? (
+                ) : (inputs.codeStandard ?? 'KWW2004') === 'KWW2004' ? (
                   inputs.pipeType === 'steel' ? (
                   <>
                     <strong style={{ color: T.textAccent }}>구 상수도시설기준(2004) [참고-4.2.1]</strong><br/>

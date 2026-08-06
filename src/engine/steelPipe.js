@@ -125,8 +125,11 @@ export function calcSteelPipe(inputs) {
     pnGrade = 'PN10',
     pipeDimManual = false, DoManual, tManual,
     steelGrade = 'SPS400', fyManual = 235,
-    // 적용 설계기준: 'KDS2022'(기본) | 'KWW2004'
-    codeStandard = 'KDS2022',
+    // 적용 설계기준: 'KWW2004'(기본) | 'KDS2022'
+    // ※ 기본값을 KWW2004로 변경. KDS2022 경로는 실제로 AWWA M11/ASCE 계열이며
+    //   현행 KDS 57 계열에는 매설관 구조계산 규정이 존재하지 않아 오귀속이다.
+    //   진단업무의 직접 근거는 세부지침(안전점검·진단 편) 제11장 11.5.2.
+    codeStandard = 'KWW2004',
     steelGradeLegacy = 'STWW400',
     E_pipeManual = false, E_pipe = null,
     // 차량하중 방식: 'boussinesq'(기본) | 'wm'(직접계산)
