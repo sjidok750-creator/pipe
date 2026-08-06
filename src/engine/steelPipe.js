@@ -90,9 +90,16 @@ export function calcSteelPipe(inputs) {
   const { Kb, Kx } = beddingRow
 
   // 원단위 제원
+  // ⚠ 지침 수식의 D 는 **관 내경**이다 (11-134 EQ4 정의부: "D : 관 내경 (mm)",
+  //   11-137 EQ10 정의부도 동일). Do(외경)를 대입하면 과대평가된다.
+  const Di    = Do - 2 * tAdopt           // mm — 내경
   const Do_cm = Do / 10
+  const Di_cm = Di / 10
   const t_cm  = tAdopt / 10
-  const R     = Do_cm / 2 + t_cm          // cm — R = D/2 + t (11-135 정의부)
+  // R = D/2 + t (11-135 정의부, "관의 평균반경").
+  // D=내경이므로 D/2 + t = (Do−2t)/2 + t = Do/2 → 외반경과 일치한다.
+  // ※ Do/2 + t 로 쓰면 관 벽 바깥에 R이 놓여 기하학적으로 성립하지 않는다.
+  const R     = Di_cm / 2 + t_cm          // cm ( = Do_cm/2 )
   const I     = t_cm ** 3 / 12            // cm³
   const Z     = t_cm ** 2 / 6             // cm²
   const f     = RING_BENDING.f            // 1.5
@@ -105,13 +112,14 @@ export function calcSteelPipe(inputs) {
   //   ⚠ 내압 검토는 외부 하중이 없는 조건 — 토압·차량하중과 합산하지 않는다.
   //   허용: 정수압(상시) 140 MPa / 동수압+수격압(일시) 210 MPa
   // ────────────────────────────────────────
-  const sigma_t_static = (Pd * Do) / (2 * tAdopt)          // MPa — 정수압
+  // σt = P·D/(2t) — D는 관 내경 (11-134 EQ4 정의부)
+  const sigma_t_static = (Pd * Di) / (2 * tAdopt)          // MPa — 정수압
   const ok_static = sigma_t_static <= STEEL_ALLOW.normal
 
   // 가압구간에서만 수격압(일시하중) 검토 (11-136)
   const isPumped = pressureZone === 'pumped'
   const Psurge_used = isPumped ? (Psurge ?? Pd * 1.5) : null
-  const sigma_t_surge = isPumped ? (Psurge_used * Do) / (2 * tAdopt) : null
+  const sigma_t_surge = isPumped ? (Psurge_used * Di) / (2 * tAdopt) : null
   const ok_surge = isPumped ? sigma_t_surge <= STEEL_ALLOW.surge : true
 
   // ────────────────────────────────────────
@@ -130,7 +138,8 @@ export function calcSteelPipe(inputs) {
   // ────────────────────────────────────────
   const numerator   = Kb * R ** 2 * E * I
                     + (RING_BENDING.a * Kb - RING_BENDING.b * Kx) * Ep * R ** 5
-  const denominator = E * I + RING_BENDING.a * Ep * R ** 3
+  // ※ 분모 계수는 원문 표기값 0.061 (aDen). 분자 계수만 표 4열 역산값 사용.
+  const denominator = E * I + RING_BENDING.aDen * Ep * R ** 3
   const sigma_b_kgf = (2 / (f * Z)) * Wtotal * numerator / denominator
   const sigma_b     = sigma_b_kgf * KGF_TO_MPA              // MPa
   const ok_bending  = sigma_b <= STEEL_ALLOW.normal
@@ -141,7 +150,8 @@ export function calcSteelPipe(inputs) {
   //   허용: 관경의 5% 미만 (라이닝 무관)
   // ────────────────────────────────────────
   const deltaX = 2 * Kx * Wtotal * R ** 4 / denominator     // cm
-  const deflectionRatio = deltaX / Do_cm * 100              // %
+  // ε = … × (1/D) × 100 — D는 관 내경 (11-136 EQ7)
+  const deflectionRatio = deltaX / Di_cm * 100              // %
   const maxDeflection = STEEL_MAX_DEFLECTION                // 5.0 %
   const ok_deflection = deflectionRatio < maxDeflection
 
@@ -152,7 +162,7 @@ export function calcSteelPipe(inputs) {
   //   Rw = 1.0,  B′ = 0.15 + 0.041·(H/D)
   // ────────────────────────────────────────
   const H_cm = H * 100
-  const HoverD = H_cm / Do_cm
+  const HoverD = H_cm / Di_cm
   const FS_buckling = HoverD >= 2 ? BUCKLING.FS_deep : BUCKLING.FS_shallow
   const Bprime = BUCKLING.Bprime(HoverD)
   // 지침 제시값은 Rw = 1.0. 지하수위 선택 시 안전측 보정값 사용 (GW_RW)
@@ -161,7 +171,7 @@ export function calcSteelPipe(inputs) {
 
   const EI = E * I                                          // kg·cm
   const qa = (1 / FS_buckling)
-           * Math.sqrt(32 * Rw * Bprime * Ep * EI / Do_cm ** 3)   // kg/cm²
+           * Math.sqrt(32 * Rw * Bprime * Ep * EI / Di_cm ** 3)   // kg/cm²
   const ok_buckling = Wtotal <= qa
   const bucklingSF = qa / Wtotal
 
@@ -172,7 +182,10 @@ export function calcSteelPipe(inputs) {
   const SF_static  = STEEL_ALLOW.normal / sigma_t_static
   const SF_surge   = isPumped ? STEEL_ALLOW.surge / sigma_t_surge : Infinity
   const SF_bending = STEEL_ALLOW.normal / sigma_b
-  const SF_min = Math.min(SF_static, SF_surge, SF_bending, bucklingSF)
+  // 변형률도 허용/발생 비로 환산해 포함한다. 누락하면 ε 초과(종합 N.G.)인데
+  // 등급이 a로 나오는 모순이 보고서에 그대로 인쇄된다.
+  const SF_deflection = deflectionRatio > 0 ? maxDeflection / deflectionRatio : Infinity
+  const SF_min = Math.min(SF_static, SF_surge, SF_bending, SF_deflection, bucklingSF)
   const safetyGrade = resolveSafetyGrade(SF_min, hasSectionLoss)
 
   const overallOK = ok_static && ok_surge && ok_bending && ok_deflection && ok_buckling
@@ -181,7 +194,7 @@ export function calcSteelPipe(inputs) {
     pipeType: 'steel',
     pipeDimManual,
     DN: pipeDimManual ? null : DN,
-    Do, tAdopt, tStandard, tMeasured, thicknessGoverned, hasMeasured,
+    Do, Di, tAdopt, tStandard, tMeasured, thicknessGoverned, hasMeasured,
     pnGrade: pipeDimManual ? null : pnGrade,
     steelGrade, fy,
 

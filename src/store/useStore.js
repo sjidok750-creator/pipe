@@ -59,7 +59,10 @@ function migrateInputs(saved) {
     ...rest
   } = saved
   const out = { ...DEFAULT_INPUTS, ...rest }
-  // 구 지지각(deg0/deg30)은 지침 표에 없음 → 엔진이 deg60으로 보정
+  // 구 지지각은 지침 표에 없으므로 엔진이 보정한다(강관 deg60 / 주철관 deg40).
+  // 폐지 키를 그대로 넘겨 beddingCoerced 경고가 화면에 뜨도록 한다 —
+  // 조용히 기본값으로 떨어뜨리면 지지조건이 개선된 것처럼 계산될 수 있다.
+  if (beddingType) out.diBeddingType = beddingType
   if (Eprime != null && saved.eprimeManual) {
     // kPa → kg/cm²  (1 kPa = 0.0101972 kg/cm²)
     out.Eprime_kgfcm2 = Eprime * 0.0101972

@@ -125,7 +125,9 @@ export default function ResultPage() {
                   : []
                 ),
                 ['설계수압 Pd', `${inputs.Pd} MPa`],
-                ['최대사용압력 (수격 포함)', `${inputs.Pd} × ${inputs.surgeRatio} = ${(inputs.Pd * inputs.surgeRatio).toFixed(3)} MPa  [Ⅰ축 압력등급 검토용]`],
+                ['압력 구간', (result as any).pressureZone === 'pumped'
+                  ? `가압구간 — 수격압 P′ = ${(hoopStep?.Psurge ?? 0).toFixed(3)} MPa`
+                  : '자연유하 구간 — 정수압 적용'],
               ].map(([k, v], i) => (
                 <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>
                   <td style={{ padding: '4px 8px', width: 130, fontWeight: 700, color: T.textLabel, borderBottom: `1px solid ${T.borderLight}` }}>{k}</td>
@@ -215,7 +217,7 @@ export default function ResultPage() {
               )}
               {result.beddingCoerced && (
                 <div style={{ color: '#b45309' }}>
-                  ⚠ 지지각 {result.beddingCoerced} 은 세부지침 11-135 표에 없어 60°로 보정되었습니다.
+                  ⚠ 지지각 {result.beddingCoerced} 은 세부지침 {pipeType === 'steel' ? '11-135' : '11-137'} 표에 없어 {pipeType === 'steel' ? '60°' : '40°(가장 보수적인 값)'}로 보정되었습니다.
                 </div>
               )}
             </div>

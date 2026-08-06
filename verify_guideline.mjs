@@ -3,7 +3,7 @@
 import { calcEarthLoad, calcTrafficLoad } from './src/engine/earthLoad.js'
 import { calcSteelPipe } from './src/engine/steelPipe.js'
 import { calcDuctileIron } from './src/engine/ductileIron.js'
-import { EARTH_LOAD, STEEL_ALLOW, resolveSafetyGrade } from './src/engine/constants.js'
+import { EARTH_LOAD, STEEL_ALLOW, STEEL_BEDDING, RING_BENDING, resolveSafetyGrade } from './src/engine/constants.js'
 
 let fail = 0
 const chk = (cond, msg) => { if (!cond) { fail++; console.log('  !! NG —', msg) } }
@@ -90,6 +90,60 @@ for (const [SF, dmg, exp] of [[1.5, false, 'a'], [1.0, false, 'a'], [1.5, true, 
   if (!okk) fail++
   console.log(`  SF=${SF} 손상=${dmg ? 'Y' : 'N'} → ${g.grade} (기대 ${exp}) ${okk ? '' : '!! NG'}`)
 }
+
+
+console.log('\n' + '='.repeat(66))
+console.log('6. 링휨 계수 - 지침 11-135 표 4열(0.061Kb-0.083Kx) 대조')
+console.log('='.repeat(66))
+console.log('원문 표기는 0.061/0.083 이나 이는 반올림 표시이며,')
+console.log('표에 인쇄된 계산값은 0.06146/0.08303 으로 산출되어 있다.')
+const TAB4 = { deg60: 0.00307, deg90: 0.00171, deg120: 0.00107, deg150: 0.00082 }
+let e1 = 0, e2 = 0
+for (const [k, tab] of Object.entries(TAB4)) {
+  const { Kb, Kx } = STEEL_BEDDING[k]
+  const v1 = 0.061 * Kb - 0.083 * Kx
+  const v2 = RING_BENDING.a * Kb - RING_BENDING.b * Kx
+  e1 += Math.abs(v1 - tab); e2 += Math.abs(v2 - tab)
+  console.log(`  ${k.padEnd(6)} 표 ${tab.toFixed(5)}  0.061/0.083 ${v1.toFixed(5)}  적용값 ${v2.toFixed(5)}`)
+}
+console.log(`  절대오차 합계: 0.061/0.083 = ${e1.toFixed(6)}  /  적용값 = ${e2.toFixed(6)}`)
+chk(e2 < e1, `링휨 계수가 표와 덜 정합 (적용 ${e2.toFixed(6)} > 0.061/0.083 ${e1.toFixed(6)})`)
+chk(RING_BENDING.aDen === 0.061, '분모 계수는 원문 표기값 0.061 이어야 함')
+
+console.log('\n' + '='.repeat(66))
+console.log('7. D = 관 내경 (지침 EQ4/EQ10 정의부)')
+console.log('='.repeat(66))
+const stD = calcSteelPipe({ DN: 600, Pd: 0.60, H: 1.5, pnGrade: 'PN10' })
+const DiExp = stD.Do - 2 * stD.tAdopt
+console.log(`  Do=${stD.Do} t=${stD.tAdopt} -> Di=${stD.Di} (기대 ${DiExp})`)
+console.log(`  sigma_t = P*Di/(2t) = ${stD.steps.step1.sigma_t_static.toFixed(3)} MPa`)
+chk(stD.Di === DiExp, '내경 계산 오류')
+chk(Math.abs(stD.steps.step1.sigma_t_static - (0.6 * DiExp) / (2 * stD.tAdopt)) < 1e-9, 'sigma_t 가 내경 기준이 아님')
+const Rexp = (DiExp / 10) / 2 + stD.tAdopt / 10
+console.log(`  R = Di/2 + t = ${stD.steps.step3.R.toFixed(3)} cm (기대 ${Rexp.toFixed(3)} = 외반경 ${(stD.Do / 20).toFixed(3)})`)
+chk(Math.abs(stD.steps.step3.R - Rexp) < 1e-9, 'R 정의 불일치')
+chk(Math.abs(stD.steps.step3.R - stD.Do / 20) < 1e-9, 'R 이 외반경과 불일치 - 관 벽 바깥에 놓임')
+
+console.log('\n' + '='.repeat(66))
+console.log('8. 등급/판정 정합 - 변형률 초과 시 등급이 a로 나오면 안 됨')
+console.log('='.repeat(66))
+const stBad = calcSteelPipe({ Pd: 0.10, H: 6.0, pipeDimManual: true, DoManual: 1524, tManual: 4 })
+console.log(`  eps = ${stBad.steps.step4.deflectionRatio.toFixed(3)}% (허용 5%) -> ${stBad.steps.step4.ok ? 'OK' : 'NG'}`)
+console.log(`  종합 판정 ${stBad.verdict.overallOK ? 'O.K.' : 'N.G.'} / SF ${stBad.SF.toFixed(3)} -> 등급 ${stBad.safetyGrade.grade}`)
+if (!stBad.verdict.overallOK) {
+  chk(stBad.safetyGrade.grade !== 'a' && stBad.safetyGrade.grade !== 'b',
+      `종합 N.G. 인데 등급 ${stBad.safetyGrade.grade} - 보고서에 모순 인쇄됨`)
+} else {
+  console.log('  (이 조건에서는 전 항목 만족 - 등급 모순 검사 해당 없음)')
+}
+
+console.log('\n' + '='.repeat(66))
+console.log('9. 주철관 지지각 보정 - 구 Type 키는 가장 보수적인 40°로')
+console.log('='.repeat(66))
+const diOld = calcDuctileIron({ DN: 600, Pd: 0.60, H: 1.5, diKGrade: 'K9', diBeddingType: 'Type2' })
+console.log(`  입력 Type2 -> 적용 ${diOld.steps.step3.diBeddingType} (Kf=${diOld.steps.step3.Kf}), 경고=${diOld.beddingCoerced}`)
+chk(diOld.steps.step3.Kf === 0.281, `구 Type 키가 Kf=${diOld.steps.step3.Kf} 로 보정됨 (기대 0.281 = 가장 보수적)`)
+chk(diOld.beddingCoerced === 'Type2', '보정 사실이 결과에 표시되지 않음')
 
 console.log('\n' + '═'.repeat(66))
 console.log(fail === 0 ? '=== 전체 검증 통과 ===' : `=== 검증 실패 ${fail}건 ===`)

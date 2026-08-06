@@ -146,9 +146,9 @@ export default function ReportPage() {
             ['차량하중', inputs.hasTraffic ? '적용 — DB-24, Kögler 분산각 45°' : '미적용'],
             ...((result as any).hasMeasured ? [['실측 최소 관두께', `${(result as any).tMeasured} mm (관 상세검사)`] as [string,string]] : []),
             ['적용 관두께', `${tAdopt} mm — ${(result as any).thicknessGoverned === 'measured' ? '실측 최소값' : '기준 두께'} 적용`],
-            ['토질 등급 / 다짐도', `${inputs.soilClass} / ${inputs.soilClass !== 'loose' ? inputs.compaction+'%' : '연약지반'}`],
+
             ...(pipeType === 'steel' ? [["흙 반력계수 E′", `${(s3b?.Ep ?? 28)} kg/cm²`] as [string,string]] : []),
-            ['침상 조건', pipeType === 'steel' ? (inputs.steelBeddingType ?? '-') : (inputs.beddingType ?? '-')],
+            ['기초지지각', s3b?.beddingLabel ?? '-'],
             ['지하수위', inputs.gwLevel],
           ] as [string,string][]).map(([k,v],i) => (
             <tr key={i} style={{ background: i%2===0 ? T.bgRowAlt : T.bgRow }}>

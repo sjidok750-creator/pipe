@@ -746,25 +746,6 @@ export default function InputPage() {
               </div>
             </EngPopover>
           </EngRow>
-          <EngRow label="흙 단위중량 γ" unit="kN/m³">
-            <EngInput value={inputs.gammaSoil} onChange={v => handleChange('gammaSoil', parseFloat(v) || 18)}
-              min={10} max={25} step={0.5} width={90}/>
-            <EngPopover>
-              <div style={{ fontWeight: T.fw.bold, fontSize: T.fs.base, marginBottom: 8, color: T.textAccent, borderBottom: `1px solid ${T.borderLight}`, paddingBottom: 6 }}>흙 단위중량 γ — AWWA M11 Ch.5</div>
-              <p style={{ marginTop: 0 }}>관 위에 작용하는 토압(Prism Load) 산정에 직접 사용됩니다. We = γ × H × Do</p>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>일반적인 흙 단위중량 기준값</strong><br/>
-                모래·자갈 (건조~습윤): 16~18 kN/m³<br/>
-                일반 점성토: 17~19 kN/m³<br/>
-                포화토 (지하수위 이하): 18~20 kN/m³<br/>
-                기본값 18 kN/m³ (KDS 상수도 설계 일반값)
-              </div>
-              <div style={{ background: T.bgWarn, borderLeft: `3px solid ${T.textWarn}`, padding: '8px 10px', borderRadius: T.radiusSm }}>
-                <strong>지하수위 고려</strong><br/>
-                지하수위가 관정보다 높은 경우, 포화단위중량(약 18~20 kN/m³)을 사용하거나 수중단위중량(γ_sub = γ_sat - γ_w ≈ 8~10 kN/m³)을 별도 검토하는 것이 정확합니다. 이 앱은 단일 γ값을 전체 구간에 적용합니다.
-              </div>
-            </EngPopover>
-          </EngRow>
         </EngPanel>
 
         {/* 입력 요약 */}

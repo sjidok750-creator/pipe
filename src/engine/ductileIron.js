@@ -65,7 +65,18 @@ export function calcDuctileIron(inputs) {
     ? (tMeasured < tStandard ? 'measured' : 'standard')
     : 'standard'
 
-  const beddingRow = DI_BEDDING[diBeddingType] || DI_BEDDING['deg90']
+  // 지지각 — 지침 11-137 표에 있는 40/60/90/120/180° 만 사용 가능.
+  // 구 버전 저장본의 Type1~Type4(Spangler 침상조건)는 대응 각도가 없으므로
+  // 가장 보수적인 40°(Kf 0.281)로 보정하고 화면·보고서에 명시한다.
+  // ※ 조용히 deg90(Kf 0.160)으로 떨어뜨리면 지지조건이 개선된 것처럼 계산되어
+  //   기존 N.G. 판정이 O.K.로 뒤집힐 수 있다.
+  let beddingKey = diBeddingType
+  let beddingCoerced = null
+  if (!DI_BEDDING[beddingKey]) {
+    beddingCoerced = beddingKey ?? '(미지정)'
+    beddingKey = 'deg40'
+  }
+  const beddingRow = DI_BEDDING[beddingKey]
   const { Kf, Kt } = beddingRow
 
   const Di = Do - 2 * tAdopt   // mm — 내경
@@ -127,6 +138,7 @@ export function calcDuctileIron(inputs) {
     // ── 적용 기준 이력 ──
     appliedCodeLabel: GUIDE_LABEL,
     appliedFormula: '2.5·σts + 2.0·σtd + 1.4·σb < S (=420 MPa)',
+    beddingCoerced,
     allowSource: REFERENCES.diCombined,
     pressureZone,
 
@@ -165,7 +177,7 @@ export function calcDuctileIron(inputs) {
       step3: {
         title: '외압에 의한 휨응력',
         ref: REFERENCES.diCombined,
-        diBeddingType, beddingLabel: beddingRow.label,
+        diBeddingType: beddingKey, beddingLabel: beddingRow.label, beddingCoerced,
         Kf, Kt, R_cm, t_cm, Wf, Wt: Wt_load,
         sigma_b_kgf, sigma_b,
         ok: true,
