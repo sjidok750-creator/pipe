@@ -518,21 +518,24 @@ export default function InputPage() {
 
           <EngDivider label="부가 하중 조건" />
           <EngRow label="차량하중" popover={
-            <EngPopover title="차량하중 산정 방식 — KDS 24 12 20 / 내진성능 평가요령 부록C" width={450}>
+            <EngPopover title="노면하중 산정 — 세부지침 11-134" width={450}>
               <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 8, borderRadius: T.radiusSm }}>
-                <strong>방식 A — DB-24 Boussinesq (기본)</strong><br/>
-                KDS 24 12 20 / AWWA M11<br/>
-                매설깊이별 등가 수직압력 테이블 보간 후 충격계수 적용.<br/>
-                WL = PL × IF × Do [kN/m]
-              </div>
-              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 6, borderRadius: T.radiusSm }}>
-                <strong>방식 B — Wm 직접계산</strong><br/>
-                내진성능 평가요령 부록C 해설식(5.3.3)<br/>
+                <strong>인접 후륜의 단축하중 + 분포각 (Kögler)</strong><br/>
                 <span style={{ fontFamily: T.fontMono, fontSize: 11 }}>
-                  Wm = 2·Pm·D / (C·(a+2h·tanθ)) × (1+i) [kN/m]
+                  Wt = 2nP(1+i) / {'{'}[nL+(n−1)C+b+2H·tanθ]·(a+2H·tanθ){'}'}
                 </span><br/>
                 <span style={{ fontSize: 10, color: T.textMuted }}>
-                  충격계수 i: h&lt;1.5 → 0.5 / 1.5≤h≤6.5 → (0.65−0.1h) / h&gt;6.5 → 0
+                  P = 9,600kg (DB-24) · n = 2 · L = 175cm · C = 100cm<br/>
+                  b = 50cm · a = 20cm · θ = 45° (Kögler 분산각)
+                </span>
+              </div>
+              <div style={{ background: T.bgInfo, borderLeft: `3px solid ${T.textLink}`, padding: '8px 10px', marginBottom: 6, borderRadius: T.radiusSm }}>
+                <strong>충격계수 i</strong><br/>
+                <span style={{ fontSize: 10, color: T.textMuted }}>
+                  H &lt; 1.5 → 0.5 / 1.5 &lt; H &lt; 6.5 → 0.65 − 0.10H / 6.5 &lt; H → <strong>0</strong>
+                </span><br/>
+                <span style={{ fontSize: 10, color: '#b45309' }}>
+                  ※ H &gt; 6.5m 에서 0 입니다. 기존 엑셀(02-1)은 0.5를 반환하는 오류가 있었습니다.
                 </span>
               </div>
               {/* 하중분포 개념도 */}
