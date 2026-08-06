@@ -18,7 +18,7 @@ export default function ReferencePage() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-bold mb-1" style={{ color: '#003366' }}>기준 참조표</h1>
-        <p className="text-sm text-gray-500">KDS 57 00 00 : 2022 / KS D 3565 / KS D 4311 / AWWA M11 / DIPRA</p>
+        <p className="text-sm text-gray-500">세부지침(안전점검·진단 편) 제11장 상수도 11.5.2 / KS D 3565 / KS D 4311</p>
       </div>
 
       {/* 탭 */}
@@ -50,13 +50,11 @@ export default function ReferencePage() {
               </tr></thead>
               <tbody>
                 {[
-                  ['KDS 57 00 00', '상수도 설계기준', '상수도 시설 전반 설계 기준 (2022)'],
-                  ['KDS 57 10 00', '상수도관로', '매설관로 구조 설계 기준'],
+                  ['세부지침 11.5.2', '안전점검·진단 편 해설서 제11장 상수도', '★ 1차 근거 — 토압식·링휨식·허용기준표·관두께 적용규칙·평가등급'],
+                  ['상수도시설기준', '환경부 (2004) [참고-4.2.1]', '2차 근거 — 지침이 지정한 계산식 출처'],
                   ['KS D 3565', '수도용 도복장강관', '도복장강관 재료·치수·시험 기준'],
                   ['KS D 4311', '수도용 덕타일 주철관', '덕타일 주철관 재료·치수·시험 기준'],
-                  ['KDS 24 12 20', '도로교 차량하중', 'DB-24 차량하중 기준'],
-                  ['AWWA M11', 'Steel Water Pipe', '강관 설계 매뉴얼 (AWWA)'],
-                  ['DIPRA', 'Ductile Iron Pipe', '덕타일 주철관 설계 지침 (DIPRA)'],
+                  ['KDS 57 10 00', '상수도관로', '매설위치·깊이·압력등급 (구조계산 규정 없음 — 적합성 검토 축)'],
                 ].map(([code, name, desc], i) => (
                   <tr key={code} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
                     <td className="p-3 font-mono font-bold text-xs" style={{ color: '#003366' }}>{code}</td>
@@ -73,67 +71,83 @@ export default function ReferencePage() {
         {tab === 'allow' && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 허용응력 — 상수도시설기준(2004) 참고표-4.2.5</h2>
+              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 구조 안전성 허용기준 — 세부지침 11-134 [해설 표 11.5.1]</h2>
               <div style={{ background: '#fff8f0', borderLeft: '3px solid #e8a020', padding: '8px 10px', marginBottom: 10, borderRadius: 2, fontSize: 11, lineHeight: 1.6 }}>
-                ※ 원문 인쇄 p.175 〈참고표-4.2.5〉 <strong>허용응력</strong> — 내압(1항)·외압(2항) 검토
-                뒤에 3항으로 놓인 <strong>공용 단일표</strong>이므로 내압·링휨에 동일하게 적용합니다.<br/>
-                ※ 현행 KDS 57 10 00에는 <strong>링휨 검토·허용응력 규정이 없습니다</strong>
-                (§3 = &quot;재료 — 내용 없음&quot;, 해설편 1,363쪽에 &quot;링휨&quot; 0회).
-                관두께는 <strong>KS·KWWA 인증 압력관 사용</strong>으로 갈음합니다(해설편 p.543).<br/>
-                ※ 종전 0.50×fy(=117.5) · 0.75×fy(=176.3)는 어느 기준 문서에도 근거가 없어
-                <strong> 폐지</strong>되었습니다. 수격압은 압력등급 적합성(최대사용압력)으로 검토합니다.
+                원문: &quot;상시하중(토압, 차량하중, 정수압)인 경우 <strong>140MPa</strong>(1,400㎏/㎠, STWW 400)이내 이고
+                일시하중(동수압+수격압)의 경우 <strong>210MPa</strong>(2,100㎏/㎠, 상시 허용응력의 150%)이하 이다.&quot;<br/>
+                ※ <strong>강종별 분기가 없습니다</strong> — STWW 400 기준 단일값이며, f_y는 허용응력 산정에 사용되지 않습니다.<br/>
+                ※ 현행 KDS 57 계열에는 매설관 구조계산 규정이 <strong>존재하지 않습니다</strong>.
+                관두께는 KS·KWWA 인증 압력관 사용으로 갈음합니다(해설편 p.543).
               </div>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: '#003366', color: 'white' }}>
-                  <th className="p-3 text-left">항목</th>
-                  <th className="p-3 text-center">종류의 번호</th>
-                  <th className="p-3 text-center">구분</th>
-                  <th className="p-3 text-center">허용응력 (MPa)</th>
+                  <th className="p-3 text-left">구분</th>
+                  <th className="p-3 text-center">검토 항목</th>
+                  <th className="p-3 text-center">작용 하중</th>
+                  <th className="p-3 text-center">허용 기준</th>
+                  <th className="p-3 text-center">하중 조건</th>
                 </tr></thead>
                 <tbody>
                   {[
-                    ['내압 (Hoop)', 'STWW400 / SS400 / SM400', '고정값', '140'],
-                    ['링 휨응력', 'STWW400 / SS400 / SM400', '고정값', '140'],
-                    ['〃 (STWW370)', 'STWW370', '고정값', '125'],
-                    ['〃 (STWW290)', 'STWW290', '고정값', '100'],
-                    ['좌굴 안전율', '—', '—', 'F.S. ≥ 2.5'],
-                    ['허용 변형률 (모르타르)', '—', '—', '3.0%'],
-                    ['허용 변형률 (도장)', '—', '—', '5.0%'],
-                  ].map(([item, base, ratio, allow], i) => (
-                    <tr key={item} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
-                      <td className="p-3">{item}</td>
-                      <td className="p-3 text-center font-mono text-xs">{base}</td>
-                      <td className="p-3 text-center">{ratio}</td>
+                    ['내 압', '휨응력', '정수압', '140 MPa (1,400 kgf/㎠)', '상시'],
+                    ['내 압', '휨응력', '동수압 + 수격압', '210 MPa (2,100 kgf/㎠)', '일시'],
+                    ['외 압', '휨응력', '토압 + 차량하중', '140 MPa (1,400 kgf/㎠)', '상시'],
+                    ['외 압', '관체 변형량', '토압 + 차량하중', '관경의 5% 미만', '상시'],
+                    ['외 압', '좌굴하중', '토압 + 차량하중', '허용하중 q_a', '상시'],
+                  ].map(([div, item, load, allow, cond], i) => (
+                    <tr key={div + item + cond} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
+                      <td className="p-3 font-bold">{div}</td>
+                      <td className="p-3 text-center">{item}</td>
+                      <td className="p-3 text-center text-xs">{load}</td>
                       <td className="p-3 text-center font-bold" style={{ color: '#003366' }}>{allow}</td>
+                      <td className="p-3 text-center text-xs">{cond}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <div className="mt-4 p-3 rounded text-xs text-gray-600" style={{ background: '#f0f4f0', border: '1px solid #b0c8b0' }}>
+                ※ 허용 변형량은 <strong>라이닝 구분 없이 5% 단일</strong>입니다.
+                2004 시설기준의 도장 5% / 모르타르 3% 분기는 그 기준 안에서는 유효하나,
+                <strong> 진단업무는 세부지침이 우선</strong>합니다.<br/>
+                ※ 좌굴 설계계수 FS = 2.5 (H/D ≥ 2) / 3.0 (H/D &lt; 2),&nbsp; 부력계수 R_w = 1.0 [11-136]
+              </div>
             </div>
             <div>
-              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>덕타일 주철관 허용응력 (KS D 4311 / DIPRA)</h2>
+              <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>덕타일 주철관 조합응력 판정 — 세부지침 11-137</h2>
+              <p className="text-xs text-gray-500 mb-3">
+                내압 및 외압에 의한 발생 복합 인장응력이 관재의 기준 인장강도를 만족하여야 한다.
+                강관과 달리 <strong>내압·외압을 분리하지 않고 조합</strong>한다.
+              </p>
               <table className="w-full text-sm">
                 <thead><tr style={{ background: '#003366', color: 'white' }}>
-                  <th className="p-3 text-left">항목</th>
-                  <th className="p-3 text-center">기준강도</th>
-                  <th className="p-3 text-center">허용응력 비율</th>
-                  <th className="p-3 text-center">허용응력 (MPa)</th>
+                  <th className="p-3 text-left">응력 성분</th>
+                  <th className="p-3 text-center">산정식</th>
+                  <th className="p-3 text-center">안전계수</th>
                 </tr></thead>
                 <tbody>
                   {[
-                    ['내압 Hoop응력', 'fu = 420 MPa', '1/3', '140.0'],
-                    ['링 휨응력', 'fu = 420 MPa', '0.50', '210.0'],
-                    ['허용 처짐율', '—', '—', '3.0%'],
-                  ].map(([item, base, ratio, allow], i) => (
+                    ['σ_ts — 정수압 인장응력', 'P · D / (2t)', '2.5'],
+                    ['σ_td — 수격압 인장응력', "P′ · D / (2t)", '2.0'],
+                    ['σ_b — 외압 휨응력', '6(K_f·W_f + K_t·W_t)R² / t²', '1.4'],
+                  ].map(([item, formula, fs], i) => (
                     <tr key={item} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
                       <td className="p-3">{item}</td>
-                      <td className="p-3 text-center font-mono text-xs">{base}</td>
-                      <td className="p-3 text-center">{ratio}</td>
-                      <td className="p-3 text-center font-bold" style={{ color: '#003366' }}>{allow}</td>
+                      <td className="p-3 text-center font-mono text-xs">{formula}</td>
+                      <td className="p-3 text-center font-bold" style={{ color: '#003366' }}>{fs}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <div className="mt-4 p-3 rounded text-xs text-gray-600" style={{ background: '#f0f4f0', border: '1px solid #b0c8b0' }}>
+                판정: <strong>2.5·σ_ts + 2.0·σ_td + 1.4·σ_b &lt; S</strong>&nbsp;
+                (S = 420 MPa, GCD400 기준 인장강도 · KS D 4311)<br/>
+                ※ D는 <strong>관 내경</strong>이며, 자연유하 구간은 σ_td = 0 이다.<br/>
+                <span style={{ color: '#b45309' }}>
+                  ※ S/1.4 = 300 MPa 를 단독 허용치로 쓰지 말 것 — GCD400 항복강도와 같아 여유가 없으며
+                  조합검토를 전제로 한 값이다.
+                </span><br/>
+                ※ 세부지침에 DCIP 변형(편평률)·좌굴 허용기준은 없다.
+              </div>
             </div>
           </div>
         )}

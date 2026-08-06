@@ -820,15 +820,17 @@ export default function InputPage() {
         {/* 적용 기준 참고 */}
         <EngPanel title="적용 기준">
           <div style={{ fontSize: '11px', color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.9 }}>
-            <strong style={{ color: T.textAccent }}>적용 산정식 근거</strong><br/>
-            <span style={{ color: '#b45309' }}>※ KDS 57 10 00은 관로 구조계산식·허용응력을 규정하지 않음
-            (§3 = "재료 — 내용 없음"). 아래는 실제 적용 근거임</span><br/>
-            내압 검토:  AWWA M11 Eq.3-1 / KS D 3565  (상시 fy×0.50, 수격 fy×0.75 — 안전율 2.0 관행)<br/>
-            링 휨 검토:  Iowa 공식  (Spangler-Watkins 방법)<br/>
-            처짐 검토:  수정 Iowa 방식  (Del = Dl·Kb·Wc·Do³/EI+0.061E'Do³)<br/>
-            외압 좌굴:  Modified AWWA M11  (강관 전용, FS=2.5)<br/>
-            차량하중:  AASHTO Boussinesq + DB-24 표준하중<br/>
-            침상계수:  AWWA M11 Table 5-1  /  DIPRA Method (주철관)
+            <strong style={{ color: T.textAccent }}>적용 산정식 근거 — 세부지침 제11장 11.5.2</strong><br/>
+            <span style={{ color: '#b45309' }}>※ 현행 KDS 57 계열에는 매설관 구조계산 규정이 존재하지 않는다.
+            진단업무의 직접 근거는 세부지침이며, 지침은 「상수도시설기준(환경부)」제시 식 사용을 원칙으로 한다.</span><br/>
+            상부 토압:  H≤2m 연직토압 / H&gt;2m Marston,  B = 2D+100 [cm]  [11-134]<br/>
+            노면하중:  Kögler 분산식 (DB-24, θ=45°)  [11-134]<br/>
+            내압 검토:  σt = P·D/(2t),  D = 관 내경  [11-134]<br/>
+            외압 휨응력:  E′ 포함식 (E′ = 28 kg/cm²)  [11-135]<br/>
+            관체 변형률:  ε = 2Kx·W·R⁴/(EI+0.061E′R³)·(1/D)·100  [11-136]<br/>
+            외압 좌굴:  qa = (1/FS)·√(32RwB′E′EI/D³),  B′ = 0.15+0.041(H/D)  [11-136]<br/>
+            주철관:  2.5σts + 2.0σtd + 1.4σb &lt; S (=420 MPa)  [11-137]<br/>
+            안전성평가:  SF = 허용응력/발생응력 → a~e 등급  [11-133 표 11.74]
           </div>
         </EngPanel>
       </div>

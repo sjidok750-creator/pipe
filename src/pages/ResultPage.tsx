@@ -225,7 +225,7 @@ export default function ResultPage() {
           <EngTable rows={structRows}/>
         </EngPanel>
 
-        {/* 주철관 조합응력 검토 (KWW2004) */}
+        {/* 주철관 조합응력 검토 — 세부지침 11-137 */}
         {result?.combined && (
           <EngPanel title="Ⅱ-(c) 구조 검토: 조합응력 — 상수도시설기준(2004)">
             <EngTable rows={[

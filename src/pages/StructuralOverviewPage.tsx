@@ -24,56 +24,56 @@ const tdMono: React.CSSProperties = {
 
 // ── 강관 설계기준 ────────────────────────────────────────────
 const steelCriteria = [
-  { step: 'S1 — 토압 (Prism Load)',   kds: 'AWWA M11 Ch.5', ref: 'Prism Load',          limit: '하중 산정 (안전측 가정)' },
-  { step: 'S1 — 차량하중 (DB-24)',     kds: 'KDS 24 12 20',      ref: 'Boussinesq 분산 / AASHTO', limit: 'IF 충격계수 적용' },
-  { step: 'S2 — 내압 (Barlow)',        kds: 'AWWA M11 Eq.3-1', ref: 'KS D 3565',         limit: 'σ_a = 0.50·fy (상시),  0.75·fy (수격)' },
-  { step: 'S3 — 링 휨응력',            kds: 'AWWA M11 §5.3', ref: 'DIPRA',   limit: 'σ_ba = 0.50·fy' },
-  { step: 'S4 — 처짐 (수정 Iowa)',     kds: 'AWWA M11 Eq.5-4', ref: 'Modified Iowa',         limit: '3.0% (라이닝 有),  5.0% (라이닝 無)' },
-  { step: 'S5 — 좌굴 ⟨강관만⟩',       kds: 'AWWA M11 Eq.5-5', ref: '좌굴',         limit: 'FS ≥ 2.5' },
-  { step: 'S6 — 최소관두께',           kds: 'KS D 3565', ref: 'AWWA M11 Ch.4', limit: 't_채택 ≥ t_req + CA (부식여유)' },
-  { step: '재료 — 강종별 fy',          kds: 'KS D 3565',         ref: '—',                        limit: 'SGP: 245,  STPG38: 215,  SPS400: 235,  SPS490: 315 MPa' },
-  { step: '침상계수 Kb / Kx',          kds: '—',                 ref: 'AWWA M11 Table 5-5',       limit: '지지각 0°~150° (2004 기준: 60~150°)' },
-  { step: '탄성지반반력계수 E\'',      kds: '—',                 ref: 'AWWA M11 Table 5-3',       limit: '토질 × 다짐도별 SI 환산' },
+  { step: 'S1 — 상부 토압',            kds: '세부지침 11-134', ref: '연직토압 / Marston', limit: 'H≤2m: γt·H  |  H>2m: Cd·γt·B  (B = 2D+100 cm)' },
+  { step: 'S1 — 노면하중',             kds: '세부지침 11-134', ref: 'Kögler 분산 (DB-24)', limit: '충격계수 i : H<1.5→0.5 / 1.5~6.5→0.65−0.10H / >6.5→0' },
+  { step: 'S2 — 내압',                 kds: '세부지침 11-134', ref: 'σt = P·D/(2t), D=내경', limit: '상시 140 MPa  |  일시(수격) 210 MPa' },
+  { step: 'S3 — 외압 휨응력',          kds: '세부지침 11-135', ref: "E′ 포함식 (E′=28 kg/cm²)", limit: 'σb ≤ 140 MPa  (STWW 400)' },
+  { step: 'S4 — 관체 변형률',          kds: '세부지침 11-136', ref: 'ε = 2Kx·W·R⁴/(EI+0.061E′R³)', limit: '관경의 5% 미만 (라이닝 무관)' },
+  { step: 'S5 — 좌굴하중',             kds: '세부지침 11-136', ref: "qa = (1/FS)·√(32RwB′E′EI/D³)", limit: 'W ≤ qa,  FS = 2.5 (H/D≥2) / 3.0 (H/D<2)' },
+  { step: '관두께 적용',               kds: '세부지침 11-134', ref: '관 상세검사', limit: 'min(실측 최소 관두께, 기준 관두께)' },
+  { step: '안전성평가',                kds: '세부지침 11-133', ref: '[표 11.74]', limit: 'SF = 허용응력/발생응력 → a~e 등급' },
+  { step: '지지각 계수 Kb / Kx',       kds: '세부지침 11-135', ref: '지지각별 계수표', limit: '60° / 90° / 120° / 150° 만 사용 가능' },
+  { step: "흙 반력계수 E′",            kds: '세부지침 11-135', ref: '지침 제시값', limit: "E′ = 28 kg/cm² (단일값)" },
 ]
 
 // ── 주철관 설계기준 ──────────────────────────────────────────
 const ductileCriteria = [
-  { step: 'S1 — 토압 (Prism Load)',   kds: 'AWWA M11 Ch.5', ref: 'Prism Load',     limit: '하중 산정 (Prism Load 가정)' },
-  { step: 'S1 — 차량하중 (DB-24)',     kds: 'KDS 24 12 20',      ref: 'DB-24',          limit: 'IF 충격계수 적용' },
-  { step: 'S2 — 내압 (Barlow, Di 기반)', kds: 'KS D 4311', ref: 'DIPRA',    limit: 'σ_a = fu/3 = 140 MPa (안전율 3.0)' },
-  { step: 'S3 — 링 휨응력',            kds: 'DIPRA / AWWA C150', ref: 'DIPRA',       limit: 'σ_ba = 0.5·fu = 210 MPa' },
-  { step: 'S4 — 처짐 (Iowa)',          kds: 'AWWA C150', ref: 'Modified Iowa',       limit: 'Δy/Do ≤ 3.0%' },
-  { step: 'S5 — 최소두께',             kds: 'KS D 4311 K등급표', ref: 'DIPRA', limit: 't_class ≥ t_req + 서비스여유' },
-  { step: '재료 — 인장강도',           kds: 'KS D 4311',         ref: 'ISO 2531',       limit: 'fu = 420 MPa 고정' },
-  { step: '침상계수 Kb / Kd',          kds: '—',                 ref: 'DIPRA Table 5-1', limit: 'Type 1~5 침상 조건' },
-  { step: '탄성지반반력계수 E\'',      kds: '—',                 ref: 'AWWA M11 Table 5-3', limit: '토질 × 다짐도별 SI 환산' },
+  { step: 'S1 — 상부 토압 Wf',         kds: '세부지침 11-134', ref: '강관의 계산공식과 동일', limit: 'H≤2m: γt·H  |  H>2m: Cd·γt·B' },
+  { step: 'S1 — 노면하중 Wt',          kds: '세부지침 11-134', ref: '강관의 계산공식과 동일', limit: 'Kögler 분산 (DB-24)' },
+  { step: 'S2 — 내압 인장응력',        kds: '세부지침 11-137', ref: 'σts = P·D/(2t), σtd = P′·D/(2t)', limit: 'D = 관 내경,  가압구간만 σtd 적용' },
+  { step: 'S3 — 외압 휨응력',          kds: '세부지침 11-137', ref: 'σb = 6(Kf·Wf + Kt·Wt)R²/t²', limit: 'E′ 미포함 (강관식과 다름)' },
+  { step: 'S4 — 조합응력 판정',        kds: '세부지침 11-137', ref: '복합 인장응력', limit: '2.5σts + 2.0σtd + 1.4σb < S (=420 MPa)' },
+  { step: '관두께 적용',               kds: '세부지침 11-137', ref: '관 상세검사', limit: 'min(실측 최소 관두께, 기준 관두께)' },
+  { step: '안전성평가',                kds: '세부지침 11-133', ref: '[표 11.74]', limit: 'SF = S/조합응력 → a~e 등급' },
+  { step: '재료 — 인장강도',           kds: 'KS D 4311',       ref: 'GCD400', limit: 'S = 420 MPa 고정' },
+  { step: '지지각 계수 Kf / Kt',       kds: '세부지침 11-137', ref: '관저 기준 계수표', limit: '40°/60°/90°(0.160)/120°/180°,  Kt = 0.011' },
 ]
 
 // ── 입력/산출 매트릭스 (강관) ────────────────────────────────
 const steelInputs = [
   { cat: '관 제원', params: 'DN, Do (mm), t (mm), 강종 (fy)', ref: 'KS D 3565' },
-  { cat: '내압',   params: 'Pd (MPa), 수격계수 ksurge',       ref: 'AWWA M11 Eq.3-1' },
-  { cat: '하중',   params: 'H (m), 차량하중 유무 (DB-24)',     ref: 'KDS 24 12 20' },
-  { cat: '지반',   params: 'γs (kN/m³), 토질분류, 다짐도',    ref: 'AWWA M11 §5.3' },
-  { cat: '이음',   params: 'E\' (MPa), 침상각, 라이닝, GWL',  ref: 'AWWA M11 §5.3' },
+  { cat: '내압',   params: '정수압 P (MPa), 수격압 P′, 압력구간', ref: '세부지침 11-134 / 11-136' },
+  { cat: '하중',   params: 'H (m), 차량하중 유무',              ref: '세부지침 11-134' },
+  { cat: '지반',   params: 'γt (kg/cm³), E′ (kg/cm²)',         ref: '세부지침 11-134 / 11-135' },
+  { cat: '기타',   params: '지지각, 실측 관두께, 단면손실 유무', ref: '세부지침 11-134 / 11-133' },
 ]
 const steelOutputs = [
-  { item: 'We / WL', desc: '토피·차량 하중 (kN/m)' },
-  { item: 'σ_hoop', desc: '후프응력 vs 0.50·fy' },
-  { item: 'σ_b',    desc: '링 휨응력 vs 0.50·fy' },
-  { item: 'Δy/Do',  desc: '처짐률 vs 3.0% / 5.0%' },
-  { item: 'FS_buck', desc: '좌굴 안전율 vs 2.5' },
-  { item: 't_req',   desc: '소요 최소두께 역산' },
+  { item: 'Wv / Wt', desc: '상부 토압·노면하중 (kg/cm²)' },
+  { item: 'σ_t',    desc: '내압응력 vs 140 MPa (일시 210)' },
+  { item: 'σ_b',    desc: '외압 휨응력 vs 140 MPa' },
+  { item: 'ε',      desc: '관체 변형률 vs 5% (라이닝 무관)' },
+  { item: 'q_a',    desc: '허용 좌굴하중 vs 작용 하중 W' },
+  { item: 'SF / 등급', desc: '안전율 → a~e 등급 (표 11.74)' },
   { item: '종합판정', desc: 'O.K. / N.G.' },
 ]
 
 // ── 입력/산출 매트릭스 (주철관) ─────────────────────────────
 const ductileInputs = [
   { cat: '관 제원', params: 'DN, Do (mm), K등급, fu=420 MPa',  ref: 'KS D 4311' },
-  { cat: '내압',   params: 'Pd (MPa), ksurge',                ref: 'AWWA M11 Eq.3-1' },
-  { cat: '하중',   params: 'H (m), 차량하중 유무',              ref: 'KDS 24 12 20' },
-  { cat: '지반',   params: 'γs, 토질, 다짐도, E\'',            ref: 'DIPRA Ch.3' },
-  { cat: '이음',   params: '침상 Type 1~5, GWL',               ref: 'DIPRA Table 3-1' },
+  { cat: '내압',   params: '정수압 P (MPa), 수격압 P′, 압력구간', ref: '세부지침 11-137' },
+  { cat: '하중',   params: 'H (m), 차량하중 유무',              ref: '세부지침 11-134' },
+  { cat: '지반',   params: 'γt (kg/cm³)',                      ref: '세부지침 11-134' },
+  { cat: '기타',   params: '지지각(관저), 실측 관두께, 단면손실', ref: '세부지침 11-137 / 11-133' },
 ]
 const ductileOutputs = [
   { item: 'We / WL', desc: '토피·차량 하중 (kN/m)' },
@@ -111,17 +111,19 @@ export default function StructuralOverviewPage() {
 
         {isSteel ? (
           <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
-            <b>목적</b>: 매설 도복장강관(KS D 3565)의 내압·토압·차량하중에 대한 구조적 안전성을 AWWA M11 기준으로 검토하고 소요 관두께를 산정한다.<br />
-            <b>적용 범위</b>: DN 80 ~ DN 3000 (PN 계열), 토피 0.3 ~ 10.0 m, DB-24 차량하중.<br />
-            <b>검토 항목</b>: 내압 (후프응력) → 링 휨응력 → 처짐 → 외압 좌굴 → 최소관두께 역산.<br />
-            <b>검토 제외</b>: 수격압 상세해석 (ksurge 계수로 간략 반영), 용접부 피로·수온변화·잔류응력, 횡방향 지반변형 (내진평가 모듈 별도).
+            <b>목적</b>: 매설 수도용 도복장강관(KS D 3565)의 구조적 안전성을 「시설물의 안전 및 유지관리 실시 세부지침(안전점검·진단 편)」 제11장 11.5.2 에 따라 검토하고 안전성평가 등급을 산정한다.<br />
+            <b>적용 범위</b>: 정밀안전진단 대상 매설관로. DB-24 차량하중.<br />
+            <b>검토 항목</b>: 내압 → 작용 하중(외압) → 외압 휨응력 → 관체 변형률 → 좌굴하중 → 안전성평가 등급.<br />
+            <b>하중 조합</b>: 외압 검토 시 관 내부 수압 없음 / 내압 검토 시 외부 하중 없음 (11-134 ②).<br />
+            <b>검토 제외</b>: 수격압 상세해석(MOC), 용접부 피로·수온변화·잔류응력, 횡방향 지반변형 (내진평가 모듈 별도).
           </div>
         ) : (
           <div style={{ fontSize: 12, lineHeight: 1.7, color: T.textLabel }}>
-            <b>목적</b>: 매설 덕타일 주철관(KS D 4311)의 내압·토압·차량하중에 대한 구조적 안전성을 DIPRA / AWWA C150 기준으로 검토한다.<br />
-            <b>적용 범위</b>: DN 80 ~ DN 2600 (K-7 / K-9 / K-10 / K-12 등급), 토피 0.3 ~ 10.0 m.<br />
-            <b>검토 항목</b>: 내압 (Barlow, Di 기반) → 링 휨응력 → 처짐 (Iowa 식) → 최소관두께 역산.<br />
-            <b>검토 제외</b>: 외압 좌굴 (주철관은 지배하지 않음), 접합부 이탈력 (Tyton·기계식 별도 검토 필요).
+            <b>목적</b>: 매설 수도용 덕타일 주철관(KS D 4311)의 구조적 안전성을 세부지침 제11장 11.5.2 (2) 에 따라 검토한다.<br />
+            <b>적용 범위</b>: 정밀안전진단 대상 매설관로 (K-7 / K-9 / K-10 / K-12 등급).<br />
+            <b>판정</b>: 내압·외압에 의한 발생 <b>복합 인장응력</b>이 관재의 기준 인장강도를 만족해야 한다 —<br />
+            &nbsp;&nbsp;&nbsp;&nbsp;2.5·σts + 2.0·σtd + 1.4·σb &lt; S (=420 MPa, GCD400).<br />
+            <b>검토 제외</b>: 세부지침에 DCIP 변형(편평률)·좌굴 기준 없음. 접합부 이탈력은 본 모듈 범위 외.
           </div>
         )}
       </EngPanel>
@@ -210,20 +212,22 @@ export default function StructuralOverviewPage() {
         <div style={{ fontSize: 11, lineHeight: 1.85, color: T.textLabel }}>
           {isSteel ? (
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              <li><b>Prism Load 가정</b>: 흙 아치효과(silo effect) 미고려 — 안전측.</li>
-              <li><b>차량하중</b>: Boussinesq 분산, 도로와 관 직각 매설 가정. 사각 매설 시 별도 보정 필요.</li>
-              <li><b>E′ 균일 가정</b>: 측방 지지 등방성, 반경방향 E′ 일정 가정.</li>
-              <li><b>부식여유(CA)</b>: 내·외면 라이닝 유무 무관 2.0 mm 일괄 적용.</li>
-              <li><b>수격압</b>: ksurge 계수로 간략화. 정밀 수격해석(MOC) 시 별도 모듈 필요.</li>
+              <li><b>토압 분기</b>: H≤2m 연직토압 / H&gt;2m Marston(흙 아치효과 반영). 굴착부 폭 B = 2D+100 <b>[cm]</b>.</li>
+              <li><b>차량하중</b>: Kögler 분산각 45°, 도로와 관 직각 매설 가정. 사각 매설 시 별도 보정 필요.</li>
+              <li><b>E′</b>: 지침 제시값 28 kg/cm² 단일값. 토질·다짐도별 세분값 적용 시 근거를 별도 명시할 것.</li>
+              <li><b>부력계수 Rw</b>: 지침 제시값 1.0. 지하수위 선택 시 안전측 보정값이 적용되며 결과에 표시됨.</li>
+              <li><b>관두께</b>: 실측 최소값과 기준 두께 중 작은 값. 실측 미입력 시 기준 두께 적용(화면 명시).</li>
+              <li><b>수격압</b>: 가압구간에서 입력값 적용. 정밀 수격해석(MOC)은 별도 모듈 필요.</li>
               <li><b>온도·잔류응력</b>: 미포함 (취급·설치 하중만 반영).</li>
             </ul>
           ) : (
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              <li><b>Prism Load 가정</b>: 흙 아치효과 미고려 — 안전측.</li>
-              <li><b>좌굴 검토 제외</b>: 덕타일 주철관은 고두께 비(t/Do)로 인해 외압 좌굴이 지배하지 않음.</li>
-              <li><b>접합부 이탈</b>: Tyton·기계식 이음의 이탈 저항력 검토는 본 모듈 범위 외.</li>
-              <li><b>인장강도 기준</b>: fu = 420 MPa 고정 (KS D 4311, ISO 2531).</li>
-              <li><b>침상 조건</b>: DIPRA Type 1~5 분류 적용. 현장 변형 시 Type 재분류 필요.</li>
+              <li><b>토압 분기</b>: 강관의 계산공식과 동일 (H≤2m 연직 / H&gt;2m Marston).</li>
+              <li><b>조합 판정</b>: 강관과 달리 내압·외압을 분리하지 않고 조합한다 (지침이 조합식을 규정).</li>
+              <li><b>단독 허용치 금지</b>: S/1.4 = 300 MPa 는 GCD400 항복강도와 같아 여유가 없다. 조합검토 전제값이므로 개별 응력에 적용하지 말 것.</li>
+              <li><b>지지각 계수</b>: 관저(管底) 기준 Kf(40~180°), Kt = 0.011. 90° = 0.160.</li>
+              <li><b>인장강도 기준</b>: S = 420 MPa 고정 (KS D 4311, GCD400).</li>
+              <li><b>좌굴·변형 기준</b>: 세부지침에 DCIP 해당 규정 없음 — 미적용.</li>
             </ul>
           )}
         </div>
