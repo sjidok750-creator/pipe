@@ -70,18 +70,22 @@ export function checkMinCover({ DN, H, hasTraffic }) {
  * → 허용응력은 압력등급을 만드는 단계에 이미 반영되어 있으므로,
  *   설계자는 "최대사용압력 ≤ 해당 등급의 최대허용압력"을 확인한다.
  *
- * @param {number} Pd          설계 운전압력 (MPa)
- * @param {number} surgeRatio  수격 배율
+ * @param {number} Pd          정수압 (MPa)
+ * @param {number} [Psurge]    수격압 (MPa) — 가압구간에서 실제 입력값
+ * @param {number} [surgeRatio] 수격 배율 — Psurge 미입력 시 대용
  * @returns {object}
  */
-export function checkPressureGrade({ Pd, surgeRatio = 1.5 }) {
-  const Pmax = Pd * surgeRatio  // 수격 포함 최대사용압력
+export function checkPressureGrade({ Pd, Psurge = null, surgeRatio = 1.5 }) {
+  // 최대사용압력: 실제 수격압이 있으면 그 값, 없으면 배율 적용
+  const Pmax = (Psurge != null && Number.isFinite(Psurge) && Psurge > 0)
+    ? Math.max(Pd, Psurge)
+    : Pd * surgeRatio
 
   // 최대사용압력을 만족하는 최소 등급 선정
   const required = PRESSURE_GRADE_KDS.find(g => Pmax <= g.maxAllow) || null
 
   return {
-    Pd, surgeRatio, Pmax,
+    Pd, Psurge, surgeRatio, Pmax,
     requiredGrade: required ? required.key : null,
     maxAllow: required ? required.maxAllow : null,
     ok: required != null,
@@ -99,12 +103,12 @@ export function checkPressureGrade({ Pd, surgeRatio = 1.5 }) {
  * 현행 KDS 기준 적합성 종합
  * @returns {{ items: object, overallOK: boolean }}
  */
-export function checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, surgeRatio, pipeDimManual }) {
+export function checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, Psurge, surgeRatio, pipeDimManual }) {
   // 직접입력 시 외경을 공칭관경 대용으로 사용
   const dnUsed = pipeDimManual ? Do : DN
 
   const cover = checkMinCover({ DN: dnUsed, H, hasTraffic })
-  const grade = checkPressureGrade({ Pd, surgeRatio })
+  const grade = checkPressureGrade({ Pd, Psurge, surgeRatio })
 
   return {
     items: { cover, grade },

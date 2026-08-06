@@ -190,7 +190,7 @@ export function calcSteelPipe(inputs) {
     appliedFormula: "σb = (2/(f·Z))·(Wv+Wt)·[Kb·R²·E·I + (0.061Kb − 0.083Kx)·E′·R⁵] / [E·I + 0.061·E′·R³]",
     allowSource: STEEL_ALLOW.source,
     allowGrade: STEEL_ALLOW.grade,
-    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, pipeDimManual }),
+    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, Psurge: Psurge_used, pipeDimManual }),
     beddingCoerced,
     pressureZone, rwIsGuideline,
 

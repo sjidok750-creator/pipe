@@ -9,22 +9,18 @@ import CrossSectionSVG from '../components/diagrams/CrossSectionSVG'
 import DeflectionSVG from '../components/diagrams/DeflectionSVG'
 import HoopStressSVG from '../components/diagrams/HoopStressSVG'
 import SafetyGaugeSVG from '../components/diagrams/SafetyGaugeSVG'
-import BoussinesqSVG from '../components/diagrams/BoussinesqSVG'
 import BeddingConditionSVG from '../components/diagrams/BeddingConditionSVG'
-import EValueChartSVG from '../components/diagrams/EValueChartSVG'
 
 const DIAGRAM_TABS = [
   { key: 'cross',   label: '단면도' },
   { key: 'deflect', label: '처짐' },
   { key: 'hoop',    label: '내압' },
-  { key: 'bouss',   label: 'DB-24' },
   { key: 'bedding', label: '침상' },
-  { key: 'eprime',  label: "E'" },
 ]
 
 export default function ResultPage() {
   const navigate = useNavigate()
-  const { result, inputs, dual } = useStore()
+  const { result, inputs } = useStore()
   const [diagTab, setDiagTab] = useState('cross')
 
   if (!result) {
@@ -39,60 +35,67 @@ export default function ResultPage() {
     )
   }
 
-  const { verdict, steps, pipeType, Do, tAdopt, tRequired } = result
+  const { verdict, steps, pipeType, Do, tAdopt } = result as any
   const rs = steps as any
   const hoopStep = rs.step1
-  const deflStep = pipeType === 'steel' ? rs.step5 : rs.step4
+  const deflStep = pipeType === 'steel' ? rs.step4 : null   // 강관: 변형률
 
   // 결과 테이블 행 구성
   const verdictItems = Object.entries(verdict)
     .filter(([k]) => k !== 'overallOK') as [string, any][]
 
-  // 지반·토압 파라미터
-  const earthStep = pipeType === 'steel' ? rs.step2 : rs.step2
+  // 지반·토압 파라미터 — 세부지침 11-134 (원단위 cm, kg/cm²)
+  const earthStep = rs.step2
   const groundParams = [
-    { label: '토피 H',         value: inputs.H,               unit: 'm' },
-    { label: '흙 단위중량 γ',  value: inputs.gammaSoil,       unit: 'kN/m³' },
-    { label: '토사하중 We',    value: earthStep?.We,          unit: 'kN/m' },
-    { label: '탄성지반반력 E\'', value: inputs.Eprime,         unit: 'kPa' },
-    { label: '외경 Do',        value: Do,                     unit: 'mm' },
-    { label: '채택 두께 t',    value: tAdopt,                 unit: 'mm' },
+    { label: '토피 H',            value: inputs.H,                    unit: 'm' },
+    { label: '흙의 단위중량 γt',  value: earthStep?.gammaSoil_kgfcm3, unit: 'kg/cm³' },
+    { label: '굴착부 폭 B',       value: earthStep?.B_cm,             unit: 'cm' },
+    { label: '상부 토압 Wv',      value: earthStep?.Wv ?? earthStep?.Wf, unit: 'kg/cm²' },
+    { label: '노면하중 Wt',       value: earthStep?.Wt,               unit: 'kg/cm²' },
+    ...(pipeType === 'steel'
+      ? [{ label: "흙 반력계수 E′", value: rs.step3?.Ep, unit: 'kg/cm²' }] : []),
+    { label: '외경 D',            value: Do,                          unit: 'mm' },
+    { label: '적용 두께 t',       value: tAdopt,                      unit: 'mm' },
   ]
 
   // 내압 검토
   const pressureRows = pipeType === 'steel' ? [
-    { label: '내압응력 σ',   formula: 'Pd·D/(2t)', value: hoopStep?.sigma_normal, unit: 'MPa', limit: hoopStep?.sigmaA_normal, ok: hoopStep?.ok_normal },
+    { label: '내압응력 σt (정수압·상시)', formula: 'P·D/(2t)', value: hoopStep?.sigma_t_static, unit: 'MPa', limit: hoopStep?.sigmaA_static, ok: hoopStep?.ok_static },
+    ...(hoopStep?.isPumped ? [
+      { label: '내압응력 σt′ (수격압·일시)', formula: 'P′·D/(2t)', value: hoopStep?.sigma_t_surge, unit: 'MPa', limit: hoopStep?.sigmaA_surge, ok: hoopStep?.ok_surge },
+    ] : []),
   ] : [
-    { label: '내압 후프응력 σ',   formula: 'Pd·Di/(2t)', value: hoopStep?.sigma_hoop, unit: 'MPa', limit: hoopStep?.sigmaA_hoop, ok: hoopStep?.ok },
+    { label: '정수압 인장응력 σts', formula: 'P·D/(2t)',  value: hoopStep?.sigma_ts, unit: 'MPa' },
+    { label: '수격압 인장응력 σtd', formula: 'P′·D/(2t)', value: hoopStep?.sigma_td, unit: 'MPa' },
   ]
+
 
   // 링 휨 / 처짐 검토 — 필드명은 각 engine 파일의 실제 반환값 기준
   const structRows = pipeType === 'steel' ? [
-    ...(rs.step4 ? [
-      { label: '링 휨 응력 σ_b',  formula: 'Kb·Wtotal·Do/t²', value: rs.step4?.sigma_b, unit: 'MPa', limit: rs.step4?.sigmaA_bend, ok: rs.step4?.ok },
-    ] : []),
-    { label: '처짐율 Δy/Do',      formula: 'Iowa식 (수정)', value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
-    ...(rs.step6 ? [
-      { label: '좌굴 안전율 FS',  formula: 'AWWA M11', value: rs.step6?.bucklingFS_actual, unit: '', limit: rs.step6?.FS_allow, ok: rs.step6?.ok },
+    { label: '외압 휨응력 σb', formula: '세부지침 11-135 (다)',
+      value: rs.step3?.sigma_b, unit: 'MPa', limit: rs.step3?.sigmaA_bend, ok: rs.step3?.ok },
+    { label: '관체 변형률 ε', formula: '세부지침 11-136 (라)',
+      value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
+    ...(rs.step5 ? [
+      { label: '좌굴하중 W ≤ qa', formula: '세부지침 11-136 (마)',
+        value: rs.step5?.Wtotal, unit: 'kg/cm²', limit: rs.step5?.qa, ok: rs.step5?.ok },
     ] : []),
   ] : [
-    ...(rs.step3 ? [
-      { label: '링 휨 응력 σ_b',  formula: 'Kb·Wtotal·Do/t²', value: rs.step3?.sigma_b, unit: 'MPa', limit: rs.step3?.sigmaA_bend, ok: rs.step3?.ok },
-    ] : []),
-    { label: '처짐율 Δy/Do',      formula: 'Iowa식 (DIPRA)', value: deflStep?.deflectionRatio, unit: '%', limit: deflStep?.maxDeflection, ok: deflStep?.ok },
+    { label: '외압 휨응력 σb', formula: '6(Kf·Wf + Kt·Wt)R²/t²',
+      value: rs.step3?.sigma_b, unit: 'MPa' },
+    { label: '조합 인장응력', formula: '2.5σts + 2.0σtd + 1.4σb < S',
+      value: rs.step4?.demand, unit: 'MPa', limit: rs.step4?.S, ok: rs.step4?.ok },
   ]
 
-  // 최소관두께 검토 행 구성
-  const minThkRows = pipeType === 'steel' ? [
-    { label: '내압 최소두께', formula: 'Pd·D/(2·σa)', value: hoopStep?.tp_normal, unit: 'mm' },
-    { label: '취급 최소두께', formula: 'Do/288', value: hoopStep?.tHandling, unit: 'mm' },
-    { label: '소요 최소두께 (합계)', formula: 'max(위) + 1.5mm 부식여유', value: tRequired, unit: 'mm' },
-    { label: '채택 두께 t', formula: '—', value: tAdopt, unit: 'mm', ok: tAdopt >= tRequired },
-  ] : [
-    { label: '내압 최소두께 tp_hoop', formula: 'Pd·Do/(2·(σA+Pd))', value: hoopStep?.tp_hoop, unit: 'mm' },
-    { label: '외압(링휨) 최소두께 tp_bend', formula: '√(Kb·W·Do/σA_bend)', value: hoopStep?.tp_bend, unit: 'mm' },
-    { label: '소요 최소두께', formula: 'max(tp_hoop, tp_bend)', value: tRequired, unit: 'mm' },
-    { label: '채택 두께 t', formula: '—', value: tAdopt, unit: 'mm', ok: tAdopt >= tRequired },
+  // 관두께 적용규칙 — 세부지침 11-134 ②
+  //   "관 상세검사에서 측정된 구간별 최소 관두께와 관경별 기준 관두께 중 작은 값"
+  const minThkRows = [
+    { label: '기준 관두께 t_std', formula: pipeType === 'steel' ? 'STWW 400 기준' : 'K등급 기준',
+      value: (result as any).tStandard, unit: 'mm' },
+    { label: '실측 최소 관두께 t_msr', formula: '관 상세검사',
+      value: (result as any).tMeasured, unit: 'mm' },
+    { label: '적용 관두께 t', formula: 'min(t_std, t_msr)',
+      value: tAdopt, unit: 'mm' },
   ]
 
   const gaugeItems = verdictItems.map(([k, v]) => ({ ...v, higherIsBetter: k === 'buckling' }))
@@ -212,7 +215,7 @@ export default function ResultPage() {
               )}
               {result.beddingCoerced && (
                 <div style={{ color: '#b45309' }}>
-                  ⚠ 지지각 {result.beddingCoerced} 은 2004 기준 표에 없어 60°로 보정되었습니다.
+                  ⚠ 지지각 {result.beddingCoerced} 은 세부지침 11-135 표에 없어 60°로 보정되었습니다.
                 </div>
               )}
             </div>
@@ -244,89 +247,40 @@ export default function ResultPage() {
           </EngPanel>
         )}
 
-        {/* 병기(倂記) 판정 — 두 기준 동시 비교 */}
-        {dual && (
-          <EngPanel title={`Ⅱ-(d) 병기 검토 — 주기준: ${dual.primaryLabel}`}>
-            <div style={{ marginBottom: 8 }}>
-              <span style={{
-                display: 'inline-block', padding: '4px 12px', borderRadius: 3,
-                fontSize: '12px', fontWeight: T.fw.bold, color: '#fff',
-                background: dual.primaryOK ? '#15803d' : '#b91c1c',
-              }}>{dual.primaryOK ? '판정: O.K.' : '판정: N.G.'}</span>
-              <span style={{ marginLeft: 8, fontSize: '11px', color: T.textMuted }}>
-                {dual.primaryLabel} 기준
-              </span>
-              <span style={{
-                display: 'inline-block', marginLeft: 10, padding: '3px 10px', borderRadius: 3,
-                fontSize: '11px', color: '#fff',
-                background: dual.verdict === 'PASS' ? '#15803d'
-                  : dual.verdict === 'CHECK_BACKFILL' ? '#b45309'
-                  : dual.verdict === 'REINFORCE' ? '#b91c1c' : '#6d28d9',
-              }}>{dual.verdictLabel}</span>
-            </div>
-            <div style={{ fontSize: '11px', color: T.textMuted, marginBottom: 8 }}>{dual.verdictNote}</div>
-
-            {(() => {
-              const isSteelDual = pipeType === 'steel'
-              // 관종별 링휨 데이터 위치가 다름 (강관 2004=setA, 현행=step4 / 주철관 모두 step3)
-              const pick = (res: any, code: string) => isSteelDual
-                ? (code === 'KWW2004' ? res?.setA : res?.steps?.step4)
-                : res?.steps?.step3
-              const fml = (code: string) => isSteelDual
-                ? (code === 'KWW2004' ? "σb = (2/(f·Z))·(Wv+Wt)·[…E′…]" : 'σb = Kb·Wtotal·Do/t²')
-                : 'σb = Kb·Wtotal·Do/t²'
-              const refCode = dual.primaryCode === 'KWW2004' ? 'KDS2022' : 'KWW2004'
-              const P = pick(dual.primary, dual.primaryCode)
-              const R = pick(dual.reference, refCode)
-              const okOf = (x: any) => x?.ok ?? x?.ok_bending
-              return (
-                <>
-                  <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textAccent, marginBottom: 3 }}>
-                    ▶ 정식 판정 — {dual.primaryLabel}
-                  </div>
-                  <EngTable rows={[
-                    { label: '링 휨응력 σb', formula: fml(dual.primaryCode),
-                      value: P?.sigma_b, unit: 'MPa', limit: P?.sigmaA_bend, ok: okOf(P) },
-                    ...(dual.primary?.combined ? [{
-                      label: '조합응력', formula: '2.5σts+2.0σtd+1.4σb',
-                      value: dual.primary.combined.demand, unit: 'MPa',
-                      limit: dual.primary.combined.S, ok: dual.primary.combined.ok,
-                    }] : []),
-                  ]}/>
-
-                  <div style={{ fontSize: '11px', fontWeight: T.fw.bold, color: T.textMuted, margin: '10px 0 3px' }}>
-                    ▷ 참고값 — {dual.referenceLabel} <span style={{ fontWeight: T.fw.normal }}>(판정에 사용하지 않음)</span>
-                  </div>
-                  <EngTable rows={[
-                    { label: '링 휨응력 σb (참고)', formula: fml(refCode),
-                      value: R?.sigma_b, unit: 'MPa', limit: R?.sigmaA_bend },
-                    ...(dual.reference?.combined ? [{
-                      label: '조합응력 (참고)', formula: '2.5σts+2.0σtd+1.4σb',
-                      value: dual.reference.combined.demand, unit: 'MPa',
-                      limit: dual.reference.combined.S,
-                    }] : []),
-                  ]}/>
-
-                  <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
-                    ※ 두 방식은 <strong>토압 산정</strong>(H&gt;2m Marston / Prism)이 달라 토피가 깊을수록 차이가 커집니다.
-                    {isSteelDual
-                      ? ' 강관은 링휨식의 E′ 반영 여부도 다릅니다.'
-                      : ' 주철관은 링휨식이 동일(E′ 미포함)하며, 2004는 조합응력 검토가 추가됩니다.'}<br/>
-                    ※ 참고값이 초과하고 주기준이 만족하는 경우, 관 결함이 아니라 되메움 다짐도 확보 여부를 확인하십시오.
-                  </div>
-                </>
-              )
-            })()}
-          </EngPanel>
-        )}
+        {/* 안전성평가 등급 — 세부지침 11-133 [표 11.74] */}
+        <EngPanel title="안전성평가 (세부지침 11-133 [표 11.74])">
+          <div style={{ marginBottom: 8 }}>
+            <span style={{
+              display: 'inline-block', padding: '4px 14px', borderRadius: 3,
+              fontSize: '15px', fontWeight: T.fw.bold, color: '#fff',
+              background: (result as any).safetyGrade?.grade === 'a' ? '#15803d'
+                : (result as any).safetyGrade?.grade === 'b' ? '#4d7c0f'
+                : (result as any).safetyGrade?.grade === 'c' ? '#b45309'
+                : (result as any).safetyGrade?.grade === 'd' ? '#c2410c' : '#b91c1c',
+            }}>{((result as any).safetyGrade?.grade ?? '—').toUpperCase()}</span>
+            <span style={{ marginLeft: 10, fontSize: '12px', color: T.textMuted }}>
+              평가점수 {(result as any).safetyGrade?.score ?? '—'} / 5
+            </span>
+          </div>
+          <EngTable rows={[
+            { label: '안전율 SF', formula: '허용응력 / 발생응력 (최솟값)',
+              value: (result as any).SF, unit: '' },
+          ]}/>
+          <div style={{ fontSize: '10.5px', color: T.textMuted, marginTop: 6, lineHeight: 1.6 }}>
+            ※ {(result as any).safetyGrade?.desc ?? ''}<br/>
+            ※ 주부재 손상(단면손실): <strong>{(result as any).hasSectionLoss ? '있음' : '없음'}</strong>
+            {' '}— 등급 a/b 구분에 사용됩니다.<br/>
+            ※ 허용응력설계법 기준. 검토항목 중 가장 불리한 값으로 등급을 판정합니다.
+          </div>
+        </EngPanel>
 
         {/* 최소관두께 */}
-        <EngPanel title="(c) 최소관두께 검토 (참고)">
+        <EngPanel title="(c) 관두께 적용">
           <EngTable rows={minThkRows}/>
           <div style={{ fontSize: '10px', color: T.textMuted, fontFamily: T.fontSans, marginTop: 6, lineHeight: 1.7, padding: '4px 6px', background: T.bgSection, borderRadius: 2 }}>
-            {pipeType === 'steel'
-              ? '강관: AWWA M11 취급최소두께(Do/288) + 부식여유 1.5mm 포함. 기준: AWWA M11 Eq.3-1 / KS D 3565'
-              : '주철관: KS D 4311 기준 Di기반 Barlow 역산(내압) 및 링휨 역산(외압). KS D 4311에 취급최소두께·부식여유 별도 규정 없으므로 해당 항목 미적용.'}
+            관두께는 관 상세검사에서 측정된 구간별 최소 관두께와 관경별 기준 관두께 가운데
+            작은 값을 적용한다. [세부지침 11-134]
+            {!(result as any).hasMeasured && ' — 실측값 미입력으로 기준 두께를 적용했습니다.'}
           </div>
         </EngPanel>
 
@@ -389,12 +343,8 @@ export default function ResultPage() {
               t={tAdopt}
             />
           )}
-          {diagTab === 'bouss' && <BoussinesqSVG currentH={inputs.H}/>}
           {diagTab === 'bedding' && (
-            <BeddingConditionSVG selected={pipeType === 'ductile' ? inputs.beddingType : 'Type2'}/>
-          )}
-          {diagTab === 'eprime' && (
-            <EValueChartSVG currentH={inputs.H} currentE={inputs.Eprime} compaction={inputs.compaction}/>
+            <BeddingConditionSVG selected={(inputs as any).diBeddingType ?? 'deg90'}/>
           )}
         </div>
 

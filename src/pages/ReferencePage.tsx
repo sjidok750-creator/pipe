@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
-import { STEEL_THICKNESS, DI_THICKNESS, BEDDING, E_PRIME, DB24_PRESSURE } from '../engine/constants.js'
+import { STEEL_THICKNESS, DI_THICKNESS, DI_BEDDING, STEEL_BEDDING, TRAFFIC, EARTH_LOAD } from '../engine/constants.js'
 
 const TAB_LIST = [
   { key: 'kds', label: 'KDS 기준체계' },
   { key: 'allow', label: '허용응력' },
   { key: 'steel', label: '강관 두께표' },
   { key: 'ductile', label: '주철관 두께표' },
-  { key: 'db24', label: 'DB-24 하중표' },
-  { key: 'eprime', label: "E' 기준표" },
-  { key: 'bedding', label: '침상 계수표' },
+  { key: 'db24', label: '작용 하중 상수' },
+  { key: 'eprime', label: '강관 지지각 계수' },
+  { key: 'bedding', label: '주철관 지지각 계수' },
 ]
 
 export default function ReferencePage() {
@@ -198,91 +198,109 @@ export default function ReferencePage() {
           </div>
         )}
 
-        {/* DB-24 하중표 */}
+        {/* 작용 하중 상수 */}
         {tab === 'db24' && (
           <div>
-            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>DB-24 등가 수직압력 (Boussinesq)</h2>
-            <p className="text-xs text-gray-500 mb-3">KDS 24 12 20 (도로교설계기준) — 충격계수 포함</p>
+            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>작용 하중 상수 — 세부지침 11-134</h2>
+            <p className="text-xs text-gray-500 mb-3">
+              상부 토압 및 노면하중 산정 상수 (원단위 cm, kg, kg/cm²)
+            </p>
             <table className="w-full text-sm">
               <thead><tr style={{ background: '#003366', color: 'white' }}>
-                <th className="p-3 text-center">매설깊이 H (m)</th>
-                <th className="p-3 text-center">기준압력 PL (kPa)</th>
-                <th className="p-3 text-center">충격계수 IF</th>
-                <th className="p-3 text-center">설계압력 PL×IF (kPa)</th>
-              </tr></thead>
-              <tbody>
-                {Object.entries(DB24_PRESSURE).map(([h, { PL, IF }]: any, i) => (
-                  <tr key={h} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
-                    <td className="p-3 text-center font-bold">{h}</td>
-                    <td className="p-3 text-center">{PL}</td>
-                    <td className="p-3 text-center">{IF}</td>
-                    <td className="p-3 text-center font-bold" style={{ color: '#003366' }}>
-                      {(PL * IF).toFixed(1)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* E' 기준표 */}
-        {tab === 'eprime' && (
-          <div>
-            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>E' 선정 기준표 (AWWA M11 Table 5-3 SI환산, kPa)</h2>
-            <table className="w-full text-sm">
-              <thead><tr style={{ background: '#003366', color: 'white' }}>
-                <th className="p-3 text-center">토질 등급</th>
-                <th className="p-3 text-center">토질 설명</th>
-                <th className="p-3 text-center">다짐도 80%</th>
-                <th className="p-3 text-center">다짐도 85%</th>
-                <th className="p-3 text-center">다짐도 90%</th>
+                <th className="p-3 text-center">항목</th>
+                <th className="p-3 text-center">기호</th>
+                <th className="p-3 text-center">값</th>
+                <th className="p-3 text-left">비고</th>
               </tr></thead>
               <tbody>
                 {[
-                  ['SC1', '조립토 (자갈, 모래)', '1,400', '2,700', '6,900'],
-                  ['SC2', '혼합토 (모래질 점토 등)', '700', '2,000', '4,800'],
-                  ['SC3', '세립토 (점토, 실트)', '—', '700', '1,400'],
-                  ['연약', '연약지반', '300', '300', '300'],
-                ].map(([cls, desc, d80, d85, d90], i) => (
-                  <tr key={cls} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
-                    <td className="p-3 text-center font-bold">{cls}</td>
-                    <td className="p-3">{desc}</td>
-                    <td className="p-3 text-center">{d80}</td>
-                    <td className="p-3 text-center">{d85}</td>
-                    <td className="p-3 text-center">{d90}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* 침상 계수표 */}
-        {tab === 'bedding' && (
-          <div>
-            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>침상 조건 계수표 (DIPRA)</h2>
-            <table className="w-full text-sm">
-              <thead><tr style={{ background: '#003366', color: 'white' }}>
-                <th className="p-3 text-center">침상 조건</th>
-                <th className="p-3 text-left">설명</th>
-                <th className="p-3 text-center">Kb (휨응력)</th>
-                <th className="p-3 text-center">Kd (처짐)</th>
-              </tr></thead>
-              <tbody>
-                {Object.entries(BEDDING).map(([type, { label, Kb, Kd }]: any, i) => (
-                  <tr key={type} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
-                    <td className="p-3 text-center font-bold">{type}</td>
-                    <td className="p-3">{label}</td>
-                    <td className="p-3 text-center font-mono">{Kb}</td>
-                    <td className="p-3 text-center font-mono">{Kd}</td>
+                  ['흙의 단위중량', 'γt', `${EARTH_LOAD.gamma_t}`, 'kg/cm³'],
+                  ['내부마찰각', "φ′ = φ", `${EARTH_LOAD.phi_deg}°`, "k = (1−sinφ)/(1+sinφ), μ′ = tanφ′"],
+                  ['토압계수', "kμ′", EARTH_LOAD.kmu.toFixed(5), 'φ=30°에서 유도'],
+                  ['굴착부 폭', 'B', '2D + 100', 'cm — 강관 정부에서의 굴착부 폭'],
+                  ['연직/Marston 경계', 'H', `${EARTH_LOAD.H_limit_m} m`, 'H ≤ 2.0m 연직토압 / 초과 Marston'],
+                  ['후륜하중', 'P', `${TRAFFIC.P}`, 'kg (DB-24)'],
+                  ['점유폭 차량 대수', 'n', `${TRAFFIC.n}`, ''],
+                  ['후륜 중심간격', 'L', `${TRAFFIC.L_cm}`, 'cm'],
+                  ['인접차량 후륜 중심간격', 'C', `${TRAFFIC.C_cm}`, 'cm'],
+                  ['차륜 접지폭', 'b', `${TRAFFIC.b_cm}`, 'cm'],
+                  ['차륜폭', 'a', `${TRAFFIC.a_cm}`, 'cm'],
+                  ['Kögler 분산각', 'θ', `${TRAFFIC.theta}°`, ''],
+                ].map(([nm, sym, val, note], i) => (
+                  <tr key={nm} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
+                    <td className="p-3">{nm}</td>
+                    <td className="p-3 text-center font-mono font-bold">{sym}</td>
+                    <td className="p-3 text-center font-mono" style={{ color: '#003366' }}>{val}</td>
+                    <td className="p-3 text-xs text-gray-600">{note}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="mt-4 p-3 rounded text-xs text-gray-600" style={{ background: '#f0f4f0', border: '1px solid #b0c8b0' }}>
-              Kb: 링 휨응력 계산 계수 / Kd: 처짐량 계산 계수 (Modified Iowa Equation)<br/>
-              침상 조건이 좋을수록 (Type 4) Kb, Kd 값이 작아지므로 응력 및 처짐이 감소함.
+              충격계수 i : H &lt; 1.5 → 0.5 / 1.5 &lt; H &lt; 6.5 → 0.65 − 0.10H / 6.5 &lt; H → 0<br/>
+              ※ B = 2D + 100 의 단위는 cm 입니다 (원문 수식군 전체가 cm 계).
+            </div>
+          </div>
+        )}
+
+        {/* 강관 지지각별 계수 */}
+        {tab === 'eprime' && (
+          <div>
+            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>강관 기초지지각별 계수 — 세부지침 11-135</h2>
+            <p className="text-xs text-gray-500 mb-3">
+              외압에 의한 관체의 원주방향 휨응력 산정 계수 · 흙 반력계수 E′ = 28 kg/cm² (단일값)
+            </p>
+            <table className="w-full text-sm">
+              <thead><tr style={{ background: '#003366', color: 'white' }}>
+                <th className="p-3 text-center">지지각</th>
+                <th className="p-3 text-center">Kb (휨)</th>
+                <th className="p-3 text-center">Kx (변형)</th>
+                <th className="p-3 text-center">0.061Kb − 0.083Kx</th>
+              </tr></thead>
+              <tbody>
+                {Object.entries(STEEL_BEDDING).map(([type, { label, Kb, Kx }]: any, i) => (
+                  <tr key={type} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
+                    <td className="p-3 text-center font-bold">{label.split('—')[0]?.trim()}</td>
+                    <td className="p-3 text-center font-mono">{Kb}</td>
+                    <td className="p-3 text-center font-mono">{Kx}</td>
+                    <td className="p-3 text-center font-mono" style={{ color: '#003366' }}>
+                      {(0.061 * Kb - 0.083 * Kx).toFixed(5)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-4 p-3 rounded text-xs text-gray-600" style={{ background: '#f0f4f0', border: '1px solid #b0c8b0' }}>
+              지침 표에 존재하는 60·90·120·150° 만 사용 가능합니다.<br/>
+              관체 탄성계수 E = 2.1×10⁶ kg/cm² · 소성단면계수 f = 1.5 · R = D/2 + t
+            </div>
+          </div>
+        )}
+
+        {/* 주철관 지지각별 계수 */}
+        {tab === 'bedding' && (
+          <div>
+            <h2 className="text-base font-bold mb-3" style={{ color: '#003366' }}>덕타일 주철관 지지각별 계수 — 세부지침 11-137</h2>
+            <p className="text-xs text-gray-500 mb-3">관저 기준 · σb = 6(Kf·Wf + Kt·Wt)R² / t²</p>
+            <table className="w-full text-sm">
+              <thead><tr style={{ background: '#003366', color: 'white' }}>
+                <th className="p-3 text-center">지지각</th>
+                <th className="p-3 text-center">Kf</th>
+                <th className="p-3 text-center">Kt</th>
+              </tr></thead>
+              <tbody>
+                {Object.entries(DI_BEDDING).map(([type, { label, Kf, Kt }]: any, i) => (
+                  <tr key={type} style={{ background: i % 2 === 0 ? '#f5f8ff' : 'white' }}>
+                    <td className="p-3 text-center font-bold">{label.split('—')[0]?.trim()}</td>
+                    <td className="p-3 text-center font-mono">{Kf}</td>
+                    <td className="p-3 text-center font-mono">{Kt}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="mt-4 p-3 rounded text-xs text-gray-600" style={{ background: '#f0f4f0', border: '1px solid #b0c8b0' }}>
+              판정: 2.5·σts + 2.0·σtd + 1.4·σb &lt; S (S = 420 MPa, GCD400 인장강도)<br/>
+              ※ 90° = 0.160 — 2004 스캔본의 1640×10⁻⁶ 표기는 오식이며 지침값이 정본입니다.
             </div>
           </div>
         )}

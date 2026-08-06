@@ -141,7 +141,7 @@ export function calcDuctileIron(inputs) {
       note: `S = ${C.S} MPa (GCD400 인장강도, KS D 4311)`,
     },
 
-    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, pipeDimManual }),
+    kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, Psurge: Psurge_used, pipeDimManual }),
 
     steps: {
       step1: {
