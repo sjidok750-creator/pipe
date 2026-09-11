@@ -40,8 +40,8 @@ export const seismicPrelimFlow: FlowSpec = {
       id: 's1', kind: 'process',
       x: 260, y: 264, w: 280, h: 42,
       title: '① 유연도지수 FLEX 산정',
-      sub: 'FLEX = f(D/t 비율)',
-      codeRef: '요령 §B.2',
+      sub: 'F = 2Em(1−νp²)R³/{Ep(1+νm)t³} → FLEX',
+      codeRef: '요령 해설식(5.4.6) · 부록 A.1.3',
     },
     {
       id: 's2', kind: 'process',
@@ -69,7 +69,7 @@ export const seismicPrelimFlow: FlowSpec = {
       id: 'd_vul', kind: 'decision',
       x: 260, y: 562, w: 240, h: 44,
       title: '상세평가 필요?',
-      sub: '1그룹  &  VI ≥ 40',
+      sub: '1그룹  &  VI > 40',
     },
 
     {

@@ -127,16 +127,32 @@ export async function exportSeismicPrelimHwpx({ inp, r, indexLabels, projectName
       [{ text: '지진구역 / 권역', bold: true }, `구역 ${inp.zone} / ${inp.isUrban ? '도시권역' : '기타지역'}`],
       [{ text: '지반종류', bold: true }, inp.soilType],
       [{ text: '공칭관경 / 관두께', bold: true }, `DN ${inp.DN} / t = ${inp.thickness} mm`],
+      [{ text: '탄성상수', bold: true }, `Em = ${r.Em_MPa.toFixed(1)} MPa, νm = ${r.nu_m} / Ep = ${r.Ep_MPa.toLocaleString()} MPa, νp = ${r.nu_p}`],
     ],
   })
   b.spacer()
 
   b.heading('2. 취약도지수 (VI) 산정')
+  b.subheading('2.1 유연도비 F (평가요령 해설식(5.4.6) · 부록 A.1.3)')
+  b.equation('유연도비', 'F = {E _{m} ( 1 - nu _{p} ^{2} ) R ^{3}} over {6 E _{p} I _{p} ( 1 + nu _{m} )} = {2 E _{m} ( 1 - nu _{p} ^{2} ) R ^{3}} over {E _{p} ( 1 + nu _{m} ) t ^{3}}')
+  b.table({
+    weights: [2, 3, 1],
+    headers: ['기호', '내용', '값'],
+    rows: [
+      ['R', '구조물의 반경 (= DN/2, m)', { text: r.R_m.toFixed(3), align: 'right' }],
+      ['t', '구조물의 두께 (m)', { text: r.t_m.toFixed(4), align: 'right' }],
+      ['Ip', '단위폭당 관성모멘트 t³/12 (m⁴/m)', { text: r.Ip.toExponential(3), align: 'right' }],
+      [{ text: 'F', bold: true, shade: true }, { text: '유연도비', shade: true }, { text: r.F.toFixed(2), align: 'right', bold: true, shade: true }],
+    ],
+  })
+  b.spacer()
+
+  b.subheading('2.2 취약도지수')
   b.equation('취약도지수', 'VI = FLEX times ( KIND + EARTH + SIZE + CONNECT + FACIL + MCONE )')
   b.table({
     headers: ['지수 항목', '산정 기준', '지수값'], weights: [2, 3, 1],
     rows: [
-      ['FLEX — 유연도지수', `D/t = ${r.ratio.toFixed(1)}`, { text: fmtNum(r.FLEX), align: 'right' }],
+      ['FLEX — 유연도지수', `유연도비 F = ${r.F.toFixed(2)} (해설표 3.4.2)`, { text: fmtNum(r.FLEX), align: 'right' }],
       ['KIND — 관종', indexLabels?.KIND ?? '', { text: fmtNum(r.KIND), align: 'right' }],
       ['EARTH — 지반상태', indexLabels?.EARTH ?? '', { text: fmtNum(r.EARTH), align: 'right' }],
       ['SIZE — 관경', indexLabels?.SIZE ?? '', { text: fmtNum(r.SIZE), align: 'right' }],
@@ -153,7 +169,7 @@ export async function exportSeismicPrelimHwpx({ inp, r, indexLabels, projectName
     weights: [1, 3],
     rows: [
       [{ text: '지진도 그룹', bold: true }, `${r.seismicityGroup}그룹 (${r.seismicityGroup === 1 ? '중점고려지역' : '관찰대상지역'})`],
-      [{ text: '취약도지수 VI', bold: true }, `${r.VI.toFixed(1)} (${r.VI >= 40 ? '≥ 40' : '< 40'})`],
+      [{ text: '취약도지수 VI', bold: true }, `${r.VI.toFixed(1)} (${r.VI > 40 ? '> 40' : '≤ 40'})`],
       [{ text: '최종 판정', bold: true, shade: true }, { text: r.isCritical ? '내진성능 중요상수도 → 상세평가 필요' : '내진성능 유보상수도 → 관찰 대상', shade: true }],
     ],
   })

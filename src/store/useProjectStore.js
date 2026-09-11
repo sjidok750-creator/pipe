@@ -6,7 +6,7 @@ import { projectRepo } from '../lib/projectRepo.js'
 import { storage } from '../lib/storage.js'
 import { getSession } from '../lib/startup.js'
 import { useStore } from './useStore.js'
-import { useSeismicStore } from './useSeismicStore.js'
+import { useSeismicStore, migratePrelimInputs, migratePrelimResult } from './useSeismicStore.js'
 
 const SESSION_KEY = 'session'
 const _session = getSession()
@@ -64,8 +64,8 @@ function loadFacilityToStores(facility, enabledModules) {
   }
   if (enabledModules.includes('seismicPrelim') && facility.modules.seismicPrelim) {
     useSeismicStore.setState({
-      prelimInputs: facility.modules.seismicPrelim.inputs,
-      prelimResult: facility.modules.seismicPrelim.result ?? null,
+      prelimInputs: migratePrelimInputs(facility.modules.seismicPrelim.inputs),
+      prelimResult: migratePrelimResult(facility.modules.seismicPrelim.result),
     })
   } else {
     useSeismicStore.getState().resetPrelim()

@@ -5,7 +5,7 @@
 import { storage } from './storage.js'
 import { projectRepo } from './projectRepo.js'
 import { useStore } from '../store/useStore.js'
-import { useSeismicStore } from '../store/useSeismicStore.js'
+import { useSeismicStore, migratePrelimInputs, migratePrelimResult } from '../store/useSeismicStore.js'
 import type { Project, Facility } from './projectRepo.js'
 
 export interface SessionData {
@@ -126,8 +126,8 @@ function restoreSession(): void {
     }
     if (session.seismicPrelim?.inputs) {
       useSeismicStore.setState({
-        prelimInputs: session.seismicPrelim.inputs as never,
-        prelimResult: (session.seismicPrelim.result as never) ?? null,
+        prelimInputs: migratePrelimInputs(session.seismicPrelim.inputs) as never,
+        prelimResult: migratePrelimResult(session.seismicPrelim.result) as never,
       })
     }
     if (session.seismicDetail?.inputs) {

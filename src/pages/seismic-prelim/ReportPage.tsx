@@ -125,10 +125,19 @@ export default function SeismicPrelimReportPage() {
               </tr>
             ))}
             <tr style={{ background: T.bgRowAlt }}>
-              <td style={{ ...TD, width: 180, fontWeight: 700 }}>D/t 비율 및 유연도지수</td>
+              <td style={{ ...TD, width: 180, fontWeight: 700 }}>유연도비 및 유연도지수</td>
               <td style={TD}>
-                D/t = {r.ratio.toFixed(1)}&nbsp;→&nbsp;
-                FLEX = <strong>{r.FLEX.toFixed(0)}</strong>
+                F = {r.F.toFixed(2)}&nbsp;→&nbsp;
+                FLEX = <strong>{r.FLEX.toFixed(1)}</strong>
+                <span style={{ color: T.textMuted, fontSize: 10 }}>&nbsp;&nbsp;(참고 D/t = {r.dtRatio.toFixed(1)})</span>
+              </td>
+            </tr>
+            <tr style={{ background: T.bgRow }}>
+              <td style={{ ...TD, width: 180, fontWeight: 700 }}>탄성상수</td>
+              <td style={TD}>
+                Em = {r.Em_MPa.toFixed(1)} MPa,&nbsp; νm = {r.nu_m},&nbsp;
+                Ep = {r.Ep_MPa.toLocaleString()} MPa,&nbsp; νp = {r.nu_p}
+                <span style={{ color: T.textMuted, fontSize: 10 }}>&nbsp;&nbsp;({r.pipeElasticSource})</span>
               </td>
             </tr>
           </tbody>
@@ -138,11 +147,22 @@ export default function SeismicPrelimReportPage() {
         <div style={RH}>3. 유연도지수 (FLEX) 산정</div>
         <FormulaBlock>
           <FormulaRow>
-            FLEX = f&nbsp;(D/t) &nbsp;—&nbsp; 관경두께비에 의한 단계별 지수값 적용
+            F = 2·Em&nbsp;(1 − νp²)·R³ / {'{'} Ep&nbsp;(1 + νm)·t³ {'}'} &nbsp;—&nbsp;
+            유연도비 (Wang, 1993) &nbsp;[평가요령 해설식(5.4.6), 부록 A.1.3]
           </FormulaRow>
           <FormulaRow>
-            D/t = {inp.DN} / {inp.thickness} = {r.ratio.toFixed(1)}&nbsp;→&nbsp;
-            <strong>FLEX = {r.FLEX.toFixed(0)}</strong>
+            R = DN/2 = {(inp.DN / 2 / 1000).toFixed(3)} m,&nbsp; t = {(inp.thickness / 1000).toFixed(4)} m,&nbsp;
+            Ip = t³/12 = {r.Ip.toExponential(3)} m⁴/m
+          </FormulaRow>
+          <FormulaRow>
+            F = 2 {G.times} {r.Em_MPa.toFixed(1)} {G.times} (1 − {r.nu_p}²) {G.times} {r.R_m.toFixed(3)}³
+            &nbsp;/&nbsp;{'{'} {r.Ep_MPa.toLocaleString()} {G.times} (1 + {r.nu_m}) {G.times} {r.t_m.toFixed(4)}³ {'}'}
+            &nbsp;=&nbsp;<strong>{r.F.toFixed(2)}</strong>
+          </FormulaRow>
+          <FormulaRow>
+            F = {r.F.toFixed(2)} → 해설표 3.4.2 &ldquo;
+            {r.F < 5 ? '5 이하' : r.F < 20 ? '5 이상 20 미만' : '20 이상'}&rdquo;
+            &nbsp;→&nbsp;<strong>FLEX = {r.FLEX.toFixed(1)}</strong>
           </FormulaRow>
         </FormulaBlock>
 
@@ -170,7 +190,7 @@ export default function SeismicPrelimReportPage() {
           </thead>
           <tbody>
             {([
-              ['FLEX — 유연도지수', `D/t = ${r.ratio.toFixed(1)} → FLEX = ${r.FLEX.toFixed(0)}`, r.FLEX],
+              ['FLEX — 유연도지수', `유연도비 F = ${r.F.toFixed(2)} → FLEX = ${r.FLEX.toFixed(1)}`, r.FLEX],
               ['KIND — 관종 지수', KIND_INDEX[inp.pipeKind as keyof typeof KIND_INDEX]?.label ?? '', r.KIND],
               ['EARTH — 지반상태 지수', (EARTH_INDEX as any)[inp.soilType]?.label ?? '', r.EARTH],
               ['SIZE — 관경 지수', SIZE_INDEX[sizeKey as keyof typeof SIZE_INDEX]?.label ?? '', r.SIZE],
@@ -207,7 +227,7 @@ export default function SeismicPrelimReportPage() {
           <tbody>
             {([
               ['지진도 그룹', `${r.seismicityGroup}그룹  (${r.seismicityGroup === 1 ? '중점고려지역' : '관찰대상지역'})`],
-              ['취약도지수 VI', `${r.VI.toFixed(1)}  (${r.VI >= 40 ? 'VI ≥ 40' : 'VI < 40'})`],
+              ['취약도지수 VI', `${r.VI.toFixed(1)}  (${r.VI > 40 ? 'VI > 40' : 'VI ≤ 40'})`],
               ['최종 판정', r.isCritical ? '내진성능 중요상수도  →  상세평가 필요' : '내진성능 유보상수도  →  관찰 대상'],
             ] as [string, string][]).map(([k, v], i) => (
               <tr key={i} style={{ background: i === 2 ? (r.isCritical ? '#fff0f0' : '#f0faf4') : (i % 2 === 0 ? T.bgRowAlt : T.bgRow) }}>

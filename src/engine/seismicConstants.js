@@ -69,10 +69,85 @@ export function getSeismicityGroup(zone, isUrban, soilType) {
 
 // ── 매설관로 취약도지수 기준 ──────────────────────────────
 
-// 유연도지수 FLEX (D/t 비율) → 계산값으로 결정
-export function calcFLEX(ratio) {
-  if (ratio < 5)  return 10.0
-  if (ratio < 20) return 8.0
+// ⚠ 유연도지수 FLEX 의 입력값은 "관경두께비 D/t" 가 아니라 Wang(1993) 유연도비 F 다.
+//
+//   근거: 평가요령 부록 A.1.3 (p.A2)
+//     덕타일 주철관 DN900 / t = 13 mm 예제에서 D/t = 69.2 임에도
+//     F = 2E(1-ν₁²)R³ / {E₁(1+ν)t³} = 7.85 로 산정하고
+//     "FLEX지수: 단면에 대한 유연도지수(5이상 20미만) = 8.0" 을 적용한다.
+//     D/t 를 그대로 대입하면 "20이상" 구간(FLEX = 6.0)이 되어 예제와 어긋난다.
+//
+//   ※ 종전 구현 calcFLEX(DN/t) 는 평가요령 근거상 오류였던 구현이다.
+//     FLEX 를 낮게(6.0) 산정하여 VI 를 과소평가 → 중요상수도가 유보상수도로
+//     뒤집히는 위험측 오류였다. D/t 대입 방식으로 되돌리지 말 것.
+
+// 단위폭당 관성모멘트 Ip — 해설식(5.4.3) 기호 I_l  [길이⁴/길이]
+// Ip = t³/12.  t 는 R 과 반드시 같은 길이단위로 넣는다 (본 앱은 m 계열).
+export function calcIpPerUnitWidth(t) {
+  if (!Number.isFinite(t) || t <= 0) return null
+  return t ** 3 / 12
+}
+
+// Wang(1993) 유연도비 F — 평가요령 해설식(5.4.6) / 부록 A.1.3
+//   F = Em (1 − νp²) R³ / { 6 · Ep · Ip · (1 + νm) }
+//   Ip = t³/12 를 대입하면 부록 A.1.3 의 표기와 동일해진다.
+//   F = 2 · Em (1 − νp²) R³ / { Ep (1 + νm) t³ }
+// Em(지반 탄성계수)·Ep(관체 탄성계수)는 같은 응력단위, R·Ip 는 같은 길이단위.
+// F 는 무차원이므로 단위계는 일치만 하면 된다 (본 앱: MPa + m).
+export function calcWangFlexibilityRatio({ Em, nu_m, Ep, nu_p, R, Ip }) {
+  const ok = [Em, Ep, R, Ip].every(v => Number.isFinite(v) && v > 0)
+    && Number.isFinite(nu_m) && Number.isFinite(nu_p)
+    && nu_m > -1 && nu_p >= 0 && nu_p < 1
+  if (!ok) return null
+  return (Em * (1 - nu_p ** 2) * R ** 3) / (6 * Ep * Ip * (1 + nu_m))
+}
+
+// 관로 제원(mm) → 유연도비 F 산정 (예비평가 입력 단위 어댑터)
+//   R : 구조물의 반경 (m) — 부록 A.1.3 은 DN900 에 대해 R = 0.45 m 를 쓰므로 R = DN/2
+//   t : 구조물의 두께 (m)
+export function calcPipeFlexibilityRatio({ DN_mm, t_mm, Em_MPa, nu_m, Ep_MPa, nu_p }) {
+  const R  = (DN_mm ?? 0) / 2 / 1000     // mm → m
+  const t  = (t_mm ?? 0) / 1000          // mm → m
+  const Ip = calcIpPerUnitWidth(t)
+  if (Ip == null) return { F: null, R, t, Ip: null }
+  const F = calcWangFlexibilityRatio({ Em: Em_MPa, nu_m, Ep: Ep_MPa, nu_p, R, Ip })
+  return { F, R, t, Ip }
+}
+
+// 지반 탄성계수 Em 을 N치에서 추정 (선택 입력)
+// E₀ = 2800 × N [kN/m²] — calcKvFromN() 이 쓰는 것과 같은 관계식
+// 1 MPa = 1000 kN/m² 이므로 Em[MPa] = 2.8 × N
+export function calcEmFromN(N) {
+  if (!Number.isFinite(N) || N <= 0) return null
+  const E0_kNm2 = 2800 * N
+  return { E0_kNm2, Em_MPa: E0_kNm2 / 1000 }
+}
+
+// 예비평가 유연도비 산정용 관체 탄성상수 기본값
+// 사용자 입력으로 덮어쓸 수 있으며, 화면·보고서에 출처를 함께 표기한다.
+export const PRELIM_PIPE_ELASTIC = {
+  ductile: { Ep: 200000, nu_p: 0.177, label: '덕타일 주철관', src: '평가요령 부록 A.1.3 예제값 (E₁ = 200 GPa, ν₁ = 0.177)' },
+  steel:   { Ep: 210000, nu_p: 0.30,  label: '강관',          src: '평가요령 부록 C.2.2 (E = 2.1×10⁸ kN/m²), ν = 0.30' },
+}
+
+export function resolvePipeElastic(pipeKind) {
+  return PRELIM_PIPE_ELASTIC[pipeKind] ?? PRELIM_PIPE_ELASTIC.ductile
+}
+
+// 지반 탄성계수·포아송비 기본값 — 평가요령 부록 A.1.3 예제값
+export const PRELIM_GROUND_DEFAULT = { Em_MPa: 26.0, nu_m: 0.33, src: '평가요령 부록 A.1.3 (Em = 26.0 MPa, ν = 0.33)' }
+
+// 유연도지수 FLEX — 해설표 3.4.2 (취약도지수 세부지수표)
+//   F 5 이하        → 10.0
+//   F 5 이상 20 미만 →  8.0
+//   F 20 이상       →  6.0
+// 인자는 D/t 가 아니라 위 calcWangFlexibilityRatio() 의 유연도비 F 다.
+export function calcFLEX(F) {
+  if (!Number.isFinite(F) || F < 0) {
+    throw new Error('calcFLEX: 유연도비 F 가 유효하지 않습니다 (D/t 가 아니라 Wang 유연도비를 넣어야 합니다).')
+  }
+  if (F < 5)  return 10.0
+  if (F < 20) return 8.0
   return 6.0
 }
 
@@ -127,10 +202,11 @@ export const MCONE_INDEX = {
   bolted: { score: 0.7, label: '볼팅 (Bolted Joint)' },
 }
 
-// 내진그룹 결정 — 매설관로 (해설그림 3.4.1)
-// 1그룹 && VI > 40 → 중요, 그외 → 유보
+// 내진그룹 결정 — 매설관로 (해설그림 3.4.1 / 부록 그림 A.1.2)
+// 판정 분기는 "VI > 40" (초과)이다. 부록 A.1.3 도 "=52.8 > 40" 으로 표기한다.
+// 1그룹 && VI > 40 → 중요상수도, 그 외 → 유보상수도
 export function calcSeismicGroup(seismicityGroup, VI) {
-  if (seismicityGroup === 1 && VI >= 40) return 'critical'   // 내진성능 중요상수도
+  if (seismicityGroup === 1 && VI > 40) return 'critical'    // 내진성능 중요상수도
   return 'deferred'                                           // 내진성능 유보상수도
 }
 
