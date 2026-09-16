@@ -162,7 +162,7 @@ export function buildAppendix({ project, projectMeta }) {
           { label: '일시 (수격압)', expr: `σt′ = P′·D/(2t) = ${f(v.Psurge, 2)} × ${f(v.Di, 1)} / (2 × ${f(v.t, 1)})`, value: `${f(v.sigma_ts, 2)} MPa` },
           { label: '판정', expr: `${f(v.sigma_ts, 2)} MPa ≤ σa′ = ${fInt(v.allow_ts)} MPa`, value: `${ok(v.ok_t)}  ( S.F = ${f(v.SF_ts, 2)} )` },
         ] : [
-          { label: '일시 (수격압)', expr: '자연유하 구간으로 입력되어 수격압을 산정하지 않음 (입력 : 운전방식)', value: '미적용' },
+          { label: '일시 (수격압)', expr: '자연유하 구간 + 일시하중 미적용 선택 (입력 화면에서 적용으로 변경 가능)', value: '미적용' },
         ]),
       ])
       b.note('※ 내압 검토는 외부하중(토압·노면하중)이 없는 조건으로 한다 [ 세부지침 11-134 ② ].')

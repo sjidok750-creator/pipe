@@ -32,9 +32,12 @@ const DEFAULT_INPUTS = {
   gwLevel: 'below',            // = 지침 제시값 Rw 1.0
   // 관 상세검사 실측 최소 관두께 (mm) — 미입력 시 기준 두께 사용 (11-134)
   tMeasured: null,
-  // 자연유하 구간 / 가압구간 (11-136)
+  // 운전방식 (자연유하 / 가압)
   pressureZone: 'gravity',     // 'gravity' | 'pumped'
-  Psurge: null,                // MPa — 가압구간 수격압
+  Psurge: null,                // MPa — 수격압. 미입력 시 정수압 × 1.5
+  // 자연유하 구간에도 일시하중(수격압)을 검토할지 — 강관 한정 선택항목
+  // 강관 조항(11-134)에는 운전방식에 따른 일시하중 제외 규정이 없으므로 기본 적용
+  surgeOnGravity: true,
   // 주부재 손상(단면손실) 유무 — 등급 a/b 구분 (11-133 표 11.74)
   hasSectionLoss: false,
   pipeDimManual: false,

@@ -120,9 +120,18 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
 
   inS.sec('하중·지반 조건').head()
   inS.item({ label: '정수압', sym: 'P', value: inputs.Pd, unit: 'MPa', name: 'In_Pd', input: true })
-  inS.item({ label: '압력 구간', value: result.pressureZone === 'pumped' ? '가압구간 (수격압 적용)' : '자연유하 구간 (정수압)',
-    note: '세부지침 11-136' })
-  if (result.pressureZone === 'pumped') {
+  inS.item({
+    label: '압력 구간',
+    value: result.pressureZone === 'pumped'
+      ? '가압구간 (수격압 적용)'
+      : (s1?.surgeApplied ? '자연유하 구간 (일시하중 적용 — 선택)' : '자연유하 구간 (정수압만)'),
+    note: result.pressureZone === 'pumped'
+      ? '가압구간 — 수격압(정수압 이상 상승압력)'
+      : (s1?.surgeApplied
+        ? '강관 11-134 에는 운전방식에 따른 일시하중 제외 규정 없음 → 사용자 선택 적용'
+        : '일시하중 미적용 (사용자 선택)'),
+  })
+  if (s1?.surgeApplied) {
     inS.item({ label: '수격압', sym: "P′", value: s1?.Psurge, unit: 'MPa', name: 'In_Ps', input: true, note: '정수압 이상 상승압력' })
   }
   inS.item({ label: '관정 매설깊이', sym: 'H', value: inputs.H, unit: 'm', name: 'In_H', input: true })
@@ -205,7 +214,7 @@ export async function exportStructuralXlsx({ inputs, result, projectName, facili
     ck.note('※ 내압 검토는 외부 하중(토압·노면하중)이 없는 조건 (세부지침 11-134 ②)')
     const rSt = ck.item({ label: '내압응력 (정수압)', sym: 'σ_t', formula: 'In_Pd*In_Do/(2*In_t)', result: s1?.sigma_t_static, unit: 'MPa', note: 'σ_t = P·D/(2t)' })
     okRefs.push(ck.verdict({ formula: `IF(${rSt}<=In_sa,"O.K.","N.G.")`, result: s1?.ok_static ? 'O.K.' : 'N.G.', note: `σ_t ≤ ${STEEL_ALLOW.normal} MPa (상시)` }))
-    if (s1?.isPumped) {
+    if (s1?.surgeApplied) {
       const rStd = ck.item({ label: '내압응력 (수격압)', sym: "σ_t′", formula: 'In_Ps*In_Do/(2*In_t)', result: s1?.sigma_t_surge, unit: 'MPa', note: '일시하중' })
       okRefs.push(ck.verdict({ formula: `IF(${rStd}<=${STEEL_ALLOW.surge},"O.K.","N.G.")`, result: s1?.ok_surge ? 'O.K.' : 'N.G.', note: `σ_t′ ≤ ${STEEL_ALLOW.surge} MPa (일시)` }))
     }
