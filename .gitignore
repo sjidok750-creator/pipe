@@ -25,3 +25,6 @@ dist-ssr
 
 # Backup files
 *.bak
+
+# 보고서 생성 검증 산출물
+out_report/

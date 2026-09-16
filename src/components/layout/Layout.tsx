@@ -10,6 +10,7 @@ const MODULE_TABS = [
   { id: 'structural',    path: '/structural/overview',    matchBase: '/structural',    label: '관로 구조안전성 검토', sub: 'KDS 57 10 00' },
   { id: 'seismic-prelim',path: '/seismic-prelim/overview',matchBase: '/seismic-prelim', label: '내진성능 예비평가',   sub: 'KDS 57 17 00' },
   { id: 'seismic-detail', path: '/seismic-detail/overview',matchBase: '/seismic-detail', label: '내진성능 상세평가',   sub: 'KDS 57 17 00' },
+  { id: 'project-report', path: '/project-report',         matchBase: '/project-report', label: '최종 보고서',        sub: '제3장 + 부록' },
 ]
 
 const SUBNAV_MAP: Record<string, { to: string; label: string }[]> = {
@@ -54,7 +55,8 @@ export default function Layout() {
     ? []
     : enabledModules.length === 0
       ? MODULE_TABS
-      : MODULE_TABS.filter(t => enabledModules.includes(MODULE_ID_MAP[t.id]))
+      // 모듈 id 가 없는 탭(최종 보고서)은 항상 노출한다
+      : MODULE_TABS.filter(t => !MODULE_ID_MAP[t.id] || enabledModules.includes(MODULE_ID_MAP[t.id]))
 
   // 초 단위 실시간 저장 시각 (저장됨 표시 시 tick)
   const [, setTick] = useState(0)

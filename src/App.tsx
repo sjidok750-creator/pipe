@@ -21,6 +21,7 @@ import SeismicDetailResultPage     from './pages/seismic-detail/ResultPage'
 import SeismicDetailReportPage     from './pages/seismic-detail/ReportPage'
 import SeismicDetailReferencePage  from './pages/seismic-detail/ReferencePage'
 import AdminPage from './pages/AdminPage'
+import ProjectReportPage from './pages/ProjectReportPage'
 
 export default function App() {
   return (
@@ -85,6 +86,9 @@ export default function App() {
         <Route path="reference" element={<Navigate to="/structural/reference" replace />} />
         <Route path="seismic-prelim-old" element={<Navigate to="/seismic-prelim/overview" replace />} />
         <Route path="seismic-detail-old" element={<Navigate to="/seismic-detail/overview" replace />} />
+
+        {/* 프로젝트 단위 최종보고서 (제3장 + 부록) */}
+        <Route path="project-report" element={<ProjectReportPage />} />
 
         <Route path="admin" element={<AdminPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
