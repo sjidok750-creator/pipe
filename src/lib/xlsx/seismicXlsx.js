@@ -306,11 +306,24 @@ export async function exportSeismicPrelimXlsx({ inp, r, indexLabels, projectName
   sw.sec('입력').head()
   const rDN = sw.item({ label: '공칭관경', sym: 'DN', value: inp.DN, unit: 'mm', input: true, name: 'P_DN' })
   const rt = sw.item({ label: '관두께', sym: 't', value: inp.thickness, unit: 'mm', input: true, name: 'P_t' })
+  const rEm = sw.item({ label: '지반 탄성계수', sym: 'Em', value: r.Em_MPa, unit: 'MPa', input: true, name: 'P_Em', note: r.emSource })
+  const rNum = sw.item({ label: '지반 포아송비', sym: 'νm', value: r.nu_m, input: true, name: 'P_num' })
+  const rEp = sw.item({ label: '관체 탄성계수', sym: 'Ep', value: r.Ep_MPa, unit: 'MPa', input: true, name: 'P_Ep', note: r.pipeElasticSource })
+  const rNup = sw.item({ label: '관체 포아송비', sym: 'νp', value: r.nu_p, input: true, name: 'P_nup' })
   sw.item({ label: '지진구역 / 권역 / 지반', value: `구역 ${inp.zone} / ${inp.isUrban ? '도시권역' : '기타지역'} / ${inp.soilType}` })
 
+  sw.sec('유연도비 F (해설식 5.4.6 / 부록 A.1.3)').head()
+  const rR = sw.item({ label: '구조물의 반경', sym: 'R', formula: 'P_DN/2/1000', result: r.R_m, unit: 'm', name: 'P_R', note: 'R = DN/2' })
+  const rtm = sw.item({ label: '구조물의 두께', sym: 't', formula: 'P_t/1000', result: r.t_m, unit: 'm', name: 'P_tm' })
+  const rIp = sw.item({ label: '단위폭당 관성모멘트', sym: 'Ip', formula: `${rtm}^3/12`, result: r.Ip, unit: 'm⁴/m', name: 'P_Ip' })
+  const rF = sw.item({
+    label: '유연도비', sym: 'F',
+    formula: `${rEm}*(1-${rNup}^2)*${rR}^3/(6*${rEp}*${rIp}*(1+${rNum}))`,
+    result: r.F, bold: true, note: 'Wang(1993) — 부록 A.1.3 예제 F = 7.85 재현',
+  })
+
   sw.sec('지수 산정 (해설표 3.4.2)').head()
-  const rRatio = sw.item({ label: '관경두께비', sym: 'D/t', formula: 'P_DN/P_t', result: r.ratio })
-  const rFLEX = sw.item({ label: '유연도지수', sym: 'FLEX', formula: `IF(${rRatio}<5,10,IF(${rRatio}<20,8,6))`, result: r.FLEX, note: 'D/t<5→10, <20→8, 이상→6' })
+  const rFLEX = sw.item({ label: '유연도지수', sym: 'FLEX', formula: `IF(${rF}<5,10,IF(${rF}<20,8,6))`, result: r.FLEX, note: 'F 5이하→10, 5이상20미만→8, 20이상→6' })
   const idx = [
     ['KIND — 관종 지수', r.KIND, indexLabels?.KIND],
     ['EARTH — 지반상태 지수', r.EARTH, indexLabels?.EARTH],
@@ -329,10 +342,10 @@ export async function exportSeismicPrelimXlsx({ inp, r, indexLabels, projectName
   sw.verdict({
     label: '최종 판정',
     formula: r.seismicityGroup === 1
-      ? `IF(${rVI}>=40,"중요상수도 — 상세평가 필요","유보상수도 — 관찰 대상")`
+      ? `IF(${rVI}>40,"중요상수도 — 상세평가 필요","유보상수도 — 관찰 대상")`
       : `"유보상수도 — 관찰 대상 (2그룹)"`,
     result: r.isCritical ? '중요상수도 — 상세평가 필요' : '유보상수도 — 관찰 대상',
-    note: '1그룹이면서 VI ≥ 40 → 내진성능 중요상수도',
+    note: '1그룹이면서 VI > 40 → 내진성능 중요상수도 (해설그림 3.4.1)',
   })
 
   await downloadWorkbook(wb, `내진예비평가_DN${inp.DN}_${new Date().toISOString().slice(0, 10)}.xlsx`)

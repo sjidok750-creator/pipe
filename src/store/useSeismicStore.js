@@ -10,7 +10,8 @@ import {
   KIND_INDEX, EARTH_INDEX, SIZE_INDEX,
   CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
   getSizeIndex, calcSeismicGroup, deriveVs,
-  calcKv,
+  calcKv, calcPipeFlexibilityRatio, calcEmFromN,
+  resolvePipeElastic, PRELIM_GROUND_DEFAULT,
 } from '../engine/seismicConstants.js'
 import { interpAmpFactor } from '../engine/seismicSegmented.js'
 
@@ -26,6 +27,46 @@ const DEFAULT_PRELIM = {
   connectCond: 'normal',
   facilExists: 'yes',
   mcone: 'bolted',
+  // ── 유연도비 F (Wang 1993) 산정 입력 — 평가요령 부록 A.1.3 ──
+  emMethod: 'manual',                          // 'manual' | 'fromN'
+  Em_MPa: PRELIM_GROUND_DEFAULT.Em_MPa,        // 지반 탄성계수 (MPa)
+  N_soil: 10,                                  // emMethod='fromN' 일 때 표준관입시험 N치
+  nu_m: PRELIM_GROUND_DEFAULT.nu_m,            // 지반 포아송비
+  pipeElasticManual: false,                    // 관체 탄성상수 직접입력 여부
+  Ep_MPa: null,                                // 직접입력 시 관체 탄성계수 (MPa)
+  nu_p: null,                                  // 직접입력 시 관체 포아송비
+}
+
+// 저장본 복원용 마이그레이션
+// 구 버전 저장본에는 유연도비 F 산정 입력(Em·νm·Ep·νp)이 없으므로 기본값으로 채운다.
+export function migratePrelimInputs(saved) {
+  return { ...DEFAULT_PRELIM, ...(saved ?? {}) }
+}
+
+// 구 버전 예비평가 결과는 FLEX 를 D/t 로 산정한 값(F 없음)이므로 버리고 재계산을 요구한다.
+export function migratePrelimResult(saved) {
+  if (!saved || typeof saved.F !== 'number') return null
+  return saved
+}
+
+// 예비평가 유연도비 F 산정 — 입력에서 Em·νm·Ep·νp 를 확정하고 F 를 돌려준다.
+// 화면(InputPage)과 계산(calcPrelim)이 같은 경로를 쓰도록 store 에서 공유한다.
+export function resolveFlexInputs(inp) {
+  const elastic = resolvePipeElastic(inp.pipeKind)
+  const useManual = !!inp.pipeElasticManual
+  const Ep_MPa = useManual && inp.Ep_MPa > 0 ? inp.Ep_MPa : elastic.Ep
+  const nu_p   = useManual && inp.nu_p != null ? inp.nu_p : elastic.nu_p
+  const fromN  = inp.emMethod === 'fromN' ? calcEmFromN(inp.N_soil) : null
+  const Em_MPa = fromN ? fromN.Em_MPa : inp.Em_MPa
+  const nu_m   = inp.nu_m
+  const geom = calcPipeFlexibilityRatio({
+    DN_mm: inp.DN, t_mm: inp.thickness, Em_MPa, nu_m, Ep_MPa, nu_p,
+  })
+  return {
+    ...geom, Em_MPa, nu_m, Ep_MPa, nu_p,
+    emSource: fromN ? `N치 ${inp.N_soil} → E₀ = 2800N = ${fromN.E0_kNm2.toLocaleString()} kN/m²` : '직접입력',
+    pipeElasticSource: useManual ? '직접입력' : elastic.src,
+  }
 }
 
 // ── 상세평가 기본값 (부록C 예제값) ──────────────────────────
@@ -120,8 +161,13 @@ const DEFAULT_TOUCHED = []
 // ── 예비평가 계산 ────────────────────────────────────────────
 function calcPrelim(inp) {
   const { zone, seismicGrade, isUrban, soilType, pipeKind, DN, thickness, connectCond, facilExists, mcone } = inp
-  const ratio = DN / thickness
-  const FLEX = calcFLEX(ratio)
+  // 유연도지수 FLEX 는 관경두께비 D/t 가 아니라 Wang 유연도비 F 로 결정한다
+  // (평가요령 부록 A.1.3 — 해당 예제는 D/t = 69.2, F = 7.85 → FLEX = 8.0)
+  const flexIn = resolveFlexInputs(inp)
+  if (flexIn.F == null) throw new Error('유연도비 F 산정 입력값(Em, νm, Ep, νp, DN, t)을 확인하십시오.')
+  const F = flexIn.F
+  const dtRatio = DN / thickness   // 참고용 기하값 — FLEX 산정에는 쓰지 않는다
+  const FLEX = calcFLEX(F)
   const KIND = KIND_INDEX[pipeKind]?.score ?? 1.0
   const EARTH = EARTH_INDEX[soilType]?.score ?? 1.3
   const sizeKey = getSizeIndex(DN)
@@ -141,9 +187,12 @@ function calcPrelim(inp) {
   const S_func = Z * gradeInfo.I_func
 
   return {
-    ratio, FLEX, KIND, EARTH, SIZE, CONNECT, FACIL, MCONE,
+    F, dtRatio, FLEX, KIND, EARTH, SIZE, CONNECT, FACIL, MCONE,
     VI_sub, VI, seismicityGroup, isCritical,
     gradeInfo, Z, S_collapse, S_func,
+    Em_MPa: flexIn.Em_MPa, nu_m: flexIn.nu_m, Ep_MPa: flexIn.Ep_MPa, nu_p: flexIn.nu_p,
+    R_m: flexIn.R, t_m: flexIn.t, Ip: flexIn.Ip,
+    emSource: flexIn.emSource, pipeElasticSource: flexIn.pipeElasticSource,
   }
 }
 

@@ -1,10 +1,10 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSeismicStore } from '../../store/useSeismicStore.js'
+import { useSeismicStore, resolveFlexInputs } from '../../store/useSeismicStore.js'
 import {
   SEISMIC_ZONE, SEISMIC_GRADE, SOIL_TYPE,
   KIND_INDEX, CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
-  calcFLEX,
+  calcFLEX, PRELIM_GROUND_DEFAULT,
 } from '../../engine/seismicConstants.js'
 import {
   EngPanel, EngSection, EngRow, EngInput,
@@ -19,8 +19,13 @@ export default function SeismicPrelimInputPage() {
 
   const Z = SEISMIC_ZONE[inp.zone as 'I'|'II'].Z
   const gradeInfo = SEISMIC_GRADE[inp.seismicGrade as 'I'|'II']
-  const ratio = inp.DN / inp.thickness
-  const FLEX = calcFLEX(ratio)
+  // 유연도지수 FLEX 는 D/t 가 아니라 Wang 유연도비 F 로 결정 (평가요령 부록 A.1.3)
+  const flexIn = resolveFlexInputs(inp)
+  const F = flexIn.F
+  const FLEX = F == null ? null : calcFLEX(F)
+  const dtRatio = inp.DN / inp.thickness      // 참고용 기하값 (FLEX 산정에 쓰지 않음)
+  const fmtF = F == null ? '—' : F.toFixed(2)
+  const fmtFLEX = FLEX == null ? '—' : FLEX.toFixed(1)
 
   function handleCalc() {
     const result = calcPrelim()
@@ -292,17 +297,16 @@ export default function SeismicPrelimInputPage() {
             <EngPopover title="공칭관경 DN">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 §4.2</strong><br/>
-                  FLEX 지수 = D/t 비율로 산정. 관경이 클수록, 두께가 얇을수록 유연성 감소
+                  <strong style={{ color: '#2d6a2d' }}>평가요령 부록 A.1.3</strong><br/>
+                  유연도비 F 의 구조물 반경 R = DN / 2 (부록 A.1.3 은 DN900 에 R = 0.45m 적용)
                 </div>
                 <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
-                  FLEX = DN / t<br/>
-                  <span style={{ fontSize: 10, color: T.textMuted }}>현재: {ratio.toFixed(1)} → FLEX = {FLEX.toFixed(0)}</span>
+                  R = DN / 2 = {(inp.DN / 2).toFixed(1)} mm<br/>
+                  <span style={{ fontSize: 10, color: T.textMuted }}>현재: F = {fmtF} → FLEX = {fmtFLEX}</span>
                 </div>
                 <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
-                  FLEX 지수가 클수록 관이 얇고 유연하여<br/>
-                  지반변위 추종 능력이 상대적으로 낮음.<br/>
-                  예비평가 취약도지수 KIND의 세부지수에 포함됨.
+                  F 는 R³ 에 비례하므로 관경이 클수록 지반 대비 관이 유연해짐.<br/>
+                  D/t 비율(= {dtRatio.toFixed(1)})은 참고 기하값일 뿐 FLEX 산정에 쓰지 않는다.
                 </div>
               </div>
             </EngPopover>
@@ -313,11 +317,13 @@ export default function SeismicPrelimInputPage() {
             <EngPopover title="관두께 t">
               <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                 <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                  <strong style={{ color: '#2d6a2d' }}>매설관로 내진성능평가 요령 §4.2 (FLEX 지수)</strong>
+                  <strong style={{ color: '#2d6a2d' }}>평가요령 해설식(5.4.6) / 부록 A.1.3</strong><br/>
+                  두께 t 는 단위폭당 관성모멘트 Ip = t³/12 로 F 에 반영된다 (F ∝ 1/t³)
                 </div>
                 <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
-                  D/t 비 = {ratio.toFixed(1)}<br/>
-                  FLEX 지수 = {FLEX.toFixed(0)}
+                  Ip = t³/12 = {flexIn.Ip == null ? '—' : flexIn.Ip.toExponential(3)} m⁴/m<br/>
+                  F = {fmtF}  →  FLEX = {fmtFLEX}<br/>
+                  <span style={{ fontSize: 10, color: T.textMuted }}>D/t = {dtRatio.toFixed(1)} (참고 — FLEX 산정에 쓰지 않음)</span>
                 </div>
                 <div style={{ marginTop: 6, fontSize: 11 }}>
                   <strong>두께 참고 (일반 상수도관)</strong>
@@ -347,8 +353,142 @@ export default function SeismicPrelimInputPage() {
             </EngPopover>
           }>
             <EngInput value={inp.thickness} onChange={v => set({ thickness: parseFloat(v)||8 })} min={1} step={0.5} width={100}/>
-            <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>
-              D/t = {ratio.toFixed(1)}  →  FLEX = {FLEX.toFixed(0)}
+          </EngRow>
+
+          <EngDivider label="유연도비 F 산정 입력 (평가요령 부록 A.1.3)" />
+
+          <EngRow label="지반 탄성계수 Em" unit="MPa" popover={
+            <EngPopover title="지반 탄성계수 Em">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>{PRELIM_GROUND_DEFAULT.src}</strong><br/>
+                  유연도비 F 는 Em 에 정비례한다 (지반이 단단할수록 F 가 커짐)
+                </div>
+                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                  N치 환산 : E₀ = 2800 × N [kN/m²] → Em[MPa] = 2.8 N<br/>
+                  <span style={{ fontSize: 10, color: T.textMuted }}>
+                    (연직지반반력계수 Kv 산정에 쓰는 관계식과 동일)
+                  </span>
+                </div>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  현장 지반조사값이 있으면 직접입력을 쓰고,<br/>
+                  없으면 N치 환산 또는 부록 A.1.3 예제값(26.0 MPa)을 적용한다.
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngSegment
+              options={[
+                { key: 'manual', label: '직접입력' },
+                { key: 'fromN',  label: 'N치 환산' },
+              ]}
+              value={inp.emMethod}
+              onChange={v => set({ emMethod: v })}
+            />
+          </EngRow>
+          {inp.emMethod === 'fromN' ? (
+            <EngRow label="표준관입시험 N치" unit="회/30cm">
+              <EngInput value={inp.N_soil} onChange={v => set({ N_soil: parseFloat(v)||10 })} min={1} step={1} width={100}/>
+              <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>
+                Em = 2.8 N = {flexIn.Em_MPa?.toFixed(1)} MPa
+              </span>
+            </EngRow>
+          ) : (
+            <EngRow label="Em" unit="MPa">
+              <EngInput value={inp.Em_MPa} onChange={v => set({ Em_MPa: parseFloat(v)||PRELIM_GROUND_DEFAULT.Em_MPa })} min={0.1} step={1} width={100}/>
+              <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontSans }}>
+                부록 A.1.3 예제값 26.0
+              </span>
+            </EngRow>
+          )}
+          <EngRow label="지반 포아송비 νm">
+            <EngInput value={inp.nu_m} onChange={v => set({ nu_m: parseFloat(v)||PRELIM_GROUND_DEFAULT.nu_m })} min={0} max={0.5} step={0.01} width={100}/>
+            <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontSans }}>
+              부록 A.1.3 예제값 0.33
+            </span>
+          </EngRow>
+
+          <EngRow label="관체 탄성상수" popover={
+            <EngPopover title="관체 탄성계수 Ep · 포아송비 νp">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>{flexIn.pipeElasticSource}</strong>
+                </div>
+                <div style={{ fontSize: 11 }}>
+                  덕타일 주철관 기본값은 부록 A.1.3 의 예제값(E₁ = 200 GPa, ν₁ = 0.177),<br/>
+                  강관 기본값은 부록 C.2.2 의 E = 2.1×10⁸ kN/m², ν = 0.30 이다.<br/>
+                  실측·재질 규격값이 있으면 직접입력한다.
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <EngSegment
+              options={[
+                { key: 'auto',   label: '관종 기본값' },
+                { key: 'manual', label: '직접입력' },
+              ]}
+              value={inp.pipeElasticManual ? 'manual' : 'auto'}
+              onChange={v => set(v === 'manual'
+                ? { pipeElasticManual: true, Ep_MPa: flexIn.Ep_MPa, nu_p: flexIn.nu_p }
+                : { pipeElasticManual: false })}
+            />
+          </EngRow>
+          {inp.pipeElasticManual ? (
+            <>
+              <EngRow label="관체 탄성계수 Ep" unit="MPa">
+                <EngInput value={inp.Ep_MPa ?? flexIn.Ep_MPa} onChange={v => set({ Ep_MPa: parseFloat(v)||null })} min={1} step={1000} width={110}/>
+              </EngRow>
+              <EngRow label="관체 포아송비 νp">
+                <EngInput value={inp.nu_p ?? flexIn.nu_p} onChange={v => set({ nu_p: parseFloat(v)||null })} min={0} max={0.49} step={0.01} width={110}/>
+              </EngRow>
+            </>
+          ) : (
+            <EngRow label="적용값">
+              <span style={{ fontSize: 11, color: T.textMuted, fontFamily: T.fontMono }}>
+                Ep = {flexIn.Ep_MPa.toLocaleString()} MPa,  νp = {flexIn.nu_p}
+              </span>
+            </EngRow>
+          )}
+
+          <EngRow label="유연도비 F" popover={
+            <EngPopover title="유연도비 F (Wang, 1993)">
+              <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
+                <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                  <strong style={{ color: '#2d6a2d' }}>평가요령 해설식(5.4.6) · 부록 A.1.3 · 해설표 3.4.2</strong>
+                </div>
+                <div style={{ padding: '4px 8px', background: '#f8f9fa', border: '1px solid #ddd', borderRadius: 2, fontFamily: T.fontMono, fontSize: 11 }}>
+                  F = Em (1 − νp²) R³ / {'{'} 6 Ep Ip (1 + νm) {'}'},  Ip = t³/12<br/>
+                  &nbsp;&nbsp;= 2 Em (1 − νp²) R³ / {'{'} Ep (1 + νm) t³ {'}'}<br/>
+                  <span style={{ fontSize: 10, color: T.textMuted }}>
+                    현재: F = {fmtF} → FLEX = {fmtFLEX}
+                  </span>
+                </div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, marginTop: 6 }}>
+                  <thead>
+                    <tr style={{ background: '#f0f4f8' }}>
+                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>유연도비 F</th>
+                      <th style={{ padding: '2px 5px', border: '1px solid #ccc' }}>FLEX 지수</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[['5 이하', '10.0'], ['5 이상 20 미만', '8.0'], ['20 이상', '6.0']].map(([a, b], i) => (
+                      <tr key={a} style={{ background: i % 2 === 0 ? 'white' : '#fafafa' }}>
+                        <td style={{ padding: '2px 5px', border: '1px solid #eee' }}>{a}</td>
+                        <td style={{ padding: '2px 5px', border: '1px solid #eee', textAlign: 'center', fontFamily: T.fontMono }}>{b}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <div style={{ marginTop: 6, padding: '4px 8px', background: '#fff8e1', border: '1px solid #f0c040', borderRadius: 2, fontSize: 10 }}>
+                  ※ 종전 버전은 D/t 비를 그대로 FLEX 표에 대입했으나,<br/>
+                  부록 A.1.3 예제(DN900 / t13, D/t = 69.2, F = 7.85 → FLEX 8.0)와 어긋나는<br/>
+                  위험측 오류였으므로 유연도비 F 로 정정되었다.
+                </div>
+              </div>
+            </EngPopover>
+          }>
+            <span style={{ fontSize: 12, fontFamily: T.fontMono, fontWeight: 700, color: T.textNumber }}>
+              F = {fmtF}  →  FLEX = {fmtFLEX}
             </span>
           </EngRow>
         </EngPanel>

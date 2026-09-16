@@ -33,7 +33,7 @@ export default function SeismicPrelimResultPage() {
 
   // 세부지수 테이블 행
   const indexRows = [
-    { label: 'FLEX — 유연도지수', formula: `D/t = ${r.ratio.toFixed(1)}`, value: r.FLEX, unit: '', ok: undefined },
+    { label: 'FLEX — 유연도지수', formula: `F = ${r.F.toFixed(2)} (Wang 유연도비)`, value: r.FLEX, unit: '', ok: undefined },
     { label: 'KIND — 관종 지수',   formula: KIND_INDEX[inp.pipeKind as keyof typeof KIND_INDEX]?.label ?? '', value: r.KIND, unit: '' },
     { label: 'EARTH — 지반상태',   formula: (EARTH_INDEX as any)[inp.soilType]?.label ?? '', value: r.EARTH, unit: '' },
     { label: 'SIZE — 관경 지수',   formula: SIZE_INDEX[sizeKey as keyof typeof SIZE_INDEX]?.label ?? '', value: r.SIZE, unit: '' },
@@ -58,6 +58,9 @@ export default function SeismicPrelimResultPage() {
             { label: '관종',    value: KIND_INDEX[inp.pipeKind as keyof typeof KIND_INDEX]?.label ?? inp.pipeKind },
             { label: 'DN',      value: inp.DN, unit: 'mm' },
             { label: '관두께 t', value: inp.thickness, unit: 'mm' },
+            { label: '지반 Em / νm', value: `${r.Em_MPa.toFixed(1)} MPa / ${r.nu_m}` },
+            { label: '관체 Ep / νp', value: `${r.Ep_MPa.toLocaleString()} MPa / ${r.nu_p}` },
+            { label: '유연도비 F', value: r.F.toFixed(2) },
           ]}/>
         </EngPanel>
 
@@ -123,8 +126,8 @@ export default function SeismicPrelimResultPage() {
               </tr>
               <tr style={{ background: T.bgRowAlt }}>
                 <td style={td}>취약도지수 VI</td>
-                <td style={{ ...td, textAlign: 'right', fontWeight: 700, fontFamily: T.fontMono, color: r.VI >= 40 ? '#c0392b' : T.textAccent }}>
-                  {r.VI.toFixed(1)}  ({r.VI >= 40 ? 'VI ≥ 40' : 'VI < 40'})
+                <td style={{ ...td, textAlign: 'right', fontWeight: 700, fontFamily: T.fontMono, color: r.VI > 40 ? '#c0392b' : T.textAccent }}>
+                  {r.VI.toFixed(1)}  ({r.VI > 40 ? 'VI > 40' : 'VI ≤ 40'})
                 </td>
               </tr>
               <tr style={{ background: r.isCritical ? '#fff0f0' : '#f0faf4', borderTop: `2px solid ${r.isCritical ? '#f5b3b3' : '#a3d9b5'}` }}>
@@ -136,7 +139,7 @@ export default function SeismicPrelimResultPage() {
             </tbody>
           </table>
           <div style={{ marginTop: 8, fontSize: 10, color: T.textMuted, fontFamily: T.fontSans, lineHeight: 1.7 }}>
-            판정기준: 지진도 1그룹  AND  VI ≥ 40  →  내진성능 중요상수도  (상세평가 대상)<br/>
+            판정기준: 지진도 1그룹  AND  VI &gt; 40  →  내진성능 중요상수도  (상세평가 대상)<br/>
             근거: 기존시설물(상수도) 내진성능 평가요령 부록 A  /  해설표 3.4.1
           </div>
         </EngPanel>
@@ -145,7 +148,7 @@ export default function SeismicPrelimResultPage() {
         <EngStatusBar
           ok={!r.isCritical}
           message={r.isCritical
-            ? `VI = ${r.VI.toFixed(1)} ≥ 40,  지진도 ${r.seismicityGroup}그룹  →  내진성능 상세평가를 실시하십시오.`
+            ? `VI = ${r.VI.toFixed(1)} > 40,  지진도 ${r.seismicityGroup}그룹  →  내진성능 상세평가를 실시하십시오.`
             : `VI = ${r.VI.toFixed(1)},  지진도 ${r.seismicityGroup}그룹  →  관찰 대상 (상세평가 불필요)`}
         />
 
@@ -209,13 +212,13 @@ export default function SeismicPrelimResultPage() {
             </thead>
             <tbody>
               {[
-                ['1그룹', 'VI ≥ 40', '내진성능 중요상수도 (상세평가 필요)'],
-                ['1그룹', 'VI < 40', '내진성능 유보상수도'],
+                ['1그룹', 'VI > 40', '내진성능 중요상수도 (상세평가 필요)'],
+                ['1그룹', 'VI ≤ 40', '내진성능 유보상수도'],
                 ['2그룹', '전체',    '내진성능 유보상수도'],
               ].map((row, i) => {
                 const isMatch =
-                  (i === 0 && r.seismicityGroup === 1 && r.VI >= 40) ||
-                  (i === 1 && r.seismicityGroup === 1 && r.VI < 40) ||
+                  (i === 0 && r.seismicityGroup === 1 && r.VI > 40) ||
+                  (i === 1 && r.seismicityGroup === 1 && r.VI <= 40) ||
                   (i === 2 && r.seismicityGroup === 2)
                 return (
                   <tr key={i} style={{ background: isMatch ? (r.isCritical ? '#fff0f0' : '#f0faf4') : (i % 2 === 0 ? T.bgRowAlt : T.bgRow) }}>

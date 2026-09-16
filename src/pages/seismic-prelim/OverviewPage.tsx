@@ -24,25 +24,28 @@ const criteria = [
   { step: '지진구역 계수 Z',      kds: 'KDS 17 10 00 §2.1',  ref: '—',                        limit: 'I = 0.11g,  II = 0.07g' },
   { step: '중요도계수 I',          kds: 'KDS 57 17 00',       ref: '—',                        limit: '특 = 1.5,  Ⅰ = 1.2,  Ⅱ = 1.0' },
   { step: '지반종류 / 증폭계수',   kds: 'KDS 17 10 00 §4',   ref: '—',                        limit: 'S1~S6,  Fa / Fv 적용' },
-  { step: '유연도지수 FLEX',       kds: '평가요령 §B.2',      ref: 'Table B-1',                limit: 'D/t 비율에 따른 4단계 분류' },
-  { step: '관종지수 KIND',         kds: '평가요령 §B.2',      ref: 'Table B-2',                limit: '강관(용접)=0.3,  DIP=0.6,  PVC=1.0' },
-  { step: '지반지수 EARTH',        kds: '평가요령 §B.2',      ref: 'Table B-3',                limit: 'S1=1.0,  S3/S4=1.5,  S5/S6=2.0' },
-  { step: '크기지수 SIZE',         kds: '평가요령 §B.2',      ref: 'Table B-4',                limit: '소형<500=1.0,  중형=0.8,  대형=0.5' },
-  { step: '이음지수 CONNECT',      kds: '평가요령 §B.2',      ref: 'Table B-5',                limit: '불량=1.0,  보통=0.8,  양호=0.5' },
-  { step: '취약도지수 VI 산정',    kds: '평가요령 식(B.1)',   ref: '—',                        limit: 'VI = FLEX × (KIND+EARTH+…)' },
-  { step: '지진도 그룹 결정',      kds: '평가요령 Table B-7', ref: '해설표 3.4.1',             limit: '1그룹 / 2그룹' },
-  { step: '상세평가 필요 여부',    kds: '평가요령 §B.3',      ref: '—',                        limit: '1그룹 & VI ≥ 40 → 상세평가' },
+  { step: '유연도비 F 산정',       kds: '평가요령 해설식(5.4.6)', ref: '부록 A.1.3',           limit: 'F = 2Em(1−νp²)R³ / {Ep(1+νm)t³}' },
+  { step: '유연도지수 FLEX',       kds: '평가요령 §3.4.2',    ref: '해설표 3.4.2',             limit: 'F 5이하=10.0,  5~20미만=8.0,  20이상=6.0' },
+  { step: '관종지수 KIND',         kds: '평가요령 §3.4.2',    ref: '해설표 3.4.2',             limit: '강관·주철관=1.0,  콘크리트=0.8,  PVC=0.5' },
+  { step: '지반지수 EARTH',        kds: '평가요령 §3.4.2',    ref: '해설표 3.4.2',             limit: 'S1=1.0,  S2/S4=1.3,  S3/S5=1.5,  S6=2.0' },
+  { step: '크기지수 SIZE',         kds: '평가요령 §3.4.2',    ref: '해설표 3.4.2',             limit: '소형<500=1.0,  중형=0.8,  대형=0.5' },
+  { step: '이음지수 CONNECT',      kds: '평가요령 §3.4.2',    ref: '해설표 3.4.2',             limit: '불량=1.0,  보통=0.8,  양호=0.5' },
+  { step: '취약도지수 VI 산정',    kds: '평가요령 해설식(3.4.1)', ref: '—',                     limit: 'VI = FLEX × (KIND+EARTH+…)' },
+  { step: '지진도 그룹 결정',      kds: '평가요령 §3.4.1',    ref: '해설표 3.4.1',             limit: '1그룹 / 2그룹' },
+  { step: '상세평가 필요 여부',    kds: '평가요령 해설그림 3.4.1', ref: '부록 그림 A.1.2',      limit: '1그룹 & VI > 40 → 상세평가' },
 ]
 
 const inputRows = [
   { cat: '지진 조건',  params: '지진구역 I/II,  내진등급 특/Ⅰ/Ⅱ,  도시/기타',    ref: 'KDS 17 10 00 §2' },
   { cat: '지반 조건',  params: '지반종류 S1~S6',                                    ref: 'KDS 17 10 00 §4' },
   { cat: '관로 제원',  params: '관종,  DN (mm),  t (mm)',                           ref: 'KS D 3565/4311' },
-  { cat: '취약도 지수', params: 'CONNECT · FACIL · MCONE 각 등급',                 ref: '요령 Table B-5~7' },
+  { cat: '탄성상수',   params: '지반 Em (MPa) · νm,  관체 Ep (MPa) · νp',           ref: '요령 부록 A.1.3' },
+  { cat: '취약도 지수', params: 'CONNECT · FACIL · MCONE 각 등급',                 ref: '요령 해설표 3.4.2' },
 ]
 
 const outputRows = [
-  { item: 'FLEX',      desc: '유연도지수' },
+  { item: 'F',         desc: '유연도비 (Wang, 1993)' },
+  { item: 'FLEX',      desc: '유연도지수 (F 로부터 해설표 3.4.2 적용)' },
   { item: 'VI',        desc: '취약도지수 (= FLEX × ΣSubIndex)' },
   { item: '지진도 그룹', desc: '1그룹 / 2그룹' },
   { item: '상세평가 필요 여부', desc: '중요상수도 / 유보상수도' },
@@ -59,7 +62,7 @@ export default function SeismicPrelimOverviewPage() {
           <b>목적</b>: KDS 57 17 00 : 2022 및 「기존시설물(상수도) 내진성능 평가요령」 부록 B에 따라
           상수도 매설관로의 취약도지수(VI)를 산정하고, 상세평가 수행 필요 여부를 판정한다.<br />
           <b>적용 범위</b>: 매설 상수도 관로 전체 (관종·규격 무관). 신설 및 기존 시설물 모두 적용 가능.<br />
-          <b>판정 기준</b>: 지진도 1그룹 & VI ≥ 40 → 중요상수도 (상세평가 필요);
+          <b>판정 기준</b>: 지진도 1그룹 & VI &gt; 40 → 중요상수도 (상세평가 필요);
           그 외 → 유보상수도 (관찰 대상).<br />
           <b>주의</b>: 예비평가 통과 시에도 액상화 우려 지반, 교량횡단부, 내진특등급은 상세평가를 권장한다.
         </div>
