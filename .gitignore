@@ -28,3 +28,6 @@ dist-ssr
 
 # 보고서 생성 검증 산출물
 out_report/
+
+# PDF 쪽 렌더링 산출물
+pdfshot/
