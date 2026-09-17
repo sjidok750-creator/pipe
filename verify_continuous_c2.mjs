@@ -14,7 +14,7 @@
 // 실행: node verify_continuous_c2.mjs
 // ============================================================
 
-import { evalContinuous } from './src/engine/seismicContinuous.js'
+import { evalContinuous, calcAllowableStrain } from './src/engine/seismicContinuous.js'
 import { calcSv } from './src/engine/seismicSegmented.js'
 
 let fail = 0
@@ -35,7 +35,7 @@ function chk(label, actual, expected, tolPct, unit = '') {
 // 매설: h 1.5 m, γ 17 kN/m³ | 내압 1,000 kN/m² | 차량 Pm 100 kN/륜, Kv 10,000 kN/m³
 // 온도: ΔT 15 ℃ | 부등침하: 연약지반 L 15 m, 성토고 h″ 1.0 m
 // 지진: 구역 Ⅰ(Z=0.11), 내진 Ⅰ등급 붕괴방지(I=1.40) → S = 0.154
-const r = evalContinuous({
+const c2Params = {
   DN: 1000, t: 9.0, D_out: 1000,
   Z: 0.11, I_seismic: 1.40,
   Fa_table: [1, 1, 1], Fv_table: [1, 1, 1],
@@ -46,8 +46,9 @@ const r = evalContinuous({
   h_cover: 1.5, z_pipe: 1.5 + 0.5,
   nu: 0.30, E: 210000,
   Pm: 100, Kv: 10000, C_width: 3.0, a_contact: 0.2,
-  tau: 10, strainCriterion: 'buckling',
-})
+  tau: 10,
+}
+const r = evalContinuous(c2Params)
 
 const pct = v => v * 100
 
@@ -86,6 +87,25 @@ for (const T of [0.06, 0.1, 0.2, 0.3]) {
 // ※ Ts < 0.06 s 에서는 앱의 KDS 원식(Sa = S(1+30T) + C_D 보간)이 그림의 직선보다
 //   최대 13 % 낮다(위험측). 매설관로 표층지반에서 TG < 0.048 s 는 사실상 나오지
 //   않으므로 회귀 판정 대상에서는 제외하고 기록만 남긴다.
+
+console.log('\n=== 허용변형률 기준 단일화 (σ_y/E 선택지 삭제) ===')
+// 평가요령에 σ_y/E 기준은 없다. 46t/D 외의 경로가 되살아나지 못하도록 고정한다.
+if ('strainCriterion' in r) { fail++; console.log('  [FAIL] 결과에 strainCriterion 이 남아 있다') }
+else console.log('  [OK  ] 결과에 strainCriterion 없음')
+if ('sigma_y' in r) { fail++; console.log('  [FAIL] 결과에 sigma_y(재료 항복강도)가 남아 있다') }
+else console.log('  [OK  ] 결과에 sigma_y 없음')
+// 옵션을 넘겨도 무시되어야 한다 (46t/D 고정)
+const rYield = evalContinuous({ ...c2Params, strainCriterion: 'yield' })
+if (Math.abs(rYield.epsilon_allow - r.epsilon_allow) > 1e-12) {
+  fail++; console.log("  [FAIL] strainCriterion:'yield' 를 넘기니 허용변형률이 달라졌다")
+} else console.log("  [OK  ] strainCriterion:'yield' 를 넘겨도 46t/D 고정")
+// Ly = ξ·εy 의 εy 도 46t/D 여야 한다 (지침 p.C28)
+chk('Ly = ξ × 46t/D', r.Ly, r.xi * r.epsilon_allow, 0.001, 'm')
+// 두께·외경이 없으면 조용히 다른 기준으로 떨어지지 말고 예외를 던져야 한다
+try {
+  calcAllowableStrain(0, 1000)
+  fail++; console.log('  [FAIL] t=0 인데 예외를 던지지 않았다')
+} catch { console.log('  [OK  ] t·D 미입력 시 예외 (조용한 대체기준 없음)') }
 
 console.log(fail === 0
   ? '\n✅ 전 항목 일치 — 엔진이 평가요령 부록 C.2 정본 예제를 재현한다.\n'

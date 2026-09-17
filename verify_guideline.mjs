@@ -101,7 +101,7 @@ console.log('\n[내진 연속관] von Mises 조합응력 미산정 확인')
     DN: 1000, t: 9.0, D_out: 1000, Z: 0.11, I_seismic: 1.4,
     Fa_table: [1.8, 1.3, 1.3], Fv_table: [3.0, 2.7, 2.4],
     layers, Vbs: 760, P: 1.0, gamma: 17, deltaT: 15,
-    L_settle: 15, h2_settle: 1.0, strainCriterion: 'buckling',
+    L_settle: 15, h2_settle: 1.0,
     h_cover: 1.5, z_pipe: 2.0, E: 210000, Pm: 100, Kv: 10000,
   })
   const banned = ['sigma_vm', 'sigma_x_total', 'stressOK', 'sigma_allow']

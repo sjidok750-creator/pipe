@@ -35,7 +35,7 @@ const A = evalContinuous({
   Fa_table: AMP_FACTOR.S5.Fa, Fv_table: AMP_FACTOR.S5.Fv,
   layers: [{ name: '표층', H: 25, Vs: 89.4 }, { name: '중간층', H: 5, Vs: 172.9 }],
   Vbs: 760, P: 1.0, gamma: 17, deltaT: 15,
-  D_settle: 0, L_settle: 15, h2_settle: 1.0, strainCriterion: 'buckling',
+  D_settle: 0, L_settle: 15, h2_settle: 1.0,
   h_cover: 1.5, z_pipe: 2.0, E: 210000, Pm: 100, Kv: 10000,
 })
 head('  <표 C.2.3> 축변형률에 의한 내진안전성의 조사', '앱', '지침 인쇄값')
@@ -66,7 +66,7 @@ const B = evalContinuous({
     { name: '풍화토층', H: 4.4, Vs: 314.57 },
   ],
   Vbs: 760, P: 1.733, gamma: 19, deltaT: 20,
-  D_settle: 0, L_settle: 0, h2_settle: 0, strainCriterion: 'buckling',
+  D_settle: 0, L_settle: 0, h2_settle: 0,
   h_cover: 4.0, z_pipe: 4.5, E: 210000, Pm: 0, Kv: 100,
 })
 head('  ① 지반 응답', '앱', '엑셀')

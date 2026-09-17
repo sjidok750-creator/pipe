@@ -106,7 +106,6 @@ const DEFAULT_SEGMENTED = {
   L_settle: 0,
   h2_settle: 0,
   deltaT: 20,        // 부록C.1: ΔT=20℃
-  strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
   Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
@@ -140,7 +139,6 @@ const DEFAULT_CONTINUOUS = {
   L_settle: 15,      // 부록C.2: L=15m
   h2_settle: 1.0,    // 부록C.2: h″=1.0m
   deltaT: 15,        // 부록C.2: ΔT=15°C
-  strainCriterion: 'buckling',
   layers: DEFAULT_LAYERS.map(l => ({ ...l })),
   Vbs: 760,          // 기반암 전단파속도 — 지침: 물성 불명확 시 760 m/s 이상 적용
   heightMode: 'sum',
@@ -201,7 +199,7 @@ function calcDetail(inp) {
   const {
     pipeType, zone, seismicGrade, soilType,
     DN, thickness, D_out, P, hCover, Lj, isSeismicJoint,
-    hasSettle, deltaT, D_settle, L_settle, h2_settle, strainCriterion, layers, Vbs,
+    hasSettle, deltaT, D_settle, L_settle, h2_settle, layers, Vbs,
     E_manual, E_steel, E_ductile,
     Pm, Kv, kvMethod, nu,
     heightMode, H_bedrock, fillGapAsLastLayer,
@@ -257,7 +255,7 @@ function calcDetail(inp) {
       seismicGrade, Z, I_seismic, Fa_table, Fv_table,
       layers, Vbs, P,
       gamma: inp.gammaSoil ?? 18,
-      deltaT, D_settle, L_settle, h2_settle: h2_settle ?? 0, strainCriterion,
+      deltaT, D_settle, L_settle, h2_settle: h2_settle ?? 0,
       h_cover: hCover, z_pipe,
       E: E_use,
       Pm: Pm ?? 0, Kv: Kv_eff,
