@@ -10,6 +10,13 @@ import {
   collectReportFacilities, structuralView, seismicView, segLabel,
   f, fInt, meta, DASH,
 } from '../report/projectReport.js'
+import {
+  KIND_INDEX, EARTH_INDEX, SIZE_INDEX, CONNECT_INDEX, FACIL_INDEX, MCONE_INDEX,
+  getSizeIndex,
+} from '../../engine/seismicConstants.js'
+
+/** 지수 선택키 → 한글 라벨 (보고서에는 내부 키를 인쇄하지 않는다) */
+const idxLabel = (table, key) => table[key]?.label ?? DASH
 
 const C = t => ({ text: t, align: 'center' })
 const R = t => ({ text: t, align: 'right' })
@@ -28,6 +35,11 @@ export function buildAppendix({ project, projectMeta }) {
   const pm = projectMeta ?? {}
   const facs = collectReportFacilities(project)
   const b = new HwpxBuilder()
+
+  // 표 번호 — 절 번호(A.1/A.2/B.1~B.3)와 겹치지 않도록 부록 전체 통번호를 쓴다.
+  // 문서에 나오는 순서대로 매겨지므로 제원/요약이 교차해도 번호가 어긋나지 않는다.
+  let tblNo = 0
+  const TN = () => `<부록 표 ${++tblNo}>`
 
   b.coverTitle('부      록', '구조안전성 및 내진성능평가 상세 계산서')
   b.infoTable([
@@ -59,7 +71,7 @@ export function buildAppendix({ project, projectMeta }) {
     { label: '노면하중', eq: 'W _{t} = {2 n P ( 1 + i )} over { C ( a + 2 h tan theta ) }' },
     { text: '후륜 1륜 하중 P = 9,600 kg(DB-24), L = 175 cm, C = 100 cm, b = 50 cm, a = 20 cm, θ = 45°  [세부지침 11-134]' },
   ])
-  b.tableWithCaption('<표 A.1> 충격계수 (i)', {
+  b.tableWithCaption(`${TN()} 충격계수 (i)`, {
     headerRows: [[H('토피 h (m)'), H('충격계수 i')]],
     rows: [[C('h < 1.5'), C('0.5')], [C('1.5 ≤ h ≤ 6.5'), C('0.65 − 0.10 h')], [C('h > 6.5'), C('0')]],
     weights: [1, 1],
@@ -77,7 +89,7 @@ export function buildAppendix({ project, projectMeta }) {
     { label: '휨응력', eq: 'sigma _{b} = {2} over {f Z} W left [ {K _{b} R ^{2} E I + ( 0.061 K _{b} - 0.083 K _{x} ) E\' R ^{5}} over {E I + 0.061 E\' R ^{3}} right ]' },
     { text: 'W = Wv + Wt, f = 1.5, R = D/2 + t, E = 2.1×10⁶ kg/cm², E′ = 28 kg/cm²  [세부지침 11-135]' },
   ])
-  b.tableWithCaption('<표 A.2> 기초 유효받침각별 계수 (Kb · Kx)', {
+  b.tableWithCaption(`${TN()} 기초 유효받침각별 계수 (Kb · Kx)`, {
     headerRows: [[H('유효받침각 2α'), H('Kb'), H('Kx'), H('0.061Kb − 0.083Kx')]],
     rows: [
       [C('60°'), C('0.189'), C('0.110'), C('0.00306')],
@@ -111,7 +123,7 @@ export function buildAppendix({ project, projectMeta }) {
 
   // ── A.2 구간별 계산서 ──────────────────────────────────
   b.heading('A.2  관로구간별 구조안전성 계산서')
-  b.tableWithCaption('<표 A.3> 공통 적용값', {
+  b.tableWithCaption(`${TN()} 공통 적용값`, {
     headerRows: [[H('구      분'), H('기 호'), H('단 위'), H('적    용    값'), H('적 용 근 거')]],
     rows: [
       ['강관 탄성계수', C('E'), C('kg/cm²'), R('2.1 × 10⁶'), '세부지침 11-135'],
@@ -132,7 +144,7 @@ export function buildAppendix({ project, projectMeta }) {
     const v = structuralView(fx)
     const m = fx.m
     b.subheading(`A.2.${i + 1}  ${facTitle(m, i)}`)
-    b.tableWithCaption(`<표 A.${4 + i}> 검토 제원 — ${facTitle(m, i)}`, {
+    b.tableWithCaption(`${TN()} 검토 제원 — ${facTitle(m, i)}`, {
       headerRows: [[H('구      분'), H('기 호'), H('단 위'), H('적    용    값')]],
       rows: [
         ['관종 / 강종', C('-'), C('-'), `${meta(m, 'pipeMark')} / ${meta(m, 'steelGrade')}`],
@@ -195,7 +207,7 @@ export function buildAppendix({ project, projectMeta }) {
       ])
       b.spacer()
 
-      b.tableWithCaption(`<표 A.${4 + facs.length + i}> 검토 결과 요약 — ${facTitle(m, i)}`, {
+      b.tableWithCaption(`${TN()} 검토 결과 요약 — ${facTitle(m, i)}`, {
         headerRows: [[H('검 토 항 목'), H('발  생  값'), H('허  용  값'), H('S.F'), H('판 정')]],
         rows: [
           ['내압 응력 (상시)', R(`σt  = ${f(v.sigma_t, 2)} MPa`), R(`σa  = ${fInt(v.allow_t)} MPa`), C(f(v.SF_t, 2)), C(ok(v.ok_t))],
@@ -236,16 +248,19 @@ export function buildAppendix({ project, projectMeta }) {
       { label: '취약도지수 VI', expr: `FLEX × Σ(세부지수) = ${f(r.FLEX, 1)} × ${f(r.VI_sub, 1)}`, value: f(r.VI, 1) },
       { label: '판정', expr: `지진도 ${r.seismicityGroup}그룹 / VI ${r.VI > 40 ? '>' : '≤'} 40`, value: r.isCritical ? '내진성능 중요상수도' : '내진성능 유보상수도' },
     ])
-    b.tableWithCaption(`<표 B.${1 + i}> 취약도 세부지수 — ${facTitle(m, i)}`, {
+    b.tableWithCaption(`${TN()} 취약도 세부지수 — ${facTitle(m, i)}`, {
       headerRows: [[H('취약도 지수'), H('적 용 근 거 및 선택 내용'), H('적용값')]],
       rows: [
         ['FLEX  (유연도)', `유연도비 F = ${f(r.F, 2)}  →  해설표 3.4.2`, C(f(r.FLEX, 1))],
-        ['KIND  (관로 종류)', meta(m, 'pipeMark') + ' → 「강관 및 주철관」', C(f(r.KIND, 1))],
-        ['EARTH (지반상태)', `지반종류 ${fx.pIn?.soilType ?? DASH}`, C(f(r.EARTH, 1))],
-        ['SIZE  (관경)', `DN ${fInt(fx.pIn?.DN)}`, C(f(r.SIZE, 1))],
-        ['CONNECT (이음부 상태)', String(fx.pIn?.connectCond ?? DASH), C(f(r.CONNECT, 1))],
-        ['FACIL (주요시설물)', String(fx.pIn?.facilExists ?? DASH), C(f(r.FACIL, 1))],
-        ['MCONE (이음부 처리)', String(fx.pIn?.mcone ?? DASH), C(f(r.MCONE, 1))],
+        ['KIND  (관로 종류)',
+          `${meta(m, 'pipeMark')} → 「${idxLabel(KIND_INDEX, fx.pIn?.pipeKind)}」`, C(f(r.KIND, 1))],
+        ['EARTH (지반상태)',
+          `지반종류 ${fx.pIn?.soilType ?? DASH} → 「${idxLabel(EARTH_INDEX, fx.pIn?.soilType)}」`, C(f(r.EARTH, 1))],
+        ['SIZE  (관경)',
+          `DN ${fInt(fx.pIn?.DN)} → 「${idxLabel(SIZE_INDEX, getSizeIndex(fx.pIn?.DN ?? 0))}」`, C(f(r.SIZE, 1))],
+        ['CONNECT (이음부 상태)', `「${idxLabel(CONNECT_INDEX, fx.pIn?.connectCond)}」`, C(f(r.CONNECT, 1))],
+        ['FACIL (주요시설물)', `「${idxLabel(FACIL_INDEX, fx.pIn?.facilExists)}」`, C(f(r.FACIL, 1))],
+        ['MCONE (이음부 처리)', `「${idxLabel(MCONE_INDEX, fx.pIn?.mcone)}」`, C(f(r.MCONE, 1))],
       ],
       weights: [1.6, 4, 1],
     })
@@ -263,7 +278,7 @@ export function buildAppendix({ project, projectMeta }) {
     { label: '지반 수평변위 (응답변위법)', eq: 'U _{h} = {2} over {pi ^{2}} S _{v} T _{s} cos ( {pi z} over {2 H} )' },
     { label: '허용 변형률 (국부좌굴)', eq: 'epsilon _{a} = {46 t} over {D}' },
   ])
-  b.tableWithCaption('<표 B.0> 충격계수 (i) — 차량하중', {
+  b.tableWithCaption(`${TN()} 충격계수 (i) — 차량하중`, {
     headerRows: [[H('토피 h (m)'), H('충격계수 i')]],
     rows: [[C('h < 1.5'), C('0.5')], [C('1.5 ≤ h ≤ 6.5'), C('0.65 − 0.1h')], [C('h > 6.5'), C('0')]],
     weights: [1, 1],
@@ -284,7 +299,7 @@ export function buildAppendix({ project, projectMeta }) {
       { label: '지반 수평변위', expr: `Uh = (2/π²)·Sv·Ts·cos(πz/2H),  z = ${f(v.z, 3)} m`, value: `${f(d.Uh, 5)} m` },
       { label: '설계 파장', expr: 'L = 2L₁L₂/(L₁+L₂)', value: `${f(d.L, 2)} m` },
     ])
-    b.tableWithCaption(`<표 B.${1 + facs.length + i}> 축방향 변형률 검토 — ${facTitle(m, i)}`, {
+    b.tableWithCaption(`${TN()} 축방향 변형률 검토 — ${facTitle(m, i)}`, {
       headerRows: [[H('검 토 항 목'), H('발 생 변형률 (%)'), H('허용 변형률 (%)'), H('변형률비'), H('판 정')]],
       rows: [
         ['내압                εi', R(f(v.ei, 5)), C('-'), C('-'), C('-')],

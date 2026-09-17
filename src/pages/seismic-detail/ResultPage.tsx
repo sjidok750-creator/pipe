@@ -64,7 +64,8 @@ export default function SeismicDetailResultPage() {
   ] : []
 
   const segJointRows = isSegmented ? [
-    { label: '이음부 신축량 |u_J|', formula: '|u₀·ūJ|  [식 5.3.28, β₁·γ₁ 기반]', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
+    { label: '지진시 이음부 신축량 |u_J|', formula: '|u₀·ūJ|  [식 5.3.28, β₁·γ₁ 기반]', value: rs.u_J * 1000, unit: 'mm' },
+    { label: '이음부 신축량 합계 e_total', formula: 'e_i+e_o+e_t+e_d+|u_J|  [식 5.3.24~5.3.35]', value: rs.e_total * 1000, unit: 'mm', limit: rs.e_allow * 1000, ok: rs.dispOK },
     { label: '이음부 굽힘각 θ_J', formula: '4π²·Lj·Uh/L²  (참고 검토)', value: rs.theta_J * 180 / Math.PI, unit: '°', limit: rs.theta_allow * 180 / Math.PI, ok: rs.angleOK },
   ] : []
 

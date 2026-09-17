@@ -1297,7 +1297,10 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TDB} colSpan={2}>
-                    허용응력 {G.sigma}<Sub>allow</Sub>&nbsp;(내진 시, {G.sigma}<Sub>y</Sub>/1.5 = 300/1.5)
+                    허용응력 {G.sigma}<Sub>allow</Sub>&nbsp;
+                    <span style={{ fontWeight: 400, fontSize: 10, color: '#64748b' }}>
+                      (덕타일 주철관 내진 시 — 평가요령 &lt;표 C.1.3&gt;)
+                    </span>
                   </td>
                   <td style={TDR}>{rs.sigma_allow?.toFixed(2)}</td>
                 </tr>
@@ -1636,9 +1639,15 @@ export default function SeismicDetailReportPage() {
                   <td style={TDC}><OKBadge ok={rs.stressOK} /></td>
                 </tr>
                 <tr>
-                  <td style={TD}>이음부 신축량 |u<Sub>J</Sub>|</td>
-                  <td style={TDR}>{(rs.u_J * 1000)?.toFixed(2)} mm</td>
-                  <td style={TDR}>{(rs.u_allow * 1000)?.toFixed(1)} mm</td>
+                  <td style={TD}>
+                    이음부 신축량 합계 e<Sub>total</Sub>
+                    <span style={{ color: '#64748b', fontSize: 10 }}>
+                      &nbsp;(= e<Sub>i</Sub>+e<Sub>o</Sub>+e<Sub>t</Sub>+e<Sub>d</Sub>+|u<Sub>J</Sub>|,&nbsp;
+                      지진분 |u<Sub>J</Sub>| = {(rs.u_J * 1000)?.toFixed(2)} mm)
+                    </span>
+                  </td>
+                  <td style={TDR}>{(rs.e_total * 1000)?.toFixed(2)} mm</td>
+                  <td style={TDR}>{(rs.e_allow * 1000)?.toFixed(1)} mm</td>
                   <td style={TDC}><OKBadge ok={rs.dispOK} /></td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>
