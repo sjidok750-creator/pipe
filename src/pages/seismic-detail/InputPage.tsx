@@ -1083,9 +1083,18 @@ export default function SeismicDetailInputPage() {
               <EngRow label="허용신축량 (mm)" popover={
                 <EngPopover title="이음부 허용신축량">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    미입력(0) 시 KS D 4311 소켓 삽입깊이 × 50%(일반형)/80%(내진형)로 자동 산정.<br/>
-                    평가요령 부록C 예제 C.1은 DN900에 <strong>31mm</strong>를 적용하였으나 산정근거가
-                    제시되지 않음 — <strong>제조사 이음 허용기준 확인 후 직접입력 권장</strong>.
+                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: '#2d6a2d' }}>기본값 31 mm (= 0.031 m)</strong><br/>
+                      평가요령 부록 &lt;표 C.1.4&gt; 예제값이며, 실무 계산서
+                      (02-3 관로내진성능평가.xlsx 주철관 시트, DN900·t13·l 6m)도 동일하게 적용한다.
+                    </div>
+                    평가요령은 &ldquo;이음부 신축량이 <strong>허용치</strong> 이하&rdquo;라고만 하고
+                    <strong>산정식도 관종별 수치도 제시하지 않는다</strong>(5.3.2 / 해설표 5.3.2 / 부록 C.1 전수 확인).
+                    따라서 <strong>제조사 이음 허용기준이 확보되면 그 값을 직접입력</strong>하는 것이 원칙이다.<br/>
+                    <span style={{ color: '#b45309' }}>
+                      ※ 관경·이음형식(일반형/내진형)에 따라 실제 허용값은 달라진다. 기본값은 DN900 예제 기준이므로
+                      다른 관경에 그대로 쓰지 말 것.
+                    </span>
                   </div>
                 </EngPopover>
               }>
@@ -1097,7 +1106,9 @@ export default function SeismicDetailInputPage() {
                   }}
                   min={0} step={1} width={90}
                 />
-                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>0 = 자동 산정</span>
+                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>
+                  0 = 기본값 31 mm (평가요령 표 C.1.4 예제값)
+                </span>
               </EngRow>
 
               <EngDivider label="부등침하 조건"/>

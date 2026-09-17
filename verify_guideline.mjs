@@ -91,6 +91,37 @@ chk(stG_on.SF === stG_off.SF && stG_on.safetyGrade.grade === stG_off.safetyGrade
 const diG = calcDuctileIron({ DN: 600, Pd: 0.60, H: 1.5, diKGrade: 'K9', diBeddingType: 'deg90', surgeOnGravity: true })
 chk(diG.combined.sigma_td === 0, `주철관 자연유하인데 σtd=${diG.combined.sigma_td} (11-137 ② : 정수압 적용)`)
 
+// ── 내진 연속관: von Mises 조합응력을 산정하지 않는다 ──
+// 근거: 평가요령 연속관 판정은 축변형률 단일(부록 표 C.2.3), KDS 57·해설편·실무 계산서에도 없음
+console.log('\n[내진 연속관] von Mises 조합응력 미산정 확인')
+{
+  const { evalContinuous } = await import('./src/engine/seismicContinuous.js')
+  const layers = [{ name: '표층', H: 25, Vs: 89.4 }, { name: '중간', H: 5, Vs: 172.9 }]
+  const rc = evalContinuous({
+    DN: 1000, t: 9.0, D_out: 1000, Z: 0.11, I_seismic: 1.4,
+    Fa_table: [1.8, 1.3, 1.3], Fv_table: [3.0, 2.7, 2.4],
+    layers, Vbs: 760, P: 1.0, gamma: 17, deltaT: 15,
+    L_settle: 15, h2_settle: 1.0, strainCriterion: 'buckling',
+    h_cover: 1.5, z_pipe: 2.0, E: 210000, Pm: 100, Kv: 10000,
+  })
+  const banned = ['sigma_vm', 'sigma_x_total', 'stressOK', 'sigma_allow']
+  const found = banned.filter(k => k in rc)
+  console.log(`  반환 필드 점검 : ${found.length ? found.join(', ') + ' 존재' : '없음'}`)
+  chk(found.length === 0, `연속관 결과에 응력 판정 필드가 남아 있다 (${found.join(', ')})`)
+  chk(rc.ok === rc.strainOK, '연속관 종합판정이 축변형률 단일 기준이 아니다')
+  // 지침 부록 표 C.2.3 재현
+  const pct = v => Math.abs(v) * 100
+  chk(Math.abs(pct(rc.epsilon_allow) - 0.414) < 0.001, `εa = 46t/D 불일치 (${pct(rc.epsilon_allow).toFixed(4)})`)
+}
+
+// ── 분절관 이음부 허용신축량 = 평가요령 <표 C.1.4> 예제값 0.031 m ──
+console.log('\n[내진 분절관] 이음부 허용신축량 기본값')
+{
+  const { JOINT_DISP_ALLOW_DEFAULT_M } = await import('./src/engine/seismicSegmented.js')
+  console.log(`  기본 허용신축량 = ${JOINT_DISP_ALLOW_DEFAULT_M} m (지침 표 C.1.4 / 실무 계산서 02-3 동일)`)
+  chk(JOINT_DISP_ALLOW_DEFAULT_M === 0.031, `허용신축량 기본값이 0.031 m 가 아니다 (${JOINT_DISP_ALLOW_DEFAULT_M})`)
+}
+
 console.log('\n' + '═'.repeat(66))
 console.log('4. 주철관 통합 계산 (DN600 K9, H=1.5m, P=0.6MPa)')
 console.log('═'.repeat(66))
