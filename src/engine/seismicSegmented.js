@@ -317,38 +317,22 @@ export function calcJointDispStatic(sigma_i_kN, sigma_o_kN, E_kN, l, deltaT, del
 }
 
 // ─── 허용 신축량 (이음부) ────────────────────────────────────
-// 근거: 2025년 상수도설계기준해설편 §4.3.3(2)나⑥
-//   "이음부 설계 최대 신축량은 제조사의 이음부 신축 관련 허용기준을 참조하여야 한다"
-// 실무 적용: KS D 4311:2016 소켓 삽입깊이(L₂) × 비율
-//   일반형 × 0.50, 내진형 × 0.80 (JWWA 수도시설 내진공법지침 기반)
-// 출처: KS D 4311:2016 소켓치수표(L₂) 기준
-const DI_INSERTION_MM = {
-    75:  57,
-   100:  60,
-   125:  62,
-   150:  65,
-   200:  68,
-   250:  72,
-   300:  75,
-   350:  78,
-   400:  78,
-   450:  82,
-   500:  85,
-   600:  90,
-   700:  95,
-   800: 100,
-   900: 105,
-  1000: 110,
-  1100: 115,
-  1200: 120,
+// ── 이음부 허용신축량 ──────────────────────────────────────
+// 평가요령은 "이음부의 신축량이 허용치 이하"라고만 하고 **산정식도 관종별 수치도 제시하지 않는다**
+// (5.3.2 분절관 / 해설표 5.3.2 / 부록 C.1 전수 확인, 2026-09).
+// 실제로 제시된 유일한 값은 부록 <표 C.1.4> 예제의 0.031 m 이며,
+// 실무 계산서(저장소 내 `02-3. 관로내진성능평가.xlsx` 주철관 시트,
+// DN900·t13·l=6m — 부록 C.1 예제와 동일 제원)도 동일하게 0.031 m 를 적용한다.
+// → 기본값을 0.031 m 로 고정하고, 제조사 이음 허용기준이 확보되면 직접입력으로 대체한다.
+// ※ 종전 구현은 KS D 4311 소켓 삽입깊이 × 0.5(일반형)/0.8(내진형)을 썼는데
+//   DN900 기준 52.5 mm 로 지침 예제·실무값의 1.7배(위험측)였고 근거도 지침 밖이었다.
+//   되살리지 말 것.
+export const JOINT_DISP_ALLOW_DEFAULT_M = 0.031
+
+export function getAllowableJointDisp() {
+  return JOINT_DISP_ALLOW_DEFAULT_M
 }
 
-export function getAllowableJointDisp(DN, isSeismicJoint = false) {
-  const dns = Object.keys(DI_INSERTION_MM).map(Number)
-  const closest = dns.reduce((a, b) => Math.abs(b - DN) < Math.abs(a - DN) ? b : a)
-  const L_insert_m = DI_INSERTION_MM[closest] / 1000
-  return isSeismicJoint ? L_insert_m * 0.8 : L_insert_m * 0.5
-}
 
 // ─── 허용응력 (분절관) ───────────────────────────────────────
 // 평가요령 부록C 표 C.1.3 확인: 허용응력 27.50 MPa (덕타일주철관 2종관, 내진 시)
@@ -508,9 +492,13 @@ export function evalSegmented(params) {
   // 허용신축량: 직접입력 우선 (부록C 예제 C.1은 DN900에 0.031m 적용 — 산정근거 미제시,
   // 제조사 이음 허용기준 확인 권장), 미입력 시 KS D 4311 삽입깊이 기반 산정값 사용
   const e_total = e_i + e_o + e_t + e_d + uJ
+  // 허용신축량: 사용자 입력(제조사 기준) 우선, 미입력 시 평가요령 <표 C.1.4> 예제값 0.031 m
   const e_allow = (e_allow_input != null && e_allow_input > 0)
     ? e_allow_input
-    : getAllowableJointDisp(DN, isSeismicJoint)
+    : JOINT_DISP_ALLOW_DEFAULT_M
+  const eAllowSource = (e_allow_input != null && e_allow_input > 0)
+    ? '직접입력 (제조사 이음 허용기준)'
+    : '평가요령 <표 C.1.4> 예제값 0.031 m — 지침에 산정식 미제시'
   const dispOK = e_total <= e_allow
 
   // ── Step 16: 이음부 굽힘각도 (θ_J) 검토 ──
@@ -556,7 +544,7 @@ export function evalSegmented(params) {
     // 이음부 신축량 (m)
     e_i, e_o, e_t, e_d,
     uJ, u0, Ua, beta1, gamma1, uJ_bar, a1_joint,
-    e_total, e_allow, dispOK,
+    e_total, e_allow, eAllowSource, dispOK,
     // 이음부 굽힘각도 (rad)
     theta_J, theta_allow, angleOK,
     // alias (보고서 호환)

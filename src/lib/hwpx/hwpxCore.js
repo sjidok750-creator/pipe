@@ -5,7 +5,7 @@
 // 삽입되어 한글 수식편집기에서 편집 가능하다.
 // ============================================================
 import JSZip from 'jszip'
-import { HWPX_TEMPLATE, SEC_OPEN, SECPR_BLOCK } from './template'
+import { HWPX_TEMPLATE, SEC_OPEN, SECPR_BLOCK } from './template.js'
 
 // ── 스타일 ID (골든 템플릿 header.xml에 고정) ──
 // ※ 한글은 IDRef를 배열 인덱스로 해석하므로 신설 ID는 연속 번호(간극 금지)
@@ -26,12 +26,15 @@ const BF_GRID = {
 }
 
 /** 셀 위치 → borderFill id (병합 후 위치로 판정) */
-function gridBf(ri, ci, nRow, nCol, hasHeader) {
-  const pos = ci === 0 ? 'first' : (ci === nCol - 1 ? 'last' : 'mid')
+// ri/ci 는 셀이 시작하는 논리 격자 좌표, colSpan/rowSpan 은 병합 크기
+function gridBf(ri, ci, nRow, nCol, nHeadRow, colSpan = 1, rowSpan = 1) {
+  const lastCol = ci + colSpan - 1
+  const lastRow = ri + rowSpan - 1
+  const pos = ci === 0 ? 'first' : (lastCol === nCol - 1 ? 'last' : 'mid')
   let band
   if (nRow === 1) band = 'single'
-  else if (hasHeader && ri === 0) band = 'head'
-  else if (ri === nRow - 1) band = 'foot'
+  else if (nHeadRow > 0 && ri < nHeadRow) band = 'head'
+  else if (lastRow === nRow - 1) band = 'foot'
   else band = 'body'
   return BF_GRID[band][pos]
 }
@@ -89,7 +92,7 @@ function paraXml(runs, { align = 'left', pageBreak = false } = {}) {
 
 // ── 표 셀 ──
 // cell: string | { text, runs?, bold, small, tiny, align, eq, shade, bf }
-function cellXml(cell, colAddr, rowAddr, cellW, tableBf, gridBfId) {
+function cellXml(cell, colAddr, rowAddr, cellW, tableBf, gridBfId, colSpan = 1, rowSpan = 1) {
   const c = typeof cell === 'object' && cell !== null ? cell : { text: cell }
   const align = c.align || 'left'
   // 우선순위: 셀 지정(bf) > 위치 기반 규약(gridBfId) > 표 기본값
@@ -99,41 +102,68 @@ function cellXml(cell, colAddr, rowAddr, cellW, tableBf, gridBfId) {
   return `<hp:tc name="" header="${c.shade ? 1 : 0}" hasMargin="1" protect="0" editable="0" dirty="0" borderFillIDRef="${bfId}">`
     + `<hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">${p}</hp:subList>`
     + `<hp:cellAddr colAddr="${colAddr}" rowAddr="${rowAddr}"/>`
-    + `<hp:cellSpan colSpan="1" rowSpan="1"/>`
+    + `<hp:cellSpan colSpan="${colSpan}" rowSpan="${rowSpan}"/>`
     + `<hp:cellSz width="${cellW}" height="${ROW_H}"/>`
     + `<hp:cellMargin left="400" right="400" top="120" bottom="120"/>`
     + `</hp:tc>`
 }
 
 // ── 표 ──
-// { headers?: cell[], rows: cell[][], weights?: number[], borderless?: bool, shadeBox?: bool }
-function tableXml({ headers, rows, weights, borderless, shadeBox }) {
-  const nCol = (headers ? headers.length : (rows[0] ? rows[0].length : 1))
+// {
+//   headers?:    cell[]      — 1줄 머리행
+//   headerRows?: cell[][]    — 여러 줄 머리행 (2단 표제)
+//   rows:        cell[][]
+//   weights?:    number[]    — 논리 열 너비 비율 (병합 전 기준, 길이 = 논리 열수)
+//   borderless?, shadeBox?
+// }
+// 셀에 { colSpan, rowSpan } 을 주면 병합된다. 병합에 덮이는 셀은 배열에서 빼야 하며
+// (한글 OWPML 규약 — 덮인 셀은 기록하지 않는다), colAddr 는 논리 격자 좌표로 자동 계산된다.
+function tableXml({ headers, headerRows, rows, weights, borderless, shadeBox }) {
+  const headRows = headerRows && headerRows.length ? headerRows : (headers ? [headers] : [])
+  const spanOf = c => (typeof c === 'object' && c !== null ? (c.colSpan || 1) : 1)
+  const firstRow = headRows[0] || rows[0] || []
+  const nCol = weights && weights.length
+    ? weights.length
+    : firstRow.reduce((a, c) => a + spanOf(c), 0) || 1
+
   const w = weights && weights.length === nCol ? weights : Array(nCol).fill(1)
   const wsum = w.reduce((a, b) => a + b, 0)
   const colW = w.map(x => Math.round(PAGE_USABLE_W * x / wsum))
   colW[nCol - 1] = PAGE_USABLE_W - colW.slice(0, -1).reduce((a, b) => a + b, 0)
   const tableBf = shadeBox ? BF.shadeBox : (borderless ? BF.none : BF.cell)
 
-  const allRows = []
-  if (headers) {
-    allRows.push(headers.map(h => (typeof h === 'object'
-      ? { ...h, shade: true, bold: true, align: h.align || 'center' }
-      : { text: h, shade: true, bold: true, align: 'center' })))
-  }
-  rows.forEach(row => allRows.push(row))
+  // 머리행 셀에는 음영·굵게·가운데를 강제 (지정값이 있으면 유지)
+  const asHead = h => (typeof h === 'object' && h !== null
+    ? { ...h, shade: true, bold: h.bold !== false, align: h.align || 'center' }
+    : { text: h, shade: true, bold: true, align: 'center' })
+
+  const allRows = [...headRows.map(hr => hr.map(asHead)), ...rows]
   const rowCnt = allRows.length
-
-  // 테두리 없는 표(borderless/shadeBox)는 규약을 적용하지 않는다
+  const nHeadRow = headRows.length
   const useGrid = !borderless && !shadeBox
-  const trs = allRows.map((row, ri) =>
-    `<hp:tr>${row.map((cell, ci) => cellXml(
-      cell, ci, ri, colW[ci], tableBf,
-      useGrid ? gridBf(ri, ci, rowCnt, nCol, !!headers) : null,
-    )).join('')}</hp:tr>`
-  ).join('')
 
-  const tbl = `<hp:tbl id="${nextId()}" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="${headers ? 1 : 0}" rowCnt="${rowCnt}" colCnt="${nCol}" cellSpacing="0" borderFillIDRef="${tableBf}" noAdjust="0">`
+  // 병합 격자 — 덮인 칸 표시
+  const taken = Array.from({ length: rowCnt }, () => Array(nCol).fill(false))
+  const trs = allRows.map((row, ri) => {
+    let ci = 0
+    const tcs = row.map(cell => {
+      while (ci < nCol && taken[ri][ci]) ci++            // 위에서 내려온 병합 칸 건너뛰기
+      const c = typeof cell === 'object' && cell !== null ? cell : { text: cell }
+      const cs = Math.min(c.colSpan || 1, nCol - ci)
+      const rs = Math.min(c.rowSpan || 1, rowCnt - ri)
+      for (let r = ri; r < ri + rs; r++) {
+        for (let k = ci; k < ci + cs; k++) taken[r][k] = true
+      }
+      const cw = colW.slice(ci, ci + cs).reduce((a, b) => a + b, 0)
+      const bf = useGrid ? gridBf(ri, ci, rowCnt, nCol, nHeadRow, cs, rs) : null
+      const xml = cellXml(c, ci, ri, cw, tableBf, bf, cs, rs)
+      ci += cs
+      return xml
+    }).join('')
+    return `<hp:tr>${tcs}</hp:tr>`
+  }).join('')
+
+  const tbl = `<hp:tbl id="${nextId()}" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="CELL" repeatHeader="${nHeadRow ? 1 : 0}" rowCnt="${rowCnt}" colCnt="${nCol}" cellSpacing="0" borderFillIDRef="${tableBf}" noAdjust="0">`
     + `<hp:sz width="${PAGE_USABLE_W}" widthRelTo="ABSOLUTE" height="${rowCnt * ROW_H}" heightRelTo="ABSOLUTE" protect="0"/>`
     + `<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="COLUMN" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>`
     + `<hp:outMargin left="0" right="0" top="140" bottom="140"/><hp:inMargin left="0" right="0" top="0" bottom="0"/>`
@@ -276,8 +306,9 @@ function b64ToStr(b64) {
   return new TextDecoder('utf-8').decode(bytes)
 }
 
-// ── 패키징 & 다운로드 ──
-export async function downloadHwpx(builder, filename, { title } = {}) {
+// ── 패키징 ──
+// 브라우저(다운로드)와 Node(검증 스크립트)에서 함께 쓰도록 zip 생성만 분리한다.
+export function buildHwpxZip(builder, { title } = {}) {
   const zip = new JSZip()
   zip.file('mimetype', 'application/hwp+zip', { compression: 'STORE' })
   for (const [name, b64] of Object.entries(HWPX_TEMPLATE)) {
@@ -289,7 +320,12 @@ export async function downloadHwpx(builder, filename, { title } = {}) {
     }
   }
   zip.file('Contents/section0.xml', builder.buildSection0(), { compression: 'DEFLATE' })
+  return zip
+}
 
+// ── 다운로드 ──
+export async function downloadHwpx(builder, filename, { title } = {}) {
+  const zip = buildHwpxZip(builder, { title })
   const blob = await zip.generateAsync({
     type: 'blob',
     mimeType: 'application/hwp+zip',

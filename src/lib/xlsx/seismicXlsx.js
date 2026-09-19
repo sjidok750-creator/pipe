@@ -129,9 +129,9 @@ export async function exportSeismicDetailXlsx({ inp, rs, projectName, facilityNa
   inS.sec('허용 기준').head()
   if (isSeg) {
     inS.item({ label: '허용응력 (관체)', sym: 'σ_a', value: rs.sigma_allow, unit: 'MPa', name: 'S_sa', input: true, note: '부록C 표 C.1.3 — 덕타일 주철관 2종관 27.5 MPa (타 등급은 직접 수정)' })
-    inS.item({ label: '허용신축량 (이음부)', sym: 'e_a', value: rs.e_allow, unit: 'm', name: 'S_ea', input: true, note: '제조사 이음 허용기준 확인 권장 (미입력 시 KS D 4311 삽입깊이 기반)' })
+    inS.item({ label: '허용신축량 (이음부)', sym: 'e_a', value: rs.e_allow, unit: 'm', name: 'S_ea', input: true, note: '미입력 시 부록C 표 C.1.4 예제값 0.031 m (지침에 산정식 미제시) — 제조사 이음 허용기준이 있으면 직접 입력' })
   } else {
-    inS.item({ label: '항복강도', sym: 'σ_y', formula: 'IF(S_t0<=16,235,215)', result: rs.sigma_y, unit: 'MPa', name: 'S_sy', note: 'SS400/SPS400: t≤16mm→235, 초과→215' })
+    inS.item({ label: '허용변형률 (축변형률)', sym: 'ε_a', formula: '46*S_t0/S_D', unit: '%', note: 'ε_a = 46t/D [%] — 부록C 표 C.2.3 항복점변형률(국부좌굴 개시변형률). 연속관 판정 기준은 이것 하나뿐이다 (σ_y/E 기준 없음)' })
   }
 
   // ══ 지반·스펙트럼 시트 ═══════════════════════════════════

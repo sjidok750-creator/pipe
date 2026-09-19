@@ -137,8 +137,8 @@ export default function ReportPage() {
         <table style={TABLE}><tbody>
           {([
             ['설계 운전압력 Pd', `${inputs.Pd} MPa`],
-            ['압력 구간', (result as any).pressureZone === 'pumped'
-              ? `가압구간 — 수격압 P′ = ${(s1?.Psurge ?? 0).toFixed(3)} MPa`
+            ['압력 구간', s1?.surgeApplied
+              ? `${(result as any).pressureZone === 'pumped' ? '가압구간' : '자연유하 구간 (일시하중 적용)'} — 수격압 P′ = ${(s1?.Psurge ?? 0).toFixed(3)} MPa`
               : '자연유하 구간 — 정수압 적용'],
             ['관정 매설깊이 H', `${inputs.H} m`],
             ['흙의 단위중량 γt', `${s2?.gammaSoil_kgfcm3 ?? 0.0018} kg/cm³`],
@@ -234,7 +234,7 @@ export default function ReportPage() {
               <CalcRow label="내압응력 σt" expr={`P × D / (2t) = ${inputs.Pd} × ${Do} / (2 × ${tAdopt})`} result={s1?.sigma_t_static ?? 0} unit="MPa"/>
               <CalcRow label="허용응력 (상시)" expr="세부지침 11-134 [해설 표 11.5.1]" result={s1?.sigmaA_static ?? 140} unit="MPa"/>
               <CalcRow label="판정" expr={`${(s1?.sigma_t_static ?? 0).toFixed(3)} ≤ ${(s1?.sigmaA_static ?? 140).toFixed(1)}`} result={s1?.ok_static ? 'O.K.' : 'N.G.'} unit=""/>
-              {s1?.isPumped && (
+              {s1?.surgeApplied && (
                 <>
                   <HR/>
                   <CalcRow label="수격압 P′" expr="정수압 이상 상승압력" result={s1?.Psurge ?? 0} unit="MPa"/>
@@ -248,7 +248,7 @@ export default function ReportPage() {
             <>
               <CalcRow label="정수압 인장응력 σts" expr="P × D / (2t)" result={s1?.sigma_ts ?? 0} unit="MPa"/>
               <CalcRow label="수격압 인장응력 σtd"
-                expr={(result as any).pressureZone === 'pumped' ? "(P′ − P) × D / (2t)" : '자연유하 구간 — 미적용'}
+                expr={(result as any).pressureZone === 'pumped' ? "(P′ − P) × D / (2t)" : '자연유하 구간 — 미적용 (11-137 ②)'}
                 result={s1?.sigma_td ?? 0} unit="MPa"/>
             </>
           )}

@@ -333,6 +333,8 @@ export const useProjectStore = create((set, get) => ({
       createdAt: existingFacility?.createdAt ?? now,
       updatedAt: now,
       fileName: existingFacility?.fileName ?? null,
+      // 보고서 서술정보(측점·연장·주상도 등)는 계산 스냅샷과 별도로 보존한다
+      reportMeta: existingFacility?.reportMeta ?? null,
       modules,
     }
 
@@ -521,6 +523,44 @@ export const useProjectStore = create((set, get) => ({
   },
 
   markDirty: () => set({ isDirty: true }),
+
+  // ── 최종보고서용 서술정보 ──────────────────────────────────
+  // 계산으로 나오지 않는 항목(측점·연장·시추주상도 등)을 시설물/프로젝트에 저장한다.
+  setFacilityReportMeta: (projectId, facilityId, patch) => {
+    const project = projectRepo.get(projectId)
+    if (!project) return null
+    const fi = project.facilities.findIndex(f => f.id === facilityId)
+    if (fi < 0) return null
+    const facilities = [...project.facilities]
+    facilities[fi] = {
+      ...facilities[fi],
+      reportMeta: { ...(facilities[fi].reportMeta ?? {}), ...patch },
+      updatedAt: new Date().toISOString(),
+    }
+    const next = { ...project, facilities, meta: { ...project.meta, updatedAt: new Date().toISOString() } }
+    projectRepo.save(next)
+    set({ projects: sortedProjects() })
+    return next
+  },
+
+  setProjectReportMeta: (projectId, patch) => {
+    const project = projectRepo.get(projectId)
+    if (!project) return null
+    const next = {
+      ...project,
+      meta: {
+        ...project.meta,
+        reportMeta: { ...(project.meta.reportMeta ?? {}), ...patch },
+        updatedAt: new Date().toISOString(),
+      },
+    }
+    projectRepo.save(next)
+    set({ projects: sortedProjects() })
+    return next
+  },
+
+  /** 저장본 기준 프로젝트 전체(시설물 포함) 반환 — 보고서 생성용 */
+  getSavedProject: (projectId) => projectRepo.get(projectId ?? get().projectId),
 
   // ── 시설물 삭제 ──────────────────────────────────────────────
 

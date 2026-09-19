@@ -31,6 +31,12 @@ export default function InputPage() {
     setErrors(e => { const n = { ...e }; delete n[field]; return n })
   }
 
+  // 압력 조건 (엔진 입력은 JS 객체라 키 접근만 별도로 좁혀 쓴다)
+  const inputBag = inputs as Record<string, unknown>
+  const pressureZone = String(inputBag.pressureZone ?? 'gravity')
+  const surgeOnGravity = inputBag.surgeOnGravity !== false     // 기본 적용
+  const surgeShown = pressureZone === 'pumped' || (inputs.pipeType === 'steel' && surgeOnGravity)
+
   const dnList = inputs.pipeType === 'steel' ? STEEL_DN_LIST : DI_DN_LIST
   const thicknessRow = inputs.pipeType === 'steel'
     ? STEEL_THICKNESS[inputs.DN]
@@ -447,9 +453,13 @@ export default function InputPage() {
                 없는 조건으로 계산합니다. 토압과 합산하지 않습니다.</span>
               </div>
               <div style={{ background: '#f0f4f8', borderLeft: `3px solid ${T.bgActive}`, padding: '8px 10px', marginBottom: 10, borderRadius: 2 }}>
-                <strong>구간 구분 (11-136)</strong><br/>
-                자연유하 구간 → 정수압 적용<br/>
-                가압 구간 → 수격압(정수압 이상 상승압력) 적용
+                <strong>운전방식과 일시하중(수격압)</strong><br/>
+                <span style={{ color: '#b45309' }}>주철관 (11-137 ②)</span> — &ldquo;자연유하 구간에서는 정수압을
+                적용하고 가압구간에서는 수격압(정수압 이상 상승압력)을 적용한다&rdquo; 는 <b>명문 규정</b>이 있어
+                자연유하 구간은 σtd = 0 으로 계산합니다.<br/>
+                <span style={{ color: '#1a6b3a' }}>강관 (11-134)</span> — 해당 규정이 <b>없고</b>
+                [해설 표 11.5.1]이 정수압(상시 140) / 동수압+수격압(일시 210)을 모두 허용기준으로 제시하므로
+                자연유하 구간의 일시하중 검토 여부를 <b>선택</b>할 수 있습니다 (기본 : 적용).
               </div>
               <div style={{ background: '#fff8f0', borderLeft: `3px solid #e8a020`, padding: '8px 10px', borderRadius: 2 }}>
                 <strong>덕타일 주철관은 조합 판정</strong><br/>
@@ -471,13 +481,32 @@ export default function InputPage() {
                 onChange={v => handleChange('pressureZone', v)}
               />
               <div style={{ fontSize: '10.5px', color: T.textMuted, lineHeight: 1.5 }}>
-                자연유하 구간에서는 정수압을 적용하고 가압구간에서는 수격압(정수압 이상 상승압력)을
-                적용합니다. [세부지침 11-136]
+                주철관은 자연유하 구간에 정수압, 가압구간에 수격압(정수압 이상 상승압력)을 적용합니다
+                [세부지침 11-137 ②]. 강관은 해당 규정이 없어 아래에서 선택합니다.
               </div>
             </div>
           </EngRow>
 
-          {((inputs as any).pressureZone ?? 'gravity') === 'pumped' && (
+          {inputs.pipeType === 'steel' && pressureZone === 'gravity' && (
+            <EngRow label="일시하중 검토">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+                <EngSegment
+                  options={[
+                    { key: 'on',  label: '자연유하도 적용', sub: '상시 + 일시' },
+                    { key: 'off', label: '적용 안 함',      sub: '상시만' },
+                  ]}
+                  value={surgeOnGravity ? 'on' : 'off'}
+                  onChange={v => handleChange('surgeOnGravity', v === 'on')}
+                />
+                <div style={{ fontSize: '10.5px', color: T.textMuted, lineHeight: 1.5 }}>
+                  강관 조항(11-134)에는 운전방식에 따른 일시하중 제외 규정이 없으며 [해설 표 11.5.1]이
+                  일시하중(동수압+수격압) 210 MPa 기준을 제시합니다. 적용 시 P′ 미입력이면 정수압 × 1.5 를 씁니다.
+                </div>
+              </div>
+            </EngRow>
+          )}
+
+          {surgeShown && (
             <EngRow label="수격압 P′" unit="MPa">
               <EngInput
                 value={(inputs as any).Psurge ?? ''}

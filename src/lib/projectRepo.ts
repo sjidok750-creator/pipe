@@ -14,6 +14,8 @@ export interface Facility {
   createdAt: string
   updatedAt: string
   fileName?: string | null
+  /** 최종보고서 서술정보 (측점·연장·시추주상도 등, 계산 대상 아님) */
+  reportMeta?: Record<string, string> | null
   modules: {
     structural?: ModuleSnapshot
     seismicPrelim?: ModuleSnapshot
@@ -28,6 +30,8 @@ export interface ProjectMeta {
   createdAt: string
   updatedAt: string
   enabledModules: ModuleId[]
+  /** 최종보고서 표제 정보 (용역명·개별시설물명 등) */
+  reportMeta?: Record<string, string> | null
 }
 
 export interface Project {

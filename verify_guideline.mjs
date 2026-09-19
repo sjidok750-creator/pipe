@@ -65,6 +65,62 @@ console.log('\n[가압구간] 수격압 1.2 MPa')
 const stP = calcSteelPipe({ DN: 600, Pd: 0.60, H: 1.5, pnGrade: 'PN10', pressureZone: 'pumped', Psurge: 1.2 })
 console.log(`  σt′ = ${stP.steps.step1.sigma_t_surge.toFixed(2)} MPa ≤ ${STEEL_ALLOW.surge} → ${stP.steps.step1.ok_surge ? 'OK' : 'NG'}`)
 chk(stP.steps.step1.sigma_t_surge > 0, '수격압 응력 미산출')
+chk(stP.steps.step1.surgeBasis === 'pumped', `가압구간 surgeBasis=${stP.steps.step1.surgeBasis} (기대 pumped)`)
+
+// ── 자연유하 구간의 일시하중(수격압) 검토 — 사용자 선택 ──
+// 근거: 강관 조항(11-134)에는 운전방식에 따른 일시하중 제외 규정이 없고
+//       [해설 표 11.5.1]이 일시하중(동수압+수격압) 210 MPa 기준을 제시한다 → 기본 적용.
+//       "자연유하 = 정수압" 규정은 주철관 조항(11-137 ②) 것이며 주철관에만 적용한다.
+console.log('\n[자연유하 구간 일시하중] 선택 옵션 surgeOnGravity')
+const stG_on  = calcSteelPipe({ DN: 600, Pd: 0.60, H: 1.5, pnGrade: 'PN10' })                        // 기본값
+const stG_off = calcSteelPipe({ DN: 600, Pd: 0.60, H: 1.5, pnGrade: 'PN10', surgeOnGravity: false })
+const s1on = stG_on.steps.step1, s1off = stG_off.steps.step1
+console.log(`  기본(적용)   : P′ = ${s1on.Psurge.toFixed(3)} MPa (= P × 1.5), σt′ = ${s1on.sigma_t_surge.toFixed(2)} MPa,`
+  + ` SF′ = ${s1on.SF_surge.toFixed(2)}, basis=${s1on.surgeBasis}`)
+console.log(`  미적용 선택  : P′ = ${s1off.Psurge}, σt′ = ${s1off.sigma_t_surge}, basis=${s1off.surgeBasis}`)
+chk(s1on.surgeApplied === true && s1on.surgeBasis === 'gravity-opt', '자연유하 기본 적용이 아님')
+chk(Math.abs(s1on.Psurge - 0.60 * 1.5) < 1e-12, 'P′ 기본값이 정수압×1.5 가 아님')
+chk(s1off.surgeApplied === false && s1off.Psurge === null && s1off.sigma_t_surge === null,
+  '미적용 선택인데 수격압이 산정됨')
+// P′ = 1.5P 이면 SF′ = 210/(1.5σt) = 140/σt = SF(상시) → 적용 여부가 등급을 바꾸지 않는다
+chk(Math.abs(s1on.SF_surge - s1on.SF_static) < 1e-9,
+  `SF′(${s1on.SF_surge}) ≠ SF(${s1on.SF_static}) — P′ 기본값에서는 같아야 한다`)
+chk(stG_on.SF === stG_off.SF && stG_on.safetyGrade.grade === stG_off.safetyGrade.grade,
+  '자연유하 일시하중 적용 여부가 종합 안전율·등급을 바꿨다 (P′ 기본값에서는 불변이어야 함)')
+// 주철관은 11-137 명문 규정 — 자연유하 구간은 σtd = 0 (옵션 영향 없음)
+const diG = calcDuctileIron({ DN: 600, Pd: 0.60, H: 1.5, diKGrade: 'K9', diBeddingType: 'deg90', surgeOnGravity: true })
+chk(diG.combined.sigma_td === 0, `주철관 자연유하인데 σtd=${diG.combined.sigma_td} (11-137 ② : 정수압 적용)`)
+
+// ── 내진 연속관: von Mises 조합응력을 산정하지 않는다 ──
+// 근거: 평가요령 연속관 판정은 축변형률 단일(부록 표 C.2.3), KDS 57·해설편·실무 계산서에도 없음
+console.log('\n[내진 연속관] von Mises 조합응력 미산정 확인')
+{
+  const { evalContinuous } = await import('./src/engine/seismicContinuous.js')
+  const layers = [{ name: '표층', H: 25, Vs: 89.4 }, { name: '중간', H: 5, Vs: 172.9 }]
+  const rc = evalContinuous({
+    DN: 1000, t: 9.0, D_out: 1000, Z: 0.11, I_seismic: 1.4,
+    Fa_table: [1.8, 1.3, 1.3], Fv_table: [3.0, 2.7, 2.4],
+    layers, Vbs: 760, P: 1.0, gamma: 17, deltaT: 15,
+    L_settle: 15, h2_settle: 1.0,
+    h_cover: 1.5, z_pipe: 2.0, E: 210000, Pm: 100, Kv: 10000,
+  })
+  const banned = ['sigma_vm', 'sigma_x_total', 'stressOK', 'sigma_allow']
+  const found = banned.filter(k => k in rc)
+  console.log(`  반환 필드 점검 : ${found.length ? found.join(', ') + ' 존재' : '없음'}`)
+  chk(found.length === 0, `연속관 결과에 응력 판정 필드가 남아 있다 (${found.join(', ')})`)
+  chk(rc.ok === rc.strainOK, '연속관 종합판정이 축변형률 단일 기준이 아니다')
+  // 지침 부록 표 C.2.3 재현
+  const pct = v => Math.abs(v) * 100
+  chk(Math.abs(pct(rc.epsilon_allow) - 0.414) < 0.001, `εa = 46t/D 불일치 (${pct(rc.epsilon_allow).toFixed(4)})`)
+}
+
+// ── 분절관 이음부 허용신축량 = 평가요령 <표 C.1.4> 예제값 0.031 m ──
+console.log('\n[내진 분절관] 이음부 허용신축량 기본값')
+{
+  const { JOINT_DISP_ALLOW_DEFAULT_M } = await import('./src/engine/seismicSegmented.js')
+  console.log(`  기본 허용신축량 = ${JOINT_DISP_ALLOW_DEFAULT_M} m (지침 표 C.1.4 / 실무 계산서 02-3 동일)`)
+  chk(JOINT_DISP_ALLOW_DEFAULT_M === 0.031, `허용신축량 기본값이 0.031 m 가 아니다 (${JOINT_DISP_ALLOW_DEFAULT_M})`)
+}
 
 console.log('\n' + '═'.repeat(66))
 console.log('4. 주철관 통합 계산 (DN600 K9, H=1.5m, P=0.6MPa)')

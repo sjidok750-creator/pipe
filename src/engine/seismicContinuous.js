@@ -127,38 +127,39 @@ export function calcStrainTrafficContinuous(Wm, Z, E_kN, I, Kv, D_m) {
   return { epsilon_o, sigma_o_kN }
 }
 
-// ─── 허용변형률 (연속강관) ───────────────────────────────────
-// criterion = 'buckling': 46t/D — 지침 부록C 표 C.2.3의 판정 기준
-//   (지침은 이를 "항복점 변형률(εy=46t/D)"로 표기 — 국부좌굴 개시 기반, 기본값)
-// criterion = 'yield': σ_y/E — 재료 항복 변형률 (보수적 대안)
-export function calcAllowableStrain(sigma_y, E_MPa, criterion = 'buckling', t_mm, D_mm) {
-  if (criterion === 'buckling' && t_mm > 0 && D_mm > 0) {
-    // 지침 표기 εy = 46t/D는 % 값 (예제 C.2: t=9, D=1000 → 0.414%)
-    // → 무차원 변형률로 환산해 반환 (÷100)
-    return 46 * t_mm / D_mm / 100
+// ─── 허용변형률 (연속강관) — 46t/D 단일 ─────────────────────
+// 근거: 평가요령 부록 C
+//   · p.C17 "연속강관의 내진성능평가 기준 : 축변형률(붕괴방지수준)
+//            ≤ 허용변형률(국부좌굴 개시변형률)"
+//   · <표 C.2.3> 판정행 "항복점변형률 (46t/D) = 0.414 %" (DN1000·t9 예제)
+// 지침 표기 46t/D 는 % 값이므로 무차원 변형률로 환산해 반환한다 (÷100).
+// D 는 관 외경 [mm] (부록 C.2.1 "관경(외경)").
+//
+// ⚠ 재료 항복변형률 σ_y/E 를 선택지로 되살리지 말 것.
+//   평가요령에 그런 기준은 없다. 종전 화면은 σ_y/E 쪽에 "지침 부록C 표 C.2.3"
+//   이라는 근거를 붙이고 46t/D 쪽에는 "ASCE/KDS 해설"을 붙여 근거가 뒤바뀌어
+//   있었고, σ_y/E(SS400 235 MPa 기준 0.112 %)를 고르면 허용값이 약 3.7배
+//   엄해지면서 근거 없는 N.G 가 인쇄됐다. 판정 기준은 46t/D 하나뿐이다.
+export function calcAllowableStrain(t_mm, D_mm) {
+  if (!(t_mm > 0) || !(D_mm > 0)) {
+    throw new Error(
+      `calcAllowableStrain: 허용변형률 46t/D 를 산정할 수 없습니다 ` +
+      `(t = ${t_mm}, D = ${D_mm}). 관두께와 외경을 입력하십시오.`
+    )
   }
-  return sigma_y / E_MPa  // 재료 항복점 변형률 (무차원)
+  return 46 * t_mm / D_mm / 100
 }
 
-// ─── 허용응력 (연속관, 강관) ─────────────────────────────────
-// 내진 시: σ_allow = σ_y × 허용계수 = 0.9 × σ_y (내진등급Ⅰ)
-//         또는 σ_allow = 0.95 × σ_y (내진등급Ⅱ)
-// SS400 기준: σ_y = 235 MPa (t≤16mm), 215 (16<t≤40)
-export function getSteelYieldStrength(t_mm) {
-  return t_mm <= 16 ? 235 : 215  // MPa
-}
-
-export function getAllowableStress_Steel(sigma_y, seismicGrade = 'I') {
-  return seismicGrade === 'I'
-    ? sigma_y * 0.9
-    : sigma_y * 0.95
-}
-
-// ─── 조합응력 계산 (후프 + 축) ──────────────────────────────
-// Von Mises: σ_vm = √(σ_θ² + σ_x² − σ_θ×σ_x)
-export function calcVonMises(sigma_theta, sigma_x) {
-  return Math.sqrt(sigma_theta ** 2 + sigma_x ** 2 - sigma_theta * sigma_x)
-}
+// ⚠ 연속관에 von Mises 조합응력(후프+축) 검토를 되살리지 말 것.
+//   근거 문서 어디에도 요구 조항이 없다 (2026-09 전수 확인):
+//     · 평가요령 : 연속관 판정은 축변형률 단일 — Σε ≤ εy = 46t/D [부록 표 C.2.3]
+//     · KDS 57 00 00 관보 원문 : 'Mises'·'조합응력'·'등가응력' 0회
+//     · 상수도설계기준 해설편 2025 : '합성응력'은 σx = √(σL′²+σB′²) (축+휨)일 뿐
+//     · 실무 계산서 02-3 관로내진성능평가.xlsx : 응력 판정 행 자체가 없음
+//   종전 구현은 허용치로 0.9×σy(=211.5 MPa, SS400 항복강도 기준)를 썼는데
+//   출처 조항이 없고, 대상 강종(STWW 400)과도 맞지 않으면서 세부지침 11-134 의
+//   210 MPa(원주방향·동수압+수격압 전용)과 값이 비슷해 근거가 있는 것처럼 보였다.
+//   세부지침 11-134 [해설 표 11.5.1]에는 강관의 축방향 허용응력 자체가 없다.
 
 // ─── 전체 연속관 본평가 메인 함수 ───────────────────────────
 /**
@@ -166,7 +167,6 @@ export function calcVonMises(sigma_theta, sigma_x) {
  * @param {number} params.DN           - 공칭관경 (mm)
  * @param {number} params.t            - 관두께 (mm)
  * @param {number} params.D_out        - 외경 (mm)
- * @param {string} params.seismicGrade - 내진등급 'I' | 'II'
  * @param {number} params.Z            - 지진구역계수
  * @param {number} params.I_seismic    - 위험도계수
  * @param {number[]} params.Fa_table   - [f1,f2,f3] Fa 증폭계수
@@ -187,12 +187,10 @@ export function calcVonMises(sigma_theta, sigma_x) {
  * @param {number} params.a_contact    - 접지폭 (m), 기본 0.2
  * @param {number} params.Kv           - 연직방향 지반반력계수 (kN/m³)
  * @param {number} params.tau          - 강관-지반 마찰력 (kN/m²), 기본 10
- * @param {string} params.strainCriterion - 허용변형률 기준 'yield' | 'buckling'
  */
 export function evalContinuous(params) {
   const {
     DN, t, D_out,
-    seismicGrade = 'I',
     Z, I_seismic,
     Fa_table, Fv_table,
     layers, Vbs,
@@ -209,7 +207,6 @@ export function evalContinuous(params) {
     a_contact = 0.2,     // m
     Kv = 0,              // kN/m³ (연직방향 지반반력계수)
     tau = 10,            // kN/m² (강관-지반 마찰력)
-    strainCriterion = 'buckling',  // 'buckling' (46t/D, 지침 표 C.2.3 기본) | 'yield' (σ_y/E, 보수적)
   } = params
 
   const D_m = D_out / 1000    // m (외경)
@@ -292,12 +289,9 @@ export function evalContinuous(params) {
   const epsilon_d = settleResult.epsilon_d
 
   // ── Step 13: 지진에 의한 축변형률 (해설식 5.3.43~5.3.53) ──
-  const sigma_y = getSteelYieldStrength(t)
-  const epsilon_y = sigma_y / E   // 재료 항복점 변형률 (무차원, 참고용)
-
-  // 허용변형률 — L1(=ξ×ε) 판정 기준 변형률로도 사용
-  // (지침 C.2/실무 계산서: L1 = ξ × εy, εy = 46t/D 기준)
-  const epsilon_allow = calcAllowableStrain(sigma_y, E, strainCriterion, t, D_out)
+  // 허용변형률 εy = 46t/D [부록 표 C.2.3] — 미끌림 판정길이 Ly = ξ·εy 에도
+  // 같은 값을 쓴다 (지침 p.C28 "L ≤ ξ·εy", 실무 계산서 동일).
+  const epsilon_allow = calcAllowableStrain(t, D_out)
 
   const {
     epsilon_G, epsilon_L, epsilon_B, epsilon_x,
@@ -311,15 +305,10 @@ export function evalContinuous(params) {
   // ── Step 15: 허용변형률 판정
   const strainOK = epsilon_total <= epsilon_allow
 
-  // ── Step 16: Von Mises 조합응력 검토 ──
-  // 축방향 합성응력: σ_x = ν×σ_θ + E×(ε_t + ε_d + ε_x)
-  const sigma_theta_MPa = sigma_theta / 1000  // kN/m² → MPa (sigma_theta는 kN/m² 단위)
-  const sigma_x_total = nu * sigma_theta_MPa + E * (Math.abs(epsilon_t) + Math.abs(epsilon_d) + Math.abs(epsilon_x))
-  const sigma_vm = calcVonMises(sigma_theta_MPa, sigma_x_total)
-  const sigma_allow = getAllowableStress_Steel(sigma_y, seismicGrade)
-  const stressOK = sigma_vm <= sigma_allow
+  // 후프응력(보고서 표시용) — εi = ν·σθ/E 유도 근거
+  const sigma_theta_MPa = sigma_theta / 1000  // kN/m² → MPa
 
-  const overallOK = strainOK  // 기준서(평가요령 부록C.2): 축변형률 검토만 판정 기준
+  const overallOK = strainOK  // 평가요령 부록 C.2 : 축변형률 검토가 유일한 판정 기준
 
   return {
     ok: overallOK,
@@ -344,12 +333,12 @@ export function evalContinuous(params) {
     // L1(Ly) 비교
     xi, Ly, usedFriction, tau,
     // 합산
-    epsilon_total, epsilon_allow, strainCriterion, strainOK,
-    // 허용
-    sigma_y, epsilon_y,
-    // 응력 (MPa)
+    epsilon_total, epsilon_allow, strainOK,
+    // 허용변형률 기준은 46t/D 단일 — 보고서 표기용 별칭
+    epsilon_y: epsilon_allow,
+    allowSource: '평가요령 부록 <표 C.2.3> 항복점변형률 εy = 46t/D [%]',
+    // 응력 (MPa) — 판정에는 쓰지 않는다 (판정은 축변형률 단일)
     sigma_theta: sigma_theta_MPa, sigma_o_kN,
-    sigma_x_total, sigma_vm, sigma_allow, stressOK,
     // 차량하중 산정 세부 (보고서용)
     Kv_used, Wm_traffic, i_traffic,
   }

@@ -4,7 +4,7 @@
 // paraPr: 0=양쪽 20=중앙 21=우측 22=좌측
 // borderFill: 3=셀 5=셀+음영 6=무테두리 7=무테두리+음영
 //   8~19 = 표 테두리 규약(안 0.12mm / 바깥 0.4mm) — head/body/foot/single × first/mid/last
-export const HWPX_TEMPLATE: Record<string, string> = {
+export const HWPX_TEMPLATE = {
   "mimetype": "YXBwbGljYXRpb24vaHdwK3ppcA==",
   "version.xml": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyIgPz48aHY6SENGVmVyc2lvbiB4bWxuczpodj0iaHR0cDovL3d3dy5oYW5jb20uY28ua3IvaHdwbWwvMjAxMS92ZXJzaW9uIiB0YWdldEFwcGxpY2F0aW9uPSJXT1JEUFJPQ0VTU09SIiBtYWpvcj0iNSIgbWlub3I9IjEiIG1pY3JvPSIxIiBidWlsZE51bWJlcj0iMCIgb3M9IjEiIHhtbFZlcnNpb249IjEuNSIgYXBwbGljYXRpb249IkhhbmNvbSBPZmZpY2UgSGFuZ3VsIiBhcHBWZXJzaW9uPSIxMywgMCwgMCwgMTQwOCBXSU4zMkxFV2luZG93c18xMCIvPg==",
   "settings.xml": "PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9InllcyIgPz48aGE6SFdQQXBwbGljYXRpb25TZXR0aW5nIHhtbG5zOmhhPSJodHRwOi8vd3d3LmhhbmNvbS5jby5rci9od3BtbC8yMDExL2FwcCIgeG1sbnM6Y29uZmlnPSJ1cm46b2FzaXM6bmFtZXM6dGM6b3BlbmRvY3VtZW50OnhtbG5zOmNvbmZpZzoxLjAiPjxoYTpDYXJldFBvc2l0aW9uIGxpc3RJRFJlZj0iMCIgcGFyYUlEUmVmPSIwIiBwb3M9IjE2Ii8+PC9oYTpIV1BBcHBsaWNhdGlvblNldHRpbmc+",

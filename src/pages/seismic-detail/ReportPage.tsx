@@ -1297,7 +1297,10 @@ export default function SeismicDetailReportPage() {
                 </tr>
                 <tr>
                   <td style={TDB} colSpan={2}>
-                    허용응력 {G.sigma}<Sub>allow</Sub>&nbsp;(내진 시, {G.sigma}<Sub>y</Sub>/1.5 = 300/1.5)
+                    허용응력 {G.sigma}<Sub>allow</Sub>&nbsp;
+                    <span style={{ fontWeight: 400, fontSize: 10, color: '#64748b' }}>
+                      (덕타일 주철관 내진 시 — 평가요령 &lt;표 C.1.3&gt;)
+                    </span>
                   </td>
                   <td style={TDR}>{rs.sigma_allow?.toFixed(2)}</td>
                 </tr>
@@ -1534,31 +1537,16 @@ export default function SeismicDetailReportPage() {
             </div>
 
             <div style={SUB_TITLE}>
-              허용변형률 ({rs.strainCriterion === 'buckling'
-                ? '국부좌굴 한계변형률, ASCE/KDS 해설'
-                : '항복점 변형률 = 국부좌굴 개시변형률, 지침 부록C'})
+              허용변형률 (항복점변형률 = 국부좌굴 개시변형률, 평가요령 부록 &lt;표 C.2.3&gt;)
             </div>
             <FormulaBlock>
               <FormulaRow>
-                {rs.strainCriterion === 'buckling' ? (
-                  <>
-                    {G.epsilon}<Sub>allow</Sub> =&nbsp;
-                    <Frac top="46t" bot="D" />
-                    &nbsp;[%]&nbsp;=&nbsp;
-                    <Frac top={`46 × ${inp.thickness}`} bot={inp.D_out} />
-                    &nbsp;=&nbsp;<strong>{(rs.epsilon_allow * 100)?.toFixed(4)} %</strong>&nbsp;
-                    (= {rs.epsilon_allow?.toExponential(4)}, 부록C 표 C.2.3)
-                  </>
-                ) : (
-                  <>
-                    {G.epsilon}<Sub>allow</Sub> =&nbsp;
-                    <Frac top={<>{G.sigma}<Sub>y</Sub></>} bot="E" />
-                    &nbsp;=&nbsp;
-                    <Frac top={rs.sigma_y} bot={E_MPa.toLocaleString()} />
-                    &nbsp;=&nbsp;<strong>{rs.epsilon_allow?.toExponential(4)}</strong>&nbsp;
-                    ({(rs.epsilon_allow * 100)?.toFixed(4)} %)
-                  </>
-                )}
+                {G.epsilon}<Sub>allow</Sub> =&nbsp;
+                <Frac top="46t" bot="D" />
+                &nbsp;[%]&nbsp;=&nbsp;
+                <Frac top={`46 × ${inp.thickness}`} bot={inp.D_out} />
+                &nbsp;=&nbsp;<strong>{(rs.epsilon_allow * 100)?.toFixed(4)} %</strong>&nbsp;
+                (= {rs.epsilon_allow?.toExponential(4)})
               </FormulaRow>
             </FormulaBlock>
 
@@ -1596,7 +1584,7 @@ export default function SeismicDetailReportPage() {
                   <td style={{ ...TDR, fontWeight: 700, fontSize: 12 }}>{(rs.epsilon_total * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr>
-                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> ({rs.strainCriterion === 'buckling' ? '46t/D [%], 부록C 표 C.2.3' : 'σ_y/E, 보수적 대안'})</td>
+                  <td style={TDB} colSpan={2}>허용변형률 {G.epsilon}<Sub>allow</Sub> (46t/D [%], 부록C 표 C.2.3)</td>
                   <td style={TDR}>{(rs.epsilon_allow * 100)?.toFixed(4)}</td>
                 </tr>
                 <tr style={{ background: rs.strainOK ? '#f0faf4' : '#fff0f0' }}>
@@ -1636,9 +1624,15 @@ export default function SeismicDetailReportPage() {
                   <td style={TDC}><OKBadge ok={rs.stressOK} /></td>
                 </tr>
                 <tr>
-                  <td style={TD}>이음부 신축량 |u<Sub>J</Sub>|</td>
-                  <td style={TDR}>{(rs.u_J * 1000)?.toFixed(2)} mm</td>
-                  <td style={TDR}>{(rs.u_allow * 1000)?.toFixed(1)} mm</td>
+                  <td style={TD}>
+                    이음부 신축량 합계 e<Sub>total</Sub>
+                    <span style={{ color: '#64748b', fontSize: 10 }}>
+                      &nbsp;(= e<Sub>i</Sub>+e<Sub>o</Sub>+e<Sub>t</Sub>+e<Sub>d</Sub>+|u<Sub>J</Sub>|,&nbsp;
+                      지진분 |u<Sub>J</Sub>| = {(rs.u_J * 1000)?.toFixed(2)} mm)
+                    </span>
+                  </td>
+                  <td style={TDR}>{(rs.e_total * 1000)?.toFixed(2)} mm</td>
+                  <td style={TDR}>{(rs.e_allow * 1000)?.toFixed(1)} mm</td>
                   <td style={TDC}><OKBadge ok={rs.dispOK} /></td>
                 </tr>
                 <tr style={{ background: '#f8f8f8' }}>

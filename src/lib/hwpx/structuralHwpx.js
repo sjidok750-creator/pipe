@@ -76,8 +76,10 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
       ['정수압 P', `${inputs.Pd} MPa`],
       ['압력 구간', result.pressureZone === 'pumped'
         ? '가압구간 — 수격압(정수압 이상 상승압력) 적용'
-        : '자연유하 구간 — 정수압 적용'],
-      ...(result.pressureZone === 'pumped' ? [['수격압 P′', `${f(s1?.Psurge)} MPa`]] : []),
+        : (s1?.surgeApplied
+          ? '자연유하 구간 — 일시하중(수격압) 적용 [강관 11-134 에 제외 규정 없음]'
+          : '자연유하 구간 — 정수압만 적용')],
+      ...(s1?.surgeApplied ? [['수격압 P′', `${f(s1?.Psurge)} MPa`]] : []),
       ['관정 매설깊이 H', `${inputs.H} m`],
       ['흙의 단위중량 γt', `${s2?.gammaSoil_kgfcm3 ?? EARTH_LOAD.gamma_t} kg/cm³`],
       ['내부마찰각 φ′ = φ', `${EARTH_LOAD.phi_deg}°  (kμ′ = ${EARTH_LOAD.kmu.toFixed(5)})`],
@@ -146,7 +148,7 @@ export async function exportStructuralHwpx({ inputs, result, projectName, facili
       { label: '내압응력 σt', expr: `P × D / (2t) = ${inputs.Pd} × ${Do} / (2 × ${tAdopt})`, value: `${f(s1?.sigma_t_static)} MPa` },
       { label: '허용응력 (상시)', expr: STEEL_ALLOW.source, value: `${STEEL_ALLOW.normal} MPa` },
       { label: '판정', expr: `${f(s1?.sigma_t_static)} ≤ ${STEEL_ALLOW.normal}`, value: ok(s1?.ok_static) },
-      ...(s1?.isPumped ? [
+      ...(s1?.surgeApplied ? [
         { label: '수격압 P′', expr: '정수압 이상 상승압력', value: `${f(s1?.Psurge)} MPa` },
         { label: "내압응력 σt′ (일시)", expr: `P′ × D / (2t)`, value: `${f(s1?.sigma_t_surge)} MPa` },
         { label: '허용응력 (일시)', expr: '상시 허용응력의 150%', value: `${STEEL_ALLOW.surge} MPa` },

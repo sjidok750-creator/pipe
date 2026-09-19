@@ -64,7 +64,8 @@ export default function SeismicDetailResultPage() {
   ] : []
 
   const segJointRows = isSegmented ? [
-    { label: '이음부 신축량 |u_J|', formula: '|u₀·ūJ|  [식 5.3.28, β₁·γ₁ 기반]', value: rs.u_J * 1000, unit: 'mm', limit: rs.u_allow * 1000, ok: rs.dispOK },
+    { label: '지진시 이음부 신축량 |u_J|', formula: '|u₀·ūJ|  [식 5.3.28, β₁·γ₁ 기반]', value: rs.u_J * 1000, unit: 'mm' },
+    { label: '이음부 신축량 합계 e_total', formula: 'e_i+e_o+e_t+e_d+|u_J|  [식 5.3.24~5.3.35]', value: rs.e_total * 1000, unit: 'mm', limit: rs.e_allow * 1000, ok: rs.dispOK },
     { label: '이음부 굽힘각 θ_J', formula: '4π²·Lj·Uh/L²  (참고 검토)', value: rs.theta_J * 180 / Math.PI, unit: '°', limit: rs.theta_allow * 180 / Math.PI, ok: rs.angleOK },
   ] : []
 
@@ -113,9 +114,9 @@ export default function SeismicDetailResultPage() {
             <EngPanel title="(a) 축변형률 검토 — 국부좌굴 한계  (연속관 — 강관)">
               <EngTable rows={contStrainRows}/>
               <div style={{ fontSize: 10, color: T.textMuted, marginTop: 4, fontFamily: T.fontSans }}>
-                허용변형률 = {rs.strainCriterion === 'buckling'
-                  ? `46·t/D = ${rs.epsilon_allow?.toExponential(3)}  (ASCE/KDS 해설, 국부좌굴 한계)`
-                  : `σ_y/E = ${rs.epsilon_allow?.toExponential(3)}  (지침 부록C, 항복점 변형률)`}
+                허용변형률 ε_a = 46·t/D = {(rs.epsilon_allow * 100)?.toFixed(4)} %
+                {' '}(= {rs.epsilon_allow?.toExponential(3)}) — 평가요령 부록 &lt;표 C.2.3&gt; 항복점변형률
+                (국부좌굴 개시변형률, p.C17)
               </div>
             </EngPanel>
           </>
@@ -202,7 +203,7 @@ export default function SeismicDetailResultPage() {
             })}
             <div style={{ height: 1, background: T.border, margin: '4px 0' }}/>
             <div style={{ fontSize: 10, color: T.textMuted, fontFamily: T.fontSans }}>
-              허용값 = {rs.epsilon_allow?.toExponential(3)}  ({rs.strainCriterion === 'buckling' ? '부록C 표 C.2.3, 46t/D [%]' : 'σ_y/E, 보수적 대안'})
+              허용값 = {rs.epsilon_allow?.toExponential(3)}  (부록C &lt;표 C.2.3&gt;, 46t/D = {(rs.epsilon_allow * 100)?.toFixed(4)} %)
             </div>
           </EngPanel>
         )}

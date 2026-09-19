@@ -49,9 +49,16 @@ export function calcSteelPipe(inputs) {
     steelGrade = 'SPS400', fyManual = 235,
     // 실측 최소 관두께 (mm) — 관 상세검사값. 미입력 시 기준 두께 사용 (11-134)
     tMeasured = null,
-    // 수격압 검토 여부 — 자연유하 구간: 정수압 / 가압구간: 수격압 (11-136)
-    pressureZone = 'gravity',   // 'gravity'(자연유하) | 'pumped'(가압)
-    Psurge = null,              // MPa — 가압구간 수격압(정수압 이상 상승압력)
+    // 운전방식 — 'gravity'(자연유하) | 'pumped'(가압)
+    pressureZone = 'gravity',
+    Psurge = null,              // MPa — 수격압(정수압 이상 상승압력). 미입력 시 정수압×1.5
+    // 자연유하 구간에도 일시하중(수격압)을 검토할지 여부 — 사용자 선택
+    //   근거: 강관 조항(11-134)에는 운전방식에 따른 일시하중 제외 규정이 없고,
+    //         [해설 표 11.5.1]이 내압에 대해 정수압(상시 140) / 동수압+수격압(일시 210)을
+    //         모두 허용기준으로 제시한다 → 기본 적용(true).
+    //   ※ "자연유하 구간에서는 정수압을 적용하고 가압구간에서는 수격압을 적용한다" 는
+    //     문구는 주철관 조항(11-137 ②)에 있는 규정이며 강관 조항에는 없다.
+    surgeOnGravity = true,
     // 주부재 손상(단면손실) 유무 — 등급 a/b 구분 (11-133 표 11.74)
     hasSectionLoss = false,
   } = inputs
@@ -116,11 +123,16 @@ export function calcSteelPipe(inputs) {
   const sigma_t_static = (Pd * Di) / (2 * tAdopt)          // MPa — 정수압
   const ok_static = sigma_t_static <= STEEL_ALLOW.normal
 
-  // 가압구간에서만 수격압(일시하중) 검토 (11-136)
+  // 일시하중(수격압) 검토 — 가압구간은 항상, 자연유하 구간은 선택(surgeOnGravity)
   const isPumped = pressureZone === 'pumped'
-  const Psurge_used = isPumped ? (Psurge ?? Pd * 1.5) : null
-  const sigma_t_surge = isPumped ? (Psurge_used * Di) / (2 * tAdopt) : null
-  const ok_surge = isPumped ? sigma_t_surge <= STEEL_ALLOW.surge : true
+  const surgeApplied = isPumped || !!surgeOnGravity
+  const surgeBasis = isPumped
+    ? 'pumped'                      // 가압구간 — 수격압 적용
+    : (surgeApplied ? 'gravity-opt' // 자연유하 + 사용자 선택 적용
+      : 'none')                     // 자연유하 + 미적용
+  const Psurge_used = surgeApplied ? (Psurge ?? Pd * 1.5) : null
+  const sigma_t_surge = surgeApplied ? (Psurge_used * Di) / (2 * tAdopt) : null
+  const ok_surge = surgeApplied ? sigma_t_surge <= STEEL_ALLOW.surge : true
 
   // ────────────────────────────────────────
   // STEP 2: 작용 하중(외압) — 상부 토압 + 노면하중 (11-134 (가))
@@ -180,12 +192,14 @@ export function calcSteelPipe(inputs) {
   //   허용응력설계법 : SF = 허용응력 / 발생응력
   // ────────────────────────────────────────
   const SF_static  = STEEL_ALLOW.normal / sigma_t_static
-  const SF_surge   = isPumped ? STEEL_ALLOW.surge / sigma_t_surge : Infinity
+  const SF_surge   = surgeApplied ? STEEL_ALLOW.surge / sigma_t_surge : Infinity
   const SF_bending = STEEL_ALLOW.normal / sigma_b
   // 변형률도 허용/발생 비로 환산해 포함한다. 누락하면 ε 초과(종합 N.G.)인데
   // 등급이 a로 나오는 모순이 보고서에 그대로 인쇄된다.
   const SF_deflection = deflectionRatio > 0 ? maxDeflection / deflectionRatio : Infinity
   const SF_min = Math.min(SF_static, SF_surge, SF_bending, SF_deflection, bucklingSF)
+  // ※ P′ 미입력 시 P′ = 1.5P 이므로 SF_surge = 210/(1.5·σt) = 140/σt = SF_static —
+  //   자연유하 적용 여부가 SF_min·등급을 바꾸지 않는다. P′ 직접입력 시에만 달라진다.
   const safetyGrade = resolveSafetyGrade(SF_min, hasSectionLoss)
 
   const overallOK = ok_static && ok_surge && ok_bending && ok_deflection && ok_buckling
@@ -205,7 +219,7 @@ export function calcSteelPipe(inputs) {
     allowGrade: STEEL_ALLOW.grade,
     kdsCompliance: checkKdsCompliance({ DN, Do, H, hasTraffic, Pd, Psurge: Psurge_used, pipeDimManual }),
     beddingCoerced,
-    pressureZone, rwIsGuideline,
+    pressureZone, rwIsGuideline, surgeApplied, surgeBasis,
 
     // ── 안전성평가 (11-133 표 11.74) ──
     SF: SF_min, safetyGrade, hasSectionLoss,
@@ -215,6 +229,7 @@ export function calcSteelPipe(inputs) {
         title: '내압에 의한 관의 응력',
         ref: REFERENCES.hoopStress,
         Pd, Psurge: Psurge_used, pressureZone, isPumped,
+        surgeApplied, surgeOnGravity: !!surgeOnGravity, surgeBasis,
         sigma_t_static, sigmaA_static: STEEL_ALLOW.normal, ok_static, SF_static,
         sigma_t_surge, sigmaA_surge: STEEL_ALLOW.surge, ok_surge, SF_surge,
         tAdopt, tStandard, tMeasured, thicknessGoverned,

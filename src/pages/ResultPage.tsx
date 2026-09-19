@@ -61,7 +61,7 @@ export default function ResultPage() {
   // 내압 검토
   const pressureRows = pipeType === 'steel' ? [
     { label: '내압응력 σt (정수압·상시)', formula: 'P·D/(2t)', value: hoopStep?.sigma_t_static, unit: 'MPa', limit: hoopStep?.sigmaA_static, ok: hoopStep?.ok_static },
-    ...(hoopStep?.isPumped ? [
+    ...(hoopStep?.surgeApplied ? [
       { label: '내압응력 σt′ (수격압·일시)', formula: 'P′·D/(2t)', value: hoopStep?.sigma_t_surge, unit: 'MPa', limit: hoopStep?.sigmaA_surge, ok: hoopStep?.ok_surge },
     ] : []),
   ] : [
@@ -125,8 +125,8 @@ export default function ResultPage() {
                   : []
                 ),
                 ['설계수압 Pd', `${inputs.Pd} MPa`],
-                ['압력 구간', (result as any).pressureZone === 'pumped'
-                  ? `가압구간 — 수격압 P′ = ${(hoopStep?.Psurge ?? 0).toFixed(3)} MPa`
+                ['압력 구간', hoopStep?.surgeApplied
+                  ? `${(result as any).pressureZone === 'pumped' ? '가압구간' : '자연유하 구간(일시하중 적용)'} — 수격압 P′ = ${(hoopStep?.Psurge ?? 0).toFixed(3)} MPa`
                   : '자연유하 구간 — 정수압 적용'],
               ].map(([k, v], i) => (
                 <tr key={i} style={{ background: i % 2 === 0 ? T.bgRowAlt : T.bgRow }}>

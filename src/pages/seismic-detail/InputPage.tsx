@@ -1083,9 +1083,18 @@ export default function SeismicDetailInputPage() {
               <EngRow label="허용신축량 (mm)" popover={
                 <EngPopover title="이음부 허용신축량">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
-                    미입력(0) 시 KS D 4311 소켓 삽입깊이 × 50%(일반형)/80%(내진형)로 자동 산정.<br/>
-                    평가요령 부록C 예제 C.1은 DN900에 <strong>31mm</strong>를 적용하였으나 산정근거가
-                    제시되지 않음 — <strong>제조사 이음 허용기준 확인 후 직접입력 권장</strong>.
+                    <div style={{ background: '#e8f4e8', border: '1px solid #6ab04c', padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
+                      <strong style={{ color: '#2d6a2d' }}>기본값 31 mm (= 0.031 m)</strong><br/>
+                      평가요령 부록 &lt;표 C.1.4&gt; 예제값이며, 실무 계산서
+                      (02-3 관로내진성능평가.xlsx 주철관 시트, DN900·t13·l 6m)도 동일하게 적용한다.
+                    </div>
+                    평가요령은 &ldquo;이음부 신축량이 <strong>허용치</strong> 이하&rdquo;라고만 하고
+                    <strong>산정식도 관종별 수치도 제시하지 않는다</strong>(5.3.2 / 해설표 5.3.2 / 부록 C.1 전수 확인).
+                    따라서 <strong>제조사 이음 허용기준이 확보되면 그 값을 직접입력</strong>하는 것이 원칙이다.<br/>
+                    <span style={{ color: '#b45309' }}>
+                      ※ 관경·이음형식(일반형/내진형)에 따라 실제 허용값은 달라진다. 기본값은 DN900 예제 기준이므로
+                      다른 관경에 그대로 쓰지 말 것.
+                    </span>
                   </div>
                 </EngPopover>
               }>
@@ -1097,7 +1106,9 @@ export default function SeismicDetailInputPage() {
                   }}
                   min={0} step={1} width={90}
                 />
-                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>0 = 자동 산정</span>
+                <span style={{ fontSize: 10, color: T.textMuted, marginLeft: 6 }}>
+                  0 = 기본값 31 mm (평가요령 표 C.1.4 예제값)
+                </span>
               </EngRow>
 
               <EngDivider label="부등침하 조건"/>
@@ -1295,61 +1306,38 @@ export default function SeismicDetailInputPage() {
               )}
               <EngDivider label="허용변형률 기준"/>
               <EngRow label="판정 기준" popover={
-                <EngPopover title="허용변형률 판정 기준">
+                <EngPopover title="허용변형률 — 46t/D 단일">
                   <div style={{ fontSize: 11, lineHeight: 1.8, fontFamily: T.fontSans }}>
                     <div style={{ background: T.bgOK, border: `1px solid ${T.borderOK}`, padding: '6px 8px', borderRadius: 3, marginBottom: 6 }}>
-                      <strong style={{ color: T.textOK }}>매설관로 내진성능평가 요령 부록 C 표 C.2.3</strong><br/>
-                      연속관(강관)의 축방향 변형률 허용 기준 선택
+                      <strong style={{ color: T.textOK }}>평가요령 부록 C — 연속강관</strong><br/>
+                      p.C17 : “연속강관의 내진성능평가 기준 : 축변형률(붕괴방지수준)<br/>
+                      &nbsp;&nbsp;≤ <strong>허용변형률(국부좌굴 개시변형률)</strong>”<br/>
+                      &lt;표 C.2.3&gt; 판정행 : <strong>항복점변형률 (46t/D) = 0.414 %</strong><br/>
+                      &nbsp;&nbsp;(DN1000 · t 9mm 예제 → 46×9/1000 = 0.414)
                     </div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-                      <thead>
-                        <tr style={{ background: T.bgInfo }}>
-                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>기준</th>
-                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>식</th>
-                          <th style={{ padding: '3px 6px', border: `1px solid ${T.border}` }}>특성</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>σ_y / E</td>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>fy / Es</td>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>항복점 변형률<br/>SS400: 235/206000 = 0.114%<br/>보수적 기준</td>
-                        </tr>
-                        <tr style={{ background: T.bgPanelAlt }}>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontWeight: 700 }}>46·t / D</td>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}`, fontFamily: T.fontMono }}>46 × t / D</td>
-                          <td style={{ padding: '3px 6px', border: `1px solid ${T.borderLight}` }}>국부좌굴 한계<br/>ASCE / KDS 해설<br/>σ_y/E 대비 약 3배 이상 크며<br/>실무에서 널리 사용</td>
-                        </tr>
-                      </tbody>
-                    </table>
+                    D 는 <strong>관 외경</strong>이다 (부록 C.2.1 “관경(외경)”).<br/>
+                    같은 값이 미끌림 판정길이 <strong>L<sub>y</sub> = ξ · ε<sub>y</sub></strong> 에도 쓰인다 (p.C28).
                     <div style={{ marginTop: 6, padding: '4px 8px', background: T.bgWarn, border: `1px solid ${T.borderWarn}`, borderRadius: 2, fontSize: 10 }}>
-                      붕괴방지 수준에서 항복을 허용하는 경우 46t/D 기준 적용 가능.<br/>
-                      기능수행 수준에서는 항복(σ_y/E) 이하 유지가 원칙.
+                      <strong>σ_y/E 선택지는 삭제되었다.</strong> 평가요령에 그런 기준은 없다.<br/>
+                      종전 화면은 두 기준의 근거 표기가 서로 뒤바뀌어 있었고
+                      (σ_y/E 쪽에 “부록C 표 C.2.3”, 46t/D 쪽에 “ASCE/KDS 해설”),
+                      σ_y/E 를 고르면 허용값이 약 3.7배 엄해져 근거 없는 N.G 가 인쇄됐다.<br/>
+                      평가요령 p.44 5.1 해설 1 : “본 요령에서는 <strong>붕괴방지수준에 대한
+                      검토만을 수행한다</strong>” — 기능수행수준용 별도 기준도 없다.
                     </div>
                   </div>
                 </EngPopover>
               }>
-                <EngRadio
-                  options={[
-                    { key: 'buckling', label: '46·t/D [%]  (부록C 표 C.2.3 기준, 기본)' },
-                    { key: 'yield',    label: 'σ_y / E  (재료 항복 변형률, 보수적)' },
-                  ]}
-                  value={inp.strainCriterion ?? 'buckling'}
-                  onChange={v => set({ strainCriterion: v })}
-                />
+                <div style={{ fontSize: T.fs.sm, fontFamily: T.fontSans, color: T.textPrimary }}>
+                  <span style={{ fontFamily: T.fontMono, fontWeight: 700 }}>
+                    ε_a = 46·t / D = 46 × {inp.thickness} / {inp.D_out} ={' '}
+                    {inp.D_out > 0 ? (46 * inp.thickness / inp.D_out).toFixed(4) : '—'} %
+                  </span>
+                </div>
               </EngRow>
               <div style={{ marginLeft: 116, marginTop: 2, padding: '4px 8px', background: T.bgPanelAlt, border: `1px solid ${T.border}`, borderRadius: T.radiusSm, fontSize: T.fs.xs, color: T.textMuted, fontFamily: T.fontSans, lineHeight: T.lh.relaxed }}>
-                {(inp.strainCriterion ?? 'yield') === 'yield'
-                  ? <>
-                      <strong>σ_y/E</strong> — 지침 부록C 표 C.2.3 (항복점 변형률 = 국부좌굴 개시변형률)<br/>
-                      SS400 기준: 235/206000 = 0.114% — <em>보수적 기준</em>
-                    </>
-                  : <>
-                      <strong>46t/D</strong> — ASCE Guidelines for Seismic Design of Oil &amp; Gas Pipeline / KDS 해설<br/>
-                      t/D 비율 기반 국부좌굴 한계변형률 — σ_y/E 대비 약 3.3배 큰 값<br/>
-                      <em>실무 프로젝트에서 널리 사용</em>
-                    </>
-                }
+                평가요령 부록 &lt;표 C.2.3&gt; <strong>항복점변형률 = 46t/D [%]</strong>
+                (= 국부좌굴 개시변형률, p.C17) — 연속관 판정 기준은 이것 하나뿐이며 선택 항목이 아니다.
               </div>
             </>
           )}

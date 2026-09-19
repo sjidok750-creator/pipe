@@ -25,11 +25,11 @@ const criteria = [
   { step: '탄성응답스펙트럼 Sv',       kds: 'KDS 17 10 00 §6',  ref: '—',                   limit: 'SDS·SD1·Ts·Vds 산정' },
   { step: '지반변위 Uh / 파장 L',      kds: '평가요령 부록 C',  ref: '식(C.2~C.5)',         limit: 'L = Vds·Ts,  Uh = (2/π²)·Sv·Ts' },
   { step: '[연속관] 축변형률 ε_L',     kds: '해설 식(5.3.43)', ref: '—',                    limit: 'ε_L = 4Uh/L (P파 지배)' },
-  { step: '[연속관] 굽힘변형률 ε_B',   kds: '해설 식(5.3.44)', ref: '—',                    limit: 'ε_B = π²·D·Uh / (2L²)' },
-  { step: '[연속관] 추가 변형률',       kds: '§5.3',            ref: '—',                    limit: 'ε_i (내압) + ε_t (온도) + ε_d (침하)' },
-  { step: '[연속관] 허용변형률',        kds: '평가요령 §C.4',   ref: '—',                    limit: 'Lv1: 1%,  Lv2: 3% (강관)' },
-  { step: '[분절관] 이음부 신축량 u_J', kds: '해설 식(5.3.48)', ref: '—',                    limit: '|u_J| ≤ u_allow (제조사 기준)' },
-  { step: '[분절관] 굽힘각 θ_J',       kds: '해설 식(5.3.49)', ref: '—',                    limit: 'θ_J ≤ θ_allow (내진형 3°)' },
+  { step: '[연속관] 굽힘변형률 ε_B',   kds: '해설 식(5.3.44)', ref: '—',                    limit: 'ε_B = α₂ · 2π²·D·Uh / L²' },
+  { step: '[연속관] 추가 변형률',       kds: '식(5.3.36~5.3.42)', ref: '—',                  limit: 'ε_i (내압) + ε_o (차량) + ε_t (온도) + ε_d (침하)' },
+  { step: '[연속관] 허용변형률',        kds: '부록 표 C.2.3',   ref: '—',                    limit: 'Σε ≤ ε_y = 46t/D  (t·D : 관두께·외경)' },
+  { step: '[분절관] 이음부 신축량',     kds: '식(5.3.24~5.3.35)', ref: '표 C.1.4',           limit: 'e_total = e_i+e_o+e_t+e_d+|u_J| ≤ 허용신축량' },
+  { step: '[분절관] 굽힘각 θ_J',       kds: '— (평가요령 미제시)', ref: '—',                  limit: 'θ_J ≤ θ_allow — 참고 검토' },
   { step: '취약부 검토',               kds: '평가요령 §C.6',   ref: '—',                    limit: '밸브실·교차부·분기·경사지' },
   { step: '액상화 검토 (필요시)',       kds: 'KDS 17 10 00 §8', ref: '—',                    limit: 'PL ≥ 15 → 부력·침하 추가 검토' },
 ]
@@ -51,7 +51,8 @@ const outputRows_cont = [
 ]
 const outputRows_seg = [
   { item: 'Uh, L',      desc: '지반변위, 지진파장' },
-  { item: '|u_J|',      desc: '이음부 신축량 (mm)' },
+  { item: '|u_J|',      desc: '지진시 이음부 신축량 (mm)' },
+  { item: 'e_total',    desc: '이음부 신축량 합계 — 판정 대상 (= e_i+e_o+e_t+e_d+|u_J|)' },
   { item: 'θ_J',        desc: '이음부 굽힘각 (°)' },
   { item: 'u_allow / θ_allow', desc: '허용 신축량·각도' },
   { item: '판정',       desc: 'O.K. / N.G.' },
